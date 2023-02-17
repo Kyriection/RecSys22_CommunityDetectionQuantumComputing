@@ -23,7 +23,7 @@ class TopPop(BaseRecommender):
     def fit(self):
 
         # Use np.ediff1d and NOT a sum done over the rows as there might be values other than 0/1
-        self.item_pop = np.ediff1d(self.URM_train.tocsc().indptr)
+        self.item_pop = np.ediff1d(self.URM_train.tocsc().indptr) # 计算每行有几个数据？
         self.n_items = self.URM_train.shape[1]
 
 
@@ -38,7 +38,7 @@ class TopPop(BaseRecommender):
             item_pop_to_copy = self.item_pop.copy()
 
         item_scores = np.array(item_pop_to_copy, dtype=np.float32).reshape((1, -1))
-        item_scores = np.repeat(item_scores, len(user_id_array), axis = 0)
+        item_scores = np.repeat(item_scores, len(user_id_array), axis = 0) # 重复增加行数
 
         return item_scores
 

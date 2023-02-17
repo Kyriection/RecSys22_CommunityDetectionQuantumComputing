@@ -10,7 +10,7 @@ from dwave.system import LeapHybridSampler
 from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
-    MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader
+    MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
@@ -212,11 +212,13 @@ def clean_empty_iteration(n_iter: int, folder_path: str, method: Type[BaseCommun
 
 
 if __name__ == '__main__':
-    data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
-                           LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
+    data_reader_classes = [MovielensSampleReader]
+    # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
+                        #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
-                    tabu.TabuSampler()]
+    sampler_list = [neal.SimulatedAnnealingSampler()]
+    # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
+                    # tabu.TabuSampler()]
     num_iters = 15
     result_folder_path = './results/'
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)

@@ -6,6 +6,7 @@ Created on 23/04/2019
 @author: Anonymous
 """
 
+from recsys.Data_manager.Movielens.MovielensSampleReader import MovielensSampleReader
 from recsys.Data_manager.Movielens.Movielens100KReader import Movielens100KReader
 from recsys.Data_manager.Movielens.Movielens1MReader import Movielens1MReader
 from recsys.Data_manager.Movielens.Movielens10MReader import Movielens10MReader

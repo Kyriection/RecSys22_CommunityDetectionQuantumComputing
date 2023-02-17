@@ -6,7 +6,7 @@ from recsys.Data_manager.DataSplitter_Holdout import DataSplitter_Holdout
 from recsys.Recommenders.Recommender_utils import reshapeSparse
 
 
-def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True, threshold=None):
+def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True, threshold=None, icm_ucm=False):
     print('Loading data...')
 
     if split_quota is None:
@@ -22,7 +22,16 @@ def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True,
         urm_validation = explicit_to_implicit_urm(urm_validation, threshold=threshold)
         urm_test = explicit_to_implicit_urm(urm_test, threshold=threshold)
 
-    return urm_train, urm_validation, urm_test  # , var_mapping
+    ICM_dict = data_splitter.get_loaded_ICM_dict()
+    icm = ICM_dict['ICM_genres']
+
+    UCM_dict = data_splitter.get_loaded_UCM_dict()
+    ucm = UCM_dict['UCM_all']
+
+    if icm_ucm:
+        return urm_train, urm_validation, urm_test, icm, ucm
+    else:
+        return urm_train, urm_validation, urm_test  # , var_mapping
 
 
 def merge_sparse_matrices(matrix_a, matrix_b):
@@ -68,8 +77,10 @@ def explicit_to_implicit_urm(urm, threshold=None):
     return urm
 
 
-def get_community_urm(urm, community: Community, filter_users=True, filter_items=True, remove=False):
+def get_community_urm(urm, community: Community, filter_users=True, filter_items=True, remove=False, icm=None, ucm=None):
     new_urm = urm.copy()
+    new_icm = icm.copy() if icm is not None else None
+    new_ucm = ucm.copy() if ucm is not None else None
     n_users, n_items = urm.shape
     new_users = np.arange(n_users)
     new_items = np.arange(n_items)
@@ -79,18 +90,29 @@ def get_community_urm(urm, community: Community, filter_users=True, filter_items
         new_users = new_users[users]
         if remove:
             new_urm = new_urm[users, :]
+            if ucm is not None:
+                new_ucm = new_ucm[users, :]
         else:
             users = np.logical_not(users)
             new_urm[users, :] = 0
+            if ucm is not None:
+                new_ucm[users, :] = 0
 
     if filter_items:
         items = community.item_mask
         new_items = new_items[items]
         if remove:
             new_urm = new_urm[:, items]
+            if icm is not None:
+                new_icm = new_icm[items, :]
         else:
             items = np.logical_not(items)
             new_urm[:, items] = 0
+            if icm is not None:
+                new_icm[items, :] = 0
 
     new_urm.eliminate_zeros()
-    return new_urm, new_users, new_items
+    if icm is not None or ucm is not None:
+        return new_urm, new_users, new_items, new_icm, new_ucm
+    else:
+        return new_urm, new_users, new_items

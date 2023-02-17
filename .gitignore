@@ -1,6 +1,11 @@
 results/
+!results/read_results.py
+
+Data_manager_split_datasets/
+!Data_manager_split_datasets/sample.py
+
 **/__pycache__
 **/Cython
 **/result_experiments
-Data_manager_split_datasets/
+
 empty.py

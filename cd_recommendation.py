@@ -11,9 +11,9 @@ from dwave.system import LeapHybridSampler
 
 from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, CommunityDetectionRecommender, \
-    get_community_folder_path
+    get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
-    MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader
+    MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from recsys.Evaluation.Evaluator import EvaluatorHoldout
 from recsys.Recommenders.BaseRecommender import BaseRecommender
 from recsys.Recommenders.NonPersonalizedRecommender import TopPop
@@ -269,11 +269,14 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, method, reco
 
 
 if __name__ == '__main__':
-    data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
-                           LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
+    data_reader_classes = [MovielensSampleReader]
+    # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
+    #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
-                    tabu.TabuSampler()]
+    method_list = [HierarchicalClustering]
+    sampler_list = [neal.SimulatedAnnealingSampler()]
+    # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
+                    # tabu.TabuSampler()]
     result_folder_path = './results/'
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
