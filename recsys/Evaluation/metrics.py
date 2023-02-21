@@ -50,6 +50,9 @@ class MAP(_Metrics_Object):
         self.n_users += 1
 
     def get_metric_value(self):
+        if self.n_users == 0:
+            return 0.0
+
         return self.cumulative_AP/self.n_users
 
     def merge_with_other(self, other_metric_object):
@@ -91,6 +94,9 @@ class MAP_MIN_DEN(_Metrics_Object):
         self.n_users += 1
 
     def get_metric_value(self):
+        if self.n_users == 0:
+            return 0.0
+        
         return self.cumulative_AP/self.n_users
 
     def merge_with_other(self, other_metric_object):
@@ -131,6 +137,9 @@ class MRR(_Metrics_Object):
         self.n_users += 1
 
     def get_metric_value(self):
+        if self.n_users == 0:
+            return 0.0
+        
         return self.cumulative_RR/self.n_users
 
     def merge_with_other(self, other_metric_object):

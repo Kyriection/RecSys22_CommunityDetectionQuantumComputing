@@ -16,16 +16,16 @@ class CommunityDetectionRecommender(BaseRecommender):
         self.recommenders: List[BaseRecommender] = recommenders
         self.n_iter: int = n_iter if n_iter is not None else self.communities.num_iters
 
-        assert len(self.recommenders) == 2 ** (self.n_iter + 1), \
-            'Cannot use a different number of recommenders and communities.'
+        # assert len(self.recommenders) == 2 ** (self.n_iter + 1), \
+            # 'Cannot use a different number of recommenders and communities.'
 
     def fit(self, n_iter=None, recommenders=None):
         if n_iter is not None:
             self.n_iter = n_iter
         if recommenders is not None:
             self.recommenders = recommenders
-        assert len(self.recommenders) == 2 ** (self.n_iter + 1), \
-            'Cannot use a different number of recommenders and communities.'
+        # assert len(self.recommenders) == 2 ** (self.n_iter + 1), \
+            # 'Cannot use a different number of recommenders and communities.'
 
     def _compute_item_score(self, user_id_array: NDArray, items_to_compute=None):
         n_comm = 0

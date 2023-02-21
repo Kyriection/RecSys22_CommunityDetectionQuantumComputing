@@ -129,7 +129,11 @@ class BaseRecommender(object):
 
     def recommend(self, user_id_array, cutoff = None, remove_seen_flag=True, items_to_compute = None,
                   remove_top_pop_flag = False, remove_custom_items_flag = False, return_scores = False):
-
+        """
+        return ranking_list(, scores_batch)
+        ranking_list: array[item id]
+        scores_batch: URM
+        """
         # If is a scalar transform it in a 1-cell array
         if np.isscalar(user_id_array):
             user_id_array = np.atleast_1d(user_id_array)
@@ -172,6 +176,8 @@ class BaseRecommender(object):
             scores_batch = self._remove_custom_items_on_scores(scores_batch)
 
         # relevant_items_partition is block_size x cutoff
+        # numpy.argpartition(array, kth) return array[index]
+        # 找到前 cutoff 大的值
         relevant_items_partition = (-scores_batch).argpartition(cutoff, axis=1)[:,0:cutoff]
 
         # Get original value and sort it
@@ -179,6 +185,7 @@ class BaseRecommender(object):
         # This is done to correctly get scores_batch value as [row, relevant_items_partition[row,:]]
         relevant_items_partition_original_value = scores_batch[np.arange(scores_batch.shape[0])[:, None], relevant_items_partition]
         relevant_items_partition_sorting = np.argsort(-relevant_items_partition_original_value, axis=1)
+        # ranking 前 cutoff 大的排序后 array[index]
         ranking = relevant_items_partition[np.arange(relevant_items_partition.shape[0])[:, None], relevant_items_partition_sorting]
 
         ranking_list = [None] * ranking.shape[0]

@@ -9,3 +9,6 @@ Data_manager_split_datasets/
 **/result_experiments
 
 empty.py
+test*
+
+*.log

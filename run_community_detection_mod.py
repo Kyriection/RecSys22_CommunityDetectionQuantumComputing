@@ -83,6 +83,9 @@ def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sa
             print(f'Stopping at iteration {n_iter}.')
             clean_empty_iteration(n_iter, folder_path, method, sampler=sampler)
             break
+    print("------------------")
+    print(f"communities.num_iters={communities.num_iters}")
+    print("------------------")
 
 
 def cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = None, communities: Communities = None,
@@ -92,17 +95,25 @@ def cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = 
         assert n_iter == 0, 'If no communities are given this must be the first iteration.'
 
         communities = run_cd(cd_urm, icm, ucm, method, folder_path, sampler=sampler, n_iter=n_iter, n_comm=None, **kwargs)
+        if communities is None:
+            raise EmptyCommunityError('Empty community found.')
     else:
         assert n_iter != 0, 'Cannot be the first iteration if previously computed communities are given.'
 
+        empty_communities_flag = True
         new_communities = []
         n_comm = 0
         for community in communities.iter(n_iter):
             cd = run_cd(cd_urm, icm, ucm, method, folder_path, sampler=sampler, community=community, n_iter=n_iter, n_comm=n_comm,
                         **kwargs)
+            if cd is not None:
+                empty_communities_flag = False
             new_communities.append(cd)
             n_comm += 1
-        communities.add_iteration(new_communities)
+        if empty_communities_flag:
+            raise EmptyCommunityError('Empty communities found.')
+        used = communities.add_iteration(new_communities)
+        assert used == len(new_communities), "commuities.add_iteration error, used items not equal to input."
 
     print('Saving community detection results...')
     method_folder_path = f'{folder_path}{method.name}/'
@@ -172,8 +183,8 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
                 'sampler_info': sampler_info,
                 'run_time': run_time,
             }
-
             users, items = m.get_comm_from_sample(sampleset.first.sample, n_users, n_items=n_items)
+            # print(f"@ n_users={n_users}, users={users}")
         else:
             users, items, run_time = m.run()
 
@@ -184,16 +195,24 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
             }
 
         dataIO.save_data(run_file_name, data_dict_to_save)
-
+    
+    # print("-----------------------------------")
+    # print(f"n_users={n_users}, n_items={n_items}")
+    # print(f"users={users}")
+    # print(f"user_index={user_index}")
+    # print("-----------------------------------")
     communities = Communities(users, items, user_index, item_index)
-    check_communities(communities, m.filter_users, m.filter_items)
-    return communities
+    # check_communities(communities, m.filter_users, m.filter_items)
+    # return communities
+    return check_communities(communities, m.filter_users, m.filter_items)
 
 
 def check_communities(communities: Communities, check_users, check_items):
     for community in communities.iter():
         if (check_users and community.users.size == 0) or (check_items and community.items.size == 0):
-            raise EmptyCommunityError('Empty community found.')
+            # raise EmptyCommunityError('Empty community found.')
+            return None
+    return communities
 
 
 def clean_empty_iteration(n_iter: int, folder_path: str, method: Type[BaseCommunityDetection],
@@ -217,10 +236,10 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [HierarchicalClustering]
+    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 15
+    num_iters = 10
     result_folder_path = './results/'
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)

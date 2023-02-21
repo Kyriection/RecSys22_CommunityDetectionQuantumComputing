@@ -74,6 +74,7 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
                                    **kwargs):
     recommender_name = recommender.RECOMMENDER_NAME
     print(f'Training {recommender_name} on community {n_comm if n_comm is not None else ""} of iteration {n_iter}...')
+    print(f"community.shape({len(community.users)}, {len(community.items)})")
 
     output_folder_path = get_community_folder_path(method_folder_path, n_iter=n_iter, n_comm=n_comm,
                                                    folder_suffix=folder_suffix)
@@ -235,6 +236,9 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, method, recom
         return
 
     num_iters = communities.num_iters + 1
+    print("------------------")
+    print(f"communities.n_items={communities.n_items}")
+    print("------------------")
     for n_iter in range(num_iters):
         recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, method, recommender_list, dataset_name,
                            folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
@@ -274,7 +278,6 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    method_list = [HierarchicalClustering]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]

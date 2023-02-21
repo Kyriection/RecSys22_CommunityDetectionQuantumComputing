@@ -38,15 +38,26 @@ class Communities:
     def iter(self, n_iter: int = None):
         if n_iter is None:
             n_iter = self.num_iters
+        """
         if n_iter == 0 or (self.s0 is None and self.s1 is None):
             yield self.c0
             yield self.c1
         else:
             yield from self.s0.iter(n_iter - 1)
             yield from self.s1.iter(n_iter - 1)
+        """
+        if n_iter == 0 or self.s0 is None:
+            yield self.c0
+        else:
+            yield from self.s0.iter(n_iter - 1)
+        if n_iter == 0 or self.s1 is None:
+            yield self.c1
+        else:
+            yield from self.s1.iter(n_iter - 1)
 
-    def add_iteration(self, communities: List):
+    def add_iteration(self, communities: List) -> int:
         self.num_iters += 1
+        """
         n_communities = len(communities)
         assert n_communities == 2 ** self.num_iters, \
             'Cannot add a number of communities different from a power of 2.'
@@ -61,6 +72,27 @@ class Communities:
             half_communities = n_communities // 2
             self.s0.add_iteration(communities[:half_communities])
             self.s1.add_iteration(communities[half_communities:])
+        """
+        idx = 0
+        if self.s0 is None:
+            if communities[idx] is not None:
+                self.s0 = communities[idx]
+                self.s0.__adjust_masks(self.n_users, self.n_items)
+            idx += 1
+        else:
+            used = self.s0.add_iteration(communities)
+            idx += used
+        print(f's0 used {idx}/{len(communities)}')
+        if self.s1 is None:
+            if communities[idx] is not None:
+                self.s1 = communities[idx]
+                self.s1.__adjust_masks(self.n_users, self.n_items)
+            idx += 1
+        else:
+            used = self.s1.add_iteration(communities[idx:])
+            idx += used
+        print(f's1 used {idx}/{len(communities)}')
+        return idx
 
     def __adjust_masks(self, n_users, n_items):
         self.n_users = n_users
@@ -97,9 +129,9 @@ class Communities:
             except FileNotFoundError:
                 communities.s1 = None
 
-            s0_num_iters = 0 if communities.s0 is None else communities.s0.num_iters + 1
-            s1_num_iters = 0 if communities.s1 is None else communities.s1.num_iters + 1
-            communities.num_iters = min(s0_num_iters, s1_num_iters)
+            # s0_num_iters = 0 if communities.s0 is None else communities.s0.num_iters + 1
+            # s1_num_iters = 0 if communities.s1 is None else communities.s1.num_iters + 1
+            # communities.num_iters = min(s0_num_iters, s1_num_iters)
 
         return communities
 
@@ -125,8 +157,10 @@ class Communities:
         if self.num_iters > 0:
             if n_comm is None:
                 n_comm = 0
-            self.s0.save(folder_path, file_name, n_iter + 1, 2 * n_comm, folder_suffix)
-            self.s1.save(folder_path, file_name, n_iter + 1, 2 * n_comm + 1, folder_suffix)
+            if self.s0 is not None:
+                self.s0.save(folder_path, file_name, n_iter + 1, 2 * n_comm, folder_suffix)
+            if self.s1 is not None:
+                self.s1.save(folder_path, file_name, n_iter + 1, 2 * n_comm + 1, folder_suffix)
 
     def reset_from_iter(self, n_iter):
         assert n_iter != 0, 'Should not reset from iteration 0.'

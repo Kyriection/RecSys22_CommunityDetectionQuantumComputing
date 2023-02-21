@@ -182,6 +182,10 @@ class Evaluator(object):
                  ignore_items = None,
                  ignore_users = None,
                  verbose=True):
+        """
+        ignore_users/items: ignore users/items not in community
+        users_to_evaluate: users with more than 1 rating in URM
+        """
 
         super(Evaluator, self).__init__()
 
@@ -249,6 +253,8 @@ class Evaluator(object):
         self._start_time_print = np.nan
         self._n_users_evaluated = np.nan
 
+        self._print(f"len(users_to_evaluate)={len(self.users_to_evaluate)}")
+
 
     def _print(self, string):
 
@@ -298,6 +304,7 @@ class Evaluator(object):
 
 
         else:
+            self._print(f"self.n_users={self.n_users}, self._n_users_evaluated={self._n_users_evaluated}")
             self._print("WARNING: No users had a sufficient number of relevant items")
 
         if self.ignore_items_flag:
@@ -310,13 +317,21 @@ class Evaluator(object):
         for cutoff in results_dict.keys():
             results_df.loc[cutoff] = results_dict[cutoff]
 
-        results_run_string = get_result_string_df(results_df)
+        try:
+            results_run_string = get_result_string_df(results_df)
+        except TypeError:
+            if self._n_users_evaluated > 0:
+                raise TypeError
+            results_run_string = ""
 
         return results_df, results_run_string
 
 
 
     def get_user_relevant_items(self, user_id):
+        """
+        return array[items id] which has value in URM_test
+        """
 
         assert self.URM_test.getformat() == "csr", "Evaluator_Base_Class: URM_test is not CSR, this will cause errors in getting relevant items"
 
@@ -360,6 +375,7 @@ class Evaluator(object):
 
             # Being the URM CSR, the indices are the non-zero column indexes
             recommended_items = recommended_items_batch_list[batch_user_index]
+            # len(is_relevant) == len(recommended_items), True if in relevant_items
             is_relevant = np.in1d(recommended_items, relevant_items, assume_unique=True)
 
             self._n_users_evaluated += 1
@@ -451,6 +467,9 @@ class EvaluatorHoldout(Evaluator):
 
 
     def _run_evaluation_on_selected_users(self, recommender_object, users_to_evaluate, block_size = None):
+        """
+        every bach run block_size of users in users_to_evaluate(list)
+        """
 
         if block_size is None:
             # Reduce block size if estimated memory requirement exceeds 4 GB
