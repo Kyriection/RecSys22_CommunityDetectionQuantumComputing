@@ -52,3 +52,15 @@ class QUBOCommunityDetection(BaseCommunityDetection):
                 comm[ind] = 1
 
         return comm[:n], comm[n:]
+    
+    @staticmethod
+    def get_modularity_matrix(mat, threshold = None):
+        k = mat.sum(axis=1)    # Degree of the user nodes
+        d = mat.sum(axis=0)    # Degree of the item nodes
+        m = k.sum()            # Total number of graph links
+        P = k * d / m         # Null model
+        B = mat - P
+        if threshold is not None:
+            B[np.abs(B) < threshold] = 0
+        Q = -B / m            # Normalized QUBO matrix
+        return Q

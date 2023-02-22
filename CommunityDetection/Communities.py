@@ -82,7 +82,7 @@ class Communities:
         else:
             used = self.s0.add_iteration(communities)
             idx += used
-        print(f's0 used {idx}/{len(communities)}')
+
         if self.s1 is None:
             if communities[idx] is not None:
                 self.s1 = communities[idx]
@@ -91,7 +91,7 @@ class Communities:
         else:
             used = self.s1.add_iteration(communities[idx:])
             idx += used
-        print(f's1 used {idx}/{len(communities)}')
+
         return idx
 
     def __adjust_masks(self, n_users, n_items):

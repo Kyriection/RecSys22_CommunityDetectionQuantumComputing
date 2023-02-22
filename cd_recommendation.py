@@ -2,6 +2,7 @@ import os.path
 import os.path
 import time
 
+import argparse
 import dimod
 import greedy
 import neal
@@ -11,7 +12,8 @@ from dwave.system import LeapHybridSampler
 
 from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, CommunityDetectionRecommender, \
-    get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering
+    get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
+    QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from recsys.Evaluation.Evaluator import EvaluatorHoldout
@@ -20,6 +22,7 @@ from recsys.Recommenders.NonPersonalizedRecommender import TopPop
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
+from results.read_results import print_result
 
 CUTOFF_LIST = [5, 10, 20, 30, 40, 50, 100]
 
@@ -272,14 +275,32 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, method, reco
             print('Recommender already trained and evaluated.')
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('alpha', type=float)
+    args = parser.parse_args()
+    return args
+
+
 if __name__ == '__main__':
+    args = parse_args()
     data_reader_classes = [MovielensSampleReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
-    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    method_list = [QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     result_folder_path = './results/'
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
+    for data_reader in data_reader_classes:
+        dataset_name = data_reader.DATASET_SUBFOLDER
+        output_folder = os.path.join(result_folder_path, dataset_name, 'results')
+        if not os.path.exists(output_folder):
+            os.mkdir(output_folder)
+        output_folder = os.path.join(output_folder, str(args.alpha)) 
+        if not os.path.exists(output_folder):
+            os.mkdir(output_folder)
+        print_result(dataset_name, False, output_folder)

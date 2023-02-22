@@ -7,6 +7,9 @@ from recsys.Recommenders.Recommender_utils import reshapeSparse
 
 
 def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True, threshold=None, icm_ucm=False):
+    """
+    return urm_train, urm_validation, urm_test(, icm, ucm)
+    """
     print('Loading data...')
 
     if split_quota is None:

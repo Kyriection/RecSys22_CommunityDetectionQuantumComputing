@@ -1,4 +1,4 @@
-import shutil
+import shutil, os, argparse
 
 import dimod
 import greedy
@@ -9,7 +9,8 @@ from dwave.system import LeapHybridSampler
 
 from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
-    UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering
+    UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
+    QUBOProjectedCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from utils.DataIO import DataIO
@@ -84,7 +85,8 @@ def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sa
             clean_empty_iteration(n_iter, folder_path, method, sampler=sampler)
             break
     print("------------------")
-    print(f"communities.num_iters={communities.num_iters}")
+    if communities is not None:
+        print(f"communities.num_iters={communities.num_iters}")
     print("------------------")
 
 
@@ -201,6 +203,8 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
     # print(f"users={users}")
     # print(f"user_index={user_index}")
     # print("-----------------------------------")
+    print("len(users:)", len(users))
+    print("len(items:)", len(items))
     communities = Communities(users, items, user_index, item_index)
     # check_communities(communities, m.filter_users, m.filter_items)
     # return communities
@@ -231,15 +235,39 @@ def clean_empty_iteration(n_iter: int, folder_path: str, method: Type[BaseCommun
         print('Cannot load communities, cleaning not complete.')
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('alpha', type=float)
+    args = parser.parse_args()
+    return args
+
+
+def clean_results(result_folder_path, data_reader_classes, method_list):
+    result_folder_path = './results/'
+    for data_reader_class in data_reader_classes:
+        data_reader = data_reader_class()
+        dataset_name = data_reader._get_dataset_name()
+        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+        for method in method_list:
+            method_folder_path = f'{dataset_folder_path}{method.name}/'
+            if os.path.exists(method_folder_path):
+                shutil.rmtree(method_folder_path)
+
 if __name__ == '__main__':
+    args = parse_args()
     data_reader_classes = [MovielensSampleReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    # method_list = [QUBOGraphCommunityDetection]
+    method_list = [QUBOProjectedCommunityDetection]
+    # method_list = [QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     num_iters = 10
     result_folder_path = './results/'
+    clean_results(result_folder_path, data_reader_classes, method_list)
+    QUBOProjectedCommunityDetection.set_alpha(args.alpha)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)

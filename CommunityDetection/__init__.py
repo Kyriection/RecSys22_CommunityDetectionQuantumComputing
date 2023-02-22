@@ -9,6 +9,8 @@ from CommunityDetection.UserCommunityDetection import UserCommunityDetection
 from CommunityDetection.HybridRecommender import HybridRecommender, calc_num_iters
 from CommunityDetection.KmeansCommunityDetection import KmeansCommunityDetection
 from CommunityDetection.HierarchicalClustering import HierarchicalClustering
+from CommunityDetection.QUBOGraphCommunityDetection import QUBOGraphCommunityDetection
+from CommunityDetection.QUBOProjectedCommunityDetection import QUBOProjectedCommunityDetection
 
 
 class EmptyCommunityError(Exception):
