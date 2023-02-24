@@ -212,8 +212,9 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
 
 
 def check_communities(communities: Communities, check_users, check_items):
+    MIN_COMMUNITIE_SIZE = 5
     for community in communities.iter():
-        if (check_users and community.users.size == 0) or (check_items and community.items.size == 0):
+        if (check_users and community.users.size < MIN_COMMUNITIE_SIZE) or (check_items and community.items.size < MIN_COMMUNITIE_SIZE):
             # raise EmptyCommunityError('Empty community found.')
             return None
     return communities
@@ -243,7 +244,6 @@ def parse_args():
 
 
 def clean_results(result_folder_path, data_reader_classes, method_list):
-    result_folder_path = './results/'
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
@@ -260,9 +260,8 @@ if __name__ == '__main__':
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    # method_list = [QUBOGraphCommunityDetection]
-    method_list = [QUBOProjectedCommunityDetection]
-    # method_list = [QUBOProjectedCommunityDetection]
+    # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
+    method_list = [UserCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]

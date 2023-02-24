@@ -1,5 +1,4 @@
-import os.path
-import os.path
+import os
 import time
 
 import argparse
@@ -13,7 +12,7 @@ from dwave.system import LeapHybridSampler
 from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, CommunityDetectionRecommender, \
     get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
-    QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection
+    QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from recsys.Evaluation.Evaluator import EvaluatorHoldout
@@ -282,6 +281,18 @@ def parse_args():
     return args
 
 
+def save_results(tag, data_reader_classes, result_folder_path):
+    for data_reader in data_reader_classes:
+        dataset_name = data_reader.DATASET_SUBFOLDER
+        output_folder = os.path.join(result_folder_path, dataset_name, 'results')
+        if not os.path.exists(output_folder):
+            os.mkdir(output_folder)
+        output_folder = os.path.join(output_folder, str(tag)) 
+        if not os.path.exists(output_folder):
+            os.mkdir(output_folder)
+        print_result(dataset_name, False, output_folder)
+
+
 if __name__ == '__main__':
     args = parse_args()
     data_reader_classes = [MovielensSampleReader]
@@ -290,17 +301,10 @@ if __name__ == '__main__':
     recommender_list = [TopPop]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     method_list = [QUBOProjectedCommunityDetection]
+    method_list = [UserCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     result_folder_path = './results/'
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    for data_reader in data_reader_classes:
-        dataset_name = data_reader.DATASET_SUBFOLDER
-        output_folder = os.path.join(result_folder_path, dataset_name, 'results')
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)
-        output_folder = os.path.join(output_folder, str(args.alpha)) 
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)
-        print_result(dataset_name, False, output_folder)
+    save_results(args.alpha, data_reader_classes, result_folder_path)

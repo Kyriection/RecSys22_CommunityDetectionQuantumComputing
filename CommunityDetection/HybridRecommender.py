@@ -18,6 +18,7 @@ class HybridRecommender(BaseRecommender):
                  verbose=True, communities_weight: List[float] = None):
         super(HybridRecommender, self).__init__(URM_train, verbose=verbose)
         
+        assert len(communities_list) == len(recommenders_list), 'HybridRecommender.__init__: len(communities_list) != len(recommenders_list)'
         if n_iter is None:
             n_iter = calc_num_iters(communities_list)
         self.n_iter: int = n_iter

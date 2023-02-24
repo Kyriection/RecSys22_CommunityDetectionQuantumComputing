@@ -1,6 +1,4 @@
-import os.path
-import os.path
-import time
+import os, time, shutil
 from typing import List
 
 import dimod
@@ -281,19 +279,78 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, method_list,
                              recommender_name, n_iter=n_iter)
 
 
+def clean_results(result_folder_path, data_reader_classes, method_list, sampler_list):
+    for data_reader_class in data_reader_classes:
+        data_reader = data_reader_class()
+        dataset_name = data_reader._get_dataset_name()
+        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+        if not os.path.exists(dataset_folder_path):
+            continue
+        hybrid_folder_path = os.path.join(dataset_folder_path, 'Hybrid')
+        """
+        if os.path.exists(hybrid_folder_path):
+            shutil.rmtree(hybrid_folder_path)
+        for method in method_list:
+            method_folder_path = f'{dataset_folder_path}{method.name}/'
+            if not os.path.exists(method_folder_path):
+                continue
+            # print('in: ', method_folder_path)
+            for iter in os.listdir(method_folder_path):
+                iter_folder_path = os.path.join(method_folder_path, iter)
+                if not os.path.isdir(iter_folder_path) or len(iter) < 4 or iter[:4] != 'iter':
+                    continue
+                # print('in: ', iter_folder_path)
+                for sample in sampler_list:
+                    # sampler_folder_path = os.path.join(iter_folder_path, sample.__name__)
+                    sampler_folder_path = os.path.join(iter_folder_path, 'SimulatedAnnealingSampler')
+                    if not os.path.exists(sampler_folder_path):
+                        continue
+                    # print('in: ', sampler_folder_path)
+                    result_file = os.path.join(sampler_folder_path, 'cd_TopPopRecommender.zip')
+                    if os.path.exists(result_file):
+                        # print('remove: ', result_file)
+                        os.remove(result_file)
+                    for c in os.listdir(sampler_folder_path):
+                        c_folder_path = os.path.join(sampler_folder_path, c)
+                        if os.path.isdir(c_folder_path) and c[0] == 'c':
+                            # print('remove: ', c_folder_path)
+                            shutil.rmtree(c_folder_path)
+        """
+
+
+def save_results(tag, data_reader_classes, result_folder_path):
+    for data_reader in data_reader_classes:
+        dataset_name = data_reader.DATASET_SUBFOLDER
+        output_folder = os.path.join(result_folder_path, dataset_name, 'results')
+        if not os.path.exists(output_folder):
+            os.mkdir(output_folder)
+        output_folder = os.path.join(output_folder, str(tag)) 
+        if not os.path.exists(output_folder):
+            os.mkdir(output_folder)
+        print_result(dataset_name, False, output_folder)
+
+
 if __name__ == '__main__':
     data_reader_classes = [MovielensSampleReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
-    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    # method_list = [QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     result_folder_path = './results/'
-    WEIGHT = [0.4, 0.4, 0.2]
-    main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    print("weight", WEIGHT)
-    print_result(MovielensSampleReader.DATASET_SUBFOLDER)
+
+    # method_list = [QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
+    # clean_results(result_folder_path, data_reader_classes, method_list, sampler_list)
+    # for alpha in np.arange(0.1, 1.0, 0.1):
+    #     WEIGHT = [alpha, 1.0 - alpha]
+    #     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
+    #     save_results(round(alpha, 2), data_reader_classes, result_folder_path)
+
+    method_list = [QUBOBipartiteCommunityDetection, UserCommunityDetection]
+    clean_results(result_folder_path, data_reader_classes, method_list, sampler_list)
+    for alpha in np.arange(0.4, 1.0, 0.1):
+        WEIGHT = [alpha, 1.0 - alpha]
+        main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
+        save_results(round(1.0 + alpha, 2), data_reader_classes, result_folder_path)
