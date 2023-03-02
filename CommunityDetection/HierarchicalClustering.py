@@ -12,8 +12,8 @@ class HierarchicalClustering(BaseCommunityDetection):
     filter_items = False
     name = 'HierarchicalClustering'
 
-    def __init__(self, urm, icm, ucm):
-        super(HierarchicalClustering, self).__init__(urm=urm)
+    def __init__(self, urm, icm, ucm, *args, **kwargs):
+        super(HierarchicalClustering, self).__init__(urm, *args, **kwargs)
 
 
     def save_model(self, folder_path, file_name):

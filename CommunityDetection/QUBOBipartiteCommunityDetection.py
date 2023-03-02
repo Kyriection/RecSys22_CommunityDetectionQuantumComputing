@@ -13,8 +13,8 @@ from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
 class QUBOBipartiteCommunityDetection(QUBOCommunityDetection):
     name = 'QUBOBipartiteCommunityDetection'
 
-    def __init__(self, urm, icm, ucm):
-        super(QUBOBipartiteCommunityDetection, self).__init__(urm=urm)
+    def __init__(self, urm, icm, ucm, *args, **kwargs):
+        super(QUBOBipartiteCommunityDetection, self).__init__(urm, *args, **kwargs)
         self.icm = icm
         self.ucm = ucm
 

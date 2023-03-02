@@ -10,7 +10,7 @@ from dwave.system import LeapHybridSampler
 from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
     UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
-    QUBOProjectedCommunityDetection
+    QUBOProjectedCommunityDetection, HybridCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from utils.DataIO import DataIO
@@ -203,8 +203,7 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
     # print(f"users={users}")
     # print(f"user_index={user_index}")
     # print("-----------------------------------")
-    print("len(users:)", len(users))
-    print("len(items:)", len(items))
+    print(f"len(users):{len(users)}, len(items):{len(items)}")
     communities = Communities(users, items, user_index, item_index)
     # check_communities(communities, m.filter_users, m.filter_items)
     # return communities
@@ -238,7 +237,7 @@ def clean_empty_iteration(n_iter: int, folder_path: str, method: Type[BaseCommun
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('alpha', type=float)
+    parser.add_argument('-a', '--alpha', type=float, default=0.5)
     args = parser.parse_args()
     return args
 
@@ -261,12 +260,12 @@ if __name__ == '__main__':
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [UserCommunityDetection]
+    method_list = [HybridCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     num_iters = 10
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list)
-    QUBOProjectedCommunityDetection.set_alpha(args.alpha)
+    HybridCommunityDetection.set_alpha(args.alpha)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)

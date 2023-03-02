@@ -15,8 +15,8 @@ class QUBOProjectedCommunityDetection(QUBOCommunityDetection):
     name = 'QUBOProjectedCommunityDetection'
     alpha = 0.5
 
-    def __init__(self, urm, icm, ucm):
-        super(QUBOProjectedCommunityDetection, self).__init__(urm=urm)
+    def __init__(self, urm, icm, ucm, *args, **kwargs):
+        super(QUBOProjectedCommunityDetection, self).__init__(urm, *args, **kwargs)
         self.icm = icm
         self.ucm = ucm
 

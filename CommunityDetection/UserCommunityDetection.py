@@ -9,8 +9,8 @@ class UserCommunityDetection(QUBOCommunityDetection):
     filter_items = False
     name = 'UserCommunityDetection'
 
-    def __init__(self, urm, icm, ucm):
-        super(UserCommunityDetection, self).__init__(urm=urm)
+    def __init__(self, urm, icm, ucm, *args, **kwargs):
+        super(UserCommunityDetection, self).__init__(urm, *args, **kwargs)
         self.ucm = ucm
 
     def fit(self, weighted=True, threshold=None):

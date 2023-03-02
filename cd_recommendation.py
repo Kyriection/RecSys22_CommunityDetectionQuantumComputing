@@ -12,7 +12,8 @@ from dwave.system import LeapHybridSampler
 from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, CommunityDetectionRecommender, \
     get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
-    QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection
+    QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
+    HybridCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from recsys.Evaluation.Evaluator import EvaluatorHoldout
@@ -276,7 +277,7 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, method, reco
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('alpha', type=float)
+    parser.add_argument('-a', '--alpha', type=float, default=0.5)
     args = parser.parse_args()
     return args
 
@@ -300,8 +301,7 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    method_list = [QUBOProjectedCommunityDetection]
-    method_list = [UserCommunityDetection]
+    method_list = [HybridCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]

@@ -13,8 +13,8 @@ from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
 class QUBOGraphCommunityDetection(QUBOCommunityDetection):
     name = 'QUBOGraphCommunityDetection'
 
-    def __init__(self, urm, icm, ucm):
-        super(QUBOGraphCommunityDetection, self).__init__(urm=urm)
+    def __init__(self, urm, icm, ucm, *args, **kwargs):
+        super(QUBOGraphCommunityDetection, self).__init__(urm, *args, **kwargs)
         self.icm = icm
         self.ucm = ucm
 

@@ -12,8 +12,8 @@ class KmeansCommunityDetection(BaseCommunityDetection):
     filter_items = False
     name = 'KmeansCommunityDetection'
 
-    def __init__(self, urm, icm, ucm):
-        super(KmeansCommunityDetection, self).__init__(urm=urm)
+    def __init__(self, urm, icm, ucm, *args, **kwargs):
+        super(KmeansCommunityDetection, self).__init__(urm, *args, **kwargs)
         self.icm = icm
         self.ucm = ucm
 
