@@ -9,6 +9,16 @@ import numpy as np
 
 from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
 
+def normalization(m):
+    min_val = np.min(m)
+    max_val = np.max(m)
+    # assert min_val == 0.0
+    return m / max_val
+
+def get_similarity(m):
+    W = m * m.T
+    return normalization(W)
+
 
 class QUBOProjectedCommunityDetection(QUBOCommunityDetection):
     filter_items = False
@@ -23,8 +33,11 @@ class QUBOProjectedCommunityDetection(QUBOCommunityDetection):
     def fit(self, weighted=True, threshold=None):
         start_time = time.time()
 
-        W = self.alpha * self.urm * self.urm.T + \
-            (1.0 - self.alpha) * self.ucm * self.ucm.T
+        urm = self.urm * self.urm.T
+        ucm = self.ucm * self.ucm.T
+        urm *= ucm.sum() / urm.sum()
+
+        W = self.alpha * urm + (1.0 - self.alpha) * ucm
 
         if not weighted:
             W = (W > 0) * 1

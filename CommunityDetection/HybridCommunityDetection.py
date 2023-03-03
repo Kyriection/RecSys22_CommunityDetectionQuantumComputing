@@ -1,12 +1,8 @@
-'''
-Author: Kaizyn
-Date: 2023-01-11 13:45:23
-LastEditTime: 2023-01-13 21:18:12
-'''
 from CommunityDetection import QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, \
     UserCommunityDetection, QUBOCommunityDetection
 
 HYBRID_LIST = [UserCommunityDetection, QUBOBipartiteCommunityDetection]
+assert len(HYBRID_LIST) >= 2
 
 class HybridCommunityDetection(*HYBRID_LIST):
     name = 'HybridCommunityDetection'
@@ -28,7 +24,7 @@ class HybridCommunityDetection(*HYBRID_LIST):
 
     @staticmethod
     def check_select_method(n_users: int) -> bool:
-        return HybridCommunityDetection.n_all_users * HybridCommunityDetection.alpha < n_users
+        return HybridCommunityDetection.n_all_users * HybridCommunityDetection.alpha >= n_users
 
     @staticmethod
     def select_method(n_users: int) -> QUBOCommunityDetection:

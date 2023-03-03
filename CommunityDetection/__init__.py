@@ -12,6 +12,7 @@ from CommunityDetection.HierarchicalClustering import HierarchicalClustering
 from CommunityDetection.QUBOGraphCommunityDetection import QUBOGraphCommunityDetection
 from CommunityDetection.QUBOProjectedCommunityDetection import QUBOProjectedCommunityDetection
 from CommunityDetection.HybridCommunityDetection import HybridCommunityDetection
+from CommunityDetection.MultiHybridCommunityDetection import MultiHybridCommunityDetection
 
 
 class EmptyCommunityError(Exception):

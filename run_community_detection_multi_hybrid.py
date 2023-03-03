@@ -10,7 +10,7 @@ from dwave.system import LeapHybridSampler
 from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
     UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
-    QUBOProjectedCommunityDetection, HybridCommunityDetection
+    QUBOProjectedCommunityDetection, HybridCommunityDetection, MultiHybridCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from utils.DataIO import DataIO
@@ -238,6 +238,7 @@ def clean_empty_iteration(n_iter: int, folder_path: str, method: Type[BaseCommun
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--alpha', type=float, default=0.5)
+    parser.add_argument('-b', '--beta', type=float, default=0.25)
     args = parser.parse_args()
     return args
 
@@ -258,14 +259,13 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [QUBOProjectedCommunityDetection]
+    method_list = [MultiHybridCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     num_iters = 10
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list)
-    QUBOProjectedCommunityDetection.set_alpha(args.alpha)
+    MultiHybridCommunityDetection.set_alpha(args.alpha)
+    MultiHybridCommunityDetection.set_beta(args.beta)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)

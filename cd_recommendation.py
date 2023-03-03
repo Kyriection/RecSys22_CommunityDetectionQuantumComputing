@@ -13,7 +13,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     QUBOBipartiteProjectedCommunityDetection, Communities, CommunityDetectionRecommender, \
     get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
-    HybridCommunityDetection
+    HybridCommunityDetection, MultiHybridCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from recsys.Evaluation.Evaluator import EvaluatorHoldout
@@ -278,17 +278,25 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, method, reco
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--alpha', type=float, default=0.5)
+    parser.add_argument('-b', '--beta', type=float, default=0.25)
     args = parser.parse_args()
     return args
 
 
-def save_results(tag, data_reader_classes, result_folder_path):
+def save_results(data_reader_classes, result_folder_path, *args):
+    tag = []
+    for arg in args:
+        if arg is None:
+            continue
+        tag.append(str(arg))
+    tag = '_'.join(tag) if tag else '_'
+
     for data_reader in data_reader_classes:
         dataset_name = data_reader.DATASET_SUBFOLDER
         output_folder = os.path.join(result_folder_path, dataset_name, 'results')
         if not os.path.exists(output_folder):
             os.mkdir(output_folder)
-        output_folder = os.path.join(output_folder, str(tag)) 
+        output_folder = os.path.join(output_folder, tag) 
         if not os.path.exists(output_folder):
             os.mkdir(output_folder)
         print_result(dataset_name, False, output_folder)
@@ -301,10 +309,11 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    method_list = [HybridCommunityDetection]
+    method_list = [QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     result_folder_path = './results/'
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    save_results(args.alpha, data_reader_classes, result_folder_path)
+    # save_results(data_reader_classes, result_folder_path, args.alpha, args.beta)
+    save_results(data_reader_classes, result_folder_path, args.alpha)
