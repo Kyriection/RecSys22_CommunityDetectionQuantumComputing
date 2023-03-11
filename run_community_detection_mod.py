@@ -10,7 +10,7 @@ from dwave.system import LeapHybridSampler
 from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
     UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
-    QUBOProjectedCommunityDetection, HybridCommunityDetection
+    QUBOProjectedCommunityDetection, HybridCommunityDetection, QUBONcutCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from utils.DataIO import DataIO
@@ -258,7 +258,8 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    method_list = [QUBONcutCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),

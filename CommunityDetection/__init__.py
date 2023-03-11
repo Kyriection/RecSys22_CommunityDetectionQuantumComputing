@@ -13,6 +13,7 @@ from CommunityDetection.QUBOGraphCommunityDetection import QUBOGraphCommunityDet
 from CommunityDetection.QUBOProjectedCommunityDetection import QUBOProjectedCommunityDetection
 from CommunityDetection.HybridCommunityDetection import HybridCommunityDetection
 from CommunityDetection.MultiHybridCommunityDetection import MultiHybridCommunityDetection
+from CommunityDetection.QUBONcutCommunityDetection import QUBONcutCommunityDetection
 
 
 class EmptyCommunityError(Exception):

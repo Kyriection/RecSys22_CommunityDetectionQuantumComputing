@@ -11,7 +11,7 @@ from dwave.system import LeapHybridSampler
 from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, CommunityDetectionRecommender, \
     get_community_folder_path, HybridRecommender, UserCommunityDetection, calc_num_iters, \
-    KmeansCommunityDetection
+    KmeansCommunityDetection, QUBONcutCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from recsys.Evaluation.Evaluator import EvaluatorHoldout
