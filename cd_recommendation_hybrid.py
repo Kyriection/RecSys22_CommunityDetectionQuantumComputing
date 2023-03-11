@@ -287,9 +287,9 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
         if not os.path.exists(dataset_folder_path):
             continue
         hybrid_folder_path = os.path.join(dataset_folder_path, 'Hybrid')
-        """
         if os.path.exists(hybrid_folder_path):
             shutil.rmtree(hybrid_folder_path)
+        """
         for method in method_list:
             method_folder_path = f'{dataset_folder_path}{method.name}/'
             if not os.path.exists(method_folder_path):
@@ -348,9 +348,9 @@ if __name__ == '__main__':
     #     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
     #     save_results(round(alpha, 2), data_reader_classes, result_folder_path)
 
-    method_list = [QUBOBipartiteCommunityDetection, UserCommunityDetection]
+    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list)
-    for alpha in np.arange(0.4, 1.0, 0.1):
+    for alpha in np.arange(0.9, 1.0, 0.1):
         WEIGHT = [alpha, 1.0 - alpha]
         main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
         save_results(round(1.0 + alpha, 2), data_reader_classes, result_folder_path)

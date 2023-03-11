@@ -75,6 +75,11 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
 def train_recommender_on_community(recommender, community, urm_train, urm_validation, urm_test, dataset_name,
                                    results_folder_path, method_folder_path, n_iter=0, n_comm=None, folder_suffix='',
                                    **kwargs):
+    """
+    validation: fit(train), predict(validation)
+    test: fit(train + validation), predict(test)
+    baseline: best_model fit(train + validation), predict(test)
+    """
     recommender_name = recommender.RECOMMENDER_NAME
     print(f'Training {recommender_name} on community {n_comm if n_comm is not None else ""} of iteration {n_iter}...')
     print(f"community.shape({len(community.users)}, {len(community.items)})")
@@ -309,7 +314,7 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    method_list = [QUBOProjectedCommunityDetection]
+    method_list = [QUBOBipartiteCommunityDetection, QUBOGraphCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
