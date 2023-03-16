@@ -207,15 +207,21 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
     communities = Communities(users, items, user_index, item_index)
     # check_communities(communities, m.filter_users, m.filter_items)
     # return communities
-    return check_communities(communities, m.filter_users, m.filter_items)
+    # return check_communities(communities, m.filter_users, m.filter_items)
+    return check_communities(communities, m)
 
 
-def check_communities(communities: Communities, check_users, check_items):
+# def check_communities(communities: Communities, check_users, check_items):
+def check_communities(communities: Communities, method: BaseCommunityDetection):
+    check_users = method.filter_users
+    check_items = method.filter_items
     MIN_COMMUNITIE_SIZE = 5
     for community in communities.iter():
         if (check_users and community.users.size < MIN_COMMUNITIE_SIZE) or (check_items and community.items.size < MIN_COMMUNITIE_SIZE):
             # raise EmptyCommunityError('Empty community found.')
             return None
+    if method.get_graph_cut(communities) > 1:
+        return None
     return communities
 
 
@@ -258,8 +264,7 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    method_list = [QUBONcutCommunityDetection]
+    method_list = [QUBOBipartiteProjectedCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),

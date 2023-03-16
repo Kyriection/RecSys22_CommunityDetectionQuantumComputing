@@ -1,7 +1,7 @@
 import numpy.typing as npt
 
 from utils.DataIO import DataIO
-
+from CommunityDetection.Communities import Communities
 
 class BaseCommunityDetection:
     filter_users = True
@@ -35,3 +35,8 @@ class BaseCommunityDetection:
 
         for attrib_name in data_dict.keys():
             self.__setattr__(attrib_name, data_dict[attrib_name])
+
+    def get_graph_cut(self, communities: Communities):
+        raise NotImplementedError(
+            f'The {self.fit.__name__} method is not implemented '
+            f'for the abstract base class {self.__class__.__name__}.')

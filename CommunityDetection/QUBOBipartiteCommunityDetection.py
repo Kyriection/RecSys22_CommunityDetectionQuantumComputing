@@ -7,6 +7,7 @@ import time
 
 import numpy as np
 
+from CommunityDetection.Communities import Communities
 from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
 
 
@@ -42,33 +43,14 @@ class QUBOBipartiteCommunityDetection(QUBOCommunityDetection):
         self._Q = -B / m            # Normalized QUBO matrix
 
         self._fit_time = time.time() - start_time
-    """
-    def fit(self, threshold=None):
-        start_time = time.time()
-
-        n_users, n_items = self.urm.shape
-
-        def calc_block(mat):
-            k = mat.sum(axis=1)
-            d = mat.sum(axis=0)
-            m = k.sum()
-            P_block = k * d / m
-            block = mat - P_block
-            return block, m
-        
-        ur_block, ur_m = calc_block(self.urm)
-        uc_block, uc_m = calc_block(self.ucm * self.ucm.T)
-        ic_block, ic_m = calc_block(self.icm * self.icm.T)
-
-        B = np.block([
-            [uc_block / uc_m, ur_block / ur_m],
-            [ur_block.T / ur_m, ic_block / ic_m]
-        ])
-
-        if threshold is not None:
-            B[np.abs(B) < threshold * uc_m] = 0
-
-        self._Q = -B
-
-        self._fit_time = time.time() - start_time
-    """
+    
+    def get_graph_cut(self, communities: Communities):
+        cut = 0.0
+        rows, cols = self.urm.nonzero()
+        for row, col in zip(rows, cols):
+            if communities.user_mask[row] != communities.item_mask[col]:
+                cut += self.urm[row, col]
+        all = self.urm.sum()
+        print(f'cut/all={cut}/{all}={cut/all}')
+        return cut / all
+    
