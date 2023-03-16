@@ -1,8 +1,3 @@
-'''
-Author: Kaizyn
-Date: 2023-01-11 13:45:23
-LastEditTime: 2023-01-20 23:00:04
-'''
 import time
 
 import scipy.sparse as sp
@@ -37,7 +32,6 @@ class QUBOGraphCommunityDetection(QUBOCommunityDetection):
         ])
 
         self._Q = self.get_modularity_matrix(mat)
-        print(f"get_modularity_matrix():Q.shape={self._Q.shape}")
 
         self._fit_time = time.time() - start_time
 
