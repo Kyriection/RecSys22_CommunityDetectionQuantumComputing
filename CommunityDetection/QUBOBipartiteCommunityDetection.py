@@ -52,5 +52,5 @@ class QUBOBipartiteCommunityDetection(QUBOCommunityDetection):
                 cut += self.urm[row, col]
         all = self.urm.sum()
         print(f'cut/all={cut}/{all}={cut/all}')
-        return cut / all
+        return cut, all
     

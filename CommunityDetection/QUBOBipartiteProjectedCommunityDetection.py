@@ -61,4 +61,4 @@ class QUBOBipartiteProjectedCommunityDetection(QUBOCommunityDetection):
                 cut += self.W[row, col]
         all = self.W.sum()
         print(f'cut/all={cut}/{all}={cut/all}')
-        return cut / all
+        return cut, all

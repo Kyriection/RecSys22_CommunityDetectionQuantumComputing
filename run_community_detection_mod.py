@@ -5,6 +5,7 @@ import greedy
 import neal
 import numpy as np
 import tabu
+import pandas as pd
 from dwave.system import LeapHybridSampler
 
 from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, QUBOBipartiteCommunityDetection, \
@@ -16,6 +17,22 @@ from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrus
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
+
+CUT_FLAG = True
+cut_info = ['n_iter', 'n_users', 'n_items', 'c0_users', 'c0_items', 'c1_users', 'c1_items', 'cut_weight', 'all_weight', 'cut_ratio']
+cut_data = {key: [] for key in cut_info}
+
+def save_cut(cut: float, all: float, n_iter: int, communities: Communities):
+    cut_data['n_iter'].append(n_iter)
+    cut_data['n_users'].append(communities.n_users)
+    cut_data['c0_users'].append(len(communities.c0.users))
+    cut_data['c1_users'].append(len(communities.c1.users))
+    cut_data['n_items'].append(communities.n_items)
+    cut_data['c0_items'].append(len(communities.c0.items))
+    cut_data['c1_items'].append(len(communities.c1.items))
+    cut_data['cut_weight'].append(cut)
+    cut_data['all_weight'].append(all)
+    cut_data['cut_ratio'].append(cut / all)
 
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
@@ -84,10 +101,13 @@ def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sa
             print(f'Stopping at iteration {n_iter}.')
             clean_empty_iteration(n_iter, folder_path, method, sampler=sampler)
             break
-    print("------------------")
+    print("---------community_detection end ---------")
     if communities is not None:
         print(f"communities.num_iters={communities.num_iters}")
-    print("------------------")
+        if CUT_FLAG:
+            df = pd.DataFrame(cut_data)
+            output_path = os.path.join(folder_path, method.name, 'cut.csv')
+            df.to_csv(output_path)
 
 
 def cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = None, communities: Communities = None,
@@ -186,7 +206,6 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
                 'run_time': run_time,
             }
             users, items = m.get_comm_from_sample(sampleset.first.sample, n_users, n_items=n_items)
-            # print(f"@ n_users={n_users}, users={users}")
         else:
             users, items, run_time = m.run()
 
@@ -198,30 +217,28 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
 
         dataIO.save_data(run_file_name, data_dict_to_save)
     
-    # print("-----------------------------------")
-    # print(f"n_users={n_users}, n_items={n_items}")
-    # print(f"users={users}")
-    # print(f"user_index={user_index}")
-    # print("-----------------------------------")
     print(f"len(users):{len(users)}, len(items):{len(items)}")
     communities = Communities(users, items, user_index, item_index)
     # check_communities(communities, m.filter_users, m.filter_items)
     # return communities
     # return check_communities(communities, m.filter_users, m.filter_items)
-    return check_communities(communities, m)
+    communities = check_communities(communities, m.filter_users, m.filter_items)
+    if CUT_FLAG and communities is not None:
+        cut, all = m.get_graph_cut(communities)
+        save_cut(cut, all, n_iter, communities)
+    return communities
 
 
-# def check_communities(communities: Communities, check_users, check_items):
-def check_communities(communities: Communities, method: BaseCommunityDetection):
-    check_users = method.filter_users
-    check_items = method.filter_items
+def check_communities(communities: Communities, check_users, check_items):
     MIN_COMMUNITIE_SIZE = 5
     for community in communities.iter():
-        if (check_users and community.users.size < MIN_COMMUNITIE_SIZE) or (check_items and community.items.size < MIN_COMMUNITIE_SIZE):
+        if (check_users and community.users.size == 0) or (check_items and community.items.size == 0):
             # raise EmptyCommunityError('Empty community found.')
+            print('Empty community found.')
             return None
-    if method.get_graph_cut(communities) > 1:
-        return None
+        if (check_users and community.users.size < MIN_COMMUNITIE_SIZE) or (check_items and community.items.size < MIN_COMMUNITIE_SIZE):
+            print(f'Community size too small: user: {community.users.size}, item: {community.items.size}.')
+            return None
     return communities
 
 
@@ -264,7 +281,7 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [QUBONcutCommunityDetection]
+    method_list = [QUBOBipartiteProjectedCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
