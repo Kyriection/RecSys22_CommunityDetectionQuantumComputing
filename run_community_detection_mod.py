@@ -18,7 +18,7 @@ from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 
-CUT_FLAG = True
+CUT_FLAG = False
 cut_info = ['n_iter', 'n_users', 'n_items', 'c0_users', 'c0_items', 'c1_users', 'c1_items', 'cut_weight', 'all_weight', 'cut_ratio']
 cut_data = {key: [] for key in cut_info}
 
@@ -281,7 +281,7 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [QUBOBipartiteProjectedCommunityDetection]
+    method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
@@ -289,5 +289,6 @@ if __name__ == '__main__':
     num_iters = 10
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list)
-    # QUBOGraphCommunityDetection.set_alpha(args.alpha)
+    QUBOGraphCommunityDetection.set_alpha(0.8)
+    QUBOProjectedCommunityDetection.set_alpha(0.8)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)

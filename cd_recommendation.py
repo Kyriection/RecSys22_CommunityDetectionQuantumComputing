@@ -1,5 +1,6 @@
 import os
 import time
+import copy
 
 import argparse
 import dimod
@@ -70,6 +71,15 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     output_dataIO.save_data('baseline', data_dict_to_save)
 
     rec.save_model(output_folder_path, f'{recommender_name}_best_model_last')
+
+
+def get_recommender_on_community(recommender, community, urm_train, urm_validation):
+    c_urm_train, _, _ = get_community_urm(urm_train, community=community, filter_items=False)
+    c_urm_validation, _, _ = get_community_urm(urm_validation, community=community, filter_items=False)
+    c_urm_train_last_test = merge_sparse_matrices(c_urm_train, c_urm_validation)
+    comm_recommender = recommender(c_urm_train_last_test)
+    comm_recommender.fit()
+    return comm_recommender
 
 
 def train_recommender_on_community(recommender, community, urm_train, urm_validation, urm_test, dataset_name,
@@ -158,7 +168,7 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
     return comm_recommender
 
 
-def evaluate_recommender(urm_train_last_test, urm_test, communities, recommenders, output_folder_path, recommender_name,
+def evaluate_recommender(urm_train_last_test, urm_test, communities, recommenders, output_folder_path=None, recommender_name=None,
                          n_iter=None):
     print(f'Evaluating {recommender_name} on the result of community detection.')
 
@@ -175,10 +185,13 @@ def evaluate_recommender(urm_train_last_test, urm_test, communities, recommender
         'result_string': result_string,
         'time_on_test': time_on_test,
     }
+    
+    if output_folder_path is not None:
+        dataIO = DataIO(output_folder_path)
+        dataIO.save_data(f'cd_{recommender_name}', result_dict)
 
-    dataIO = DataIO(output_folder_path)
-    dataIO.save_data(f'cd_{recommender_name}', result_dict)
     print(result_string)
+    return result_dict
 
 
 def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]],
@@ -235,6 +248,51 @@ def recommend_per_method(urm_train, urm_validation, urm_test, cd_urm, method, sa
                           folder_path, **kwargs)
 
 
+def adaptive_selection(urm_train, urm_validation, urm_test, cd_urm, recommender, output_folder_path, communities: Communities = None):
+    if communities.s0 is not None:
+        adaptive_selection(urm_train, urm_validation, urm_test, cd_urm, recommender, output_folder_path, communities.s0)
+    if communities.s1 is not None:
+        adaptive_selection(urm_train, urm_validation, urm_test, cd_urm, recommender, output_folder_path, communities.s1)
+
+    def get_result_dict():
+        cd_recommenders = []
+        for community in communities.iter():
+            comm_recommender = get_recommender_on_community(recommender, community, urm_train, urm_validation)
+            cd_recommenders.append(comm_recommender)
+        return evaluate_recommender(cd_urm, urm_test, communities, cd_recommenders)
+    
+    result_dict_divide = get_result_dict()
+    communities_s0 = communities.s0
+    communities_s1 = communities.s1
+    communities.s0 = None
+    communities.s1 = None
+    result_dict_combine = get_result_dict()
+
+    def compare_result(result_dict_1: dict, result_dict_2: dict) -> bool:
+        '''
+        return result_dict_1 better than result_dict_2
+        '''
+        CutOff = 10
+        Metrics = ['PRECISION', 'MAP', 'NDCG'][0]
+        result_df_1 = result_dict_1['result_df']
+        result_df_2 = result_dict_2['result_df']
+        return result_df_1.loc[CutOff, Metrics] > result_df_2.loc[CutOff, Metrics]
+
+    dataIO = DataIO(output_folder_path)
+    print("-----------------------------")
+    print(f"communities user: {communities.n_users}, items: {communities.n_items}")
+    recommender_name = recommender.RECOMMENDER_NAME
+    if compare_result(result_dict_divide, result_dict_combine):
+        communities.s0 = communities_s0
+        communities.s1 = communities_s1
+        dataIO.save_data(f'cd_{recommender_name}', result_dict_divide)
+        print('choose divide')
+    else:
+        dataIO.save_data(f'cd_{recommender_name}', result_dict_combine)
+        print('choose combine')
+    print("-----------------------------")
+
+
 def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, method, recommender_list, dataset_name, folder_path,
                       sampler: dimod.Sampler = None, **kwargs):
     dataset_folder_path = f'{folder_path}{dataset_name}/'
@@ -244,12 +302,15 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, method, recom
         return
 
     num_iters = communities.num_iters + 1
-    print("------------------")
-    print(f"communities.n_items={communities.n_items}")
-    print("------------------")
     for n_iter in range(num_iters):
         recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, method, recommender_list, dataset_name,
                            folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
+
+    method_folder_path = f'{folder_path}{dataset_name}/{method.name}/'
+    folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
+    output_folder_path = get_community_folder_path(method_folder_path, n_iter=-1, folder_suffix=folder_suffix)
+    for recommender in recommender_list:
+        adaptive_selection(urm_train, urm_validation, urm_test, cd_urm, recommender, output_folder_path, communities=copy.deepcopy(communities))
 
 
 def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, method, recommender_list, dataset_name, folder_path,
@@ -314,8 +375,7 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    # method_list = [QUBOBipartiteCommunityDetection, QUBOGraphCommunityDetection]
-    method_list = [QUBONcutCommunityDetection]
+    method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
