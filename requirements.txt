@@ -12,3 +12,4 @@ scikit-optimize==0.8.1
 scipy==1.6.2
 tables
 tqdm==4.59.0
+matplotlib

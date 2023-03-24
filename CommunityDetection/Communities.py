@@ -35,6 +35,8 @@ class Communities:
         self.s1: Optional[Communities] = None
         self.num_iters = 0
 
+        self.cut_ratio: float = 0
+
     def iter(self, n_iter: int = None):
         if n_iter is None:
             n_iter = self.num_iters

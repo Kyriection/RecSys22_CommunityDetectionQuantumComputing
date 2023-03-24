@@ -1,7 +1,7 @@
 from CommunityDetection import QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, \
     UserCommunityDetection, QUBOCommunityDetection
 
-HYBRID_LIST = [UserCommunityDetection, QUBOBipartiteCommunityDetection]
+HYBRID_LIST = [QUBOBipartiteCommunityDetection, UserCommunityDetection]
 assert len(HYBRID_LIST) >= 2
 
 class HybridCommunityDetection(*HYBRID_LIST):
@@ -23,12 +23,17 @@ class HybridCommunityDetection(*HYBRID_LIST):
         method.fit(self, *args, **kwargs)
 
     @staticmethod
-    def check_select_method(n_users: int) -> bool:
-        return HybridCommunityDetection.n_all_users * HybridCommunityDetection.alpha >= n_users
+    def check_select_method(n_users: int) -> int:
+        n_all_users = HybridCommunityDetection.n_all_users
+        alpha = HybridCommunityDetection.alpha
+        if n_users > n_all_users * alpha:
+            return 0
+        else:
+            return 1
 
     @staticmethod
     def select_method(n_users: int) -> QUBOCommunityDetection:
-        return HYBRID_LIST[int(HybridCommunityDetection.check_select_method(n_users))]
+        return HYBRID_LIST[HybridCommunityDetection.check_select_method(n_users)]
 
     @staticmethod
     def get_comm_from_sample(sample, n_users, n_items=0):

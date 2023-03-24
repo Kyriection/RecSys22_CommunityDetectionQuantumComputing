@@ -278,10 +278,10 @@ def clean_results(result_folder_path, data_reader_classes, method_list):
 if __name__ == '__main__':
     args = parse_args()
     data_reader_classes = [MovielensSampleReader]
+    # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
-    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
+    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
@@ -289,6 +289,7 @@ if __name__ == '__main__':
     num_iters = 10
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list)
-    QUBOGraphCommunityDetection.set_alpha(0.8)
-    QUBOProjectedCommunityDetection.set_alpha(0.8)
+    # QUBOGraphCommunityDetection.set_alpha(args.alpha)
+    # QUBOProjectedCommunityDetection.set_alpha(args.alpha)
+    # HybridCommunityDetection.set_alpha(1/64)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)
