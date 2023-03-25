@@ -16,9 +16,10 @@ from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrus
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
+from utils.plot import plot_cut
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 
-CUT_FLAG = False
+CUT_FLAG = True
 cut_info = ['n_iter', 'n_users', 'n_items', 'c0_users', 'c0_items', 'c1_users', 'c1_items', 'cut_weight', 'all_weight', 'cut_ratio']
 cut_data = {key: [] for key in cut_info}
 
@@ -33,6 +34,7 @@ def save_cut(cut: float, all: float, n_iter: int, communities: Communities):
     cut_data['cut_weight'].append(cut)
     cut_data['all_weight'].append(all)
     cut_data['cut_ratio'].append(cut / all)
+    communities.cut_ratio = cut / all
 
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
@@ -102,12 +104,16 @@ def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sa
             clean_empty_iteration(n_iter, folder_path, method, sampler=sampler)
             break
     print("---------community_detection end ---------")
-    if communities is not None:
-        print(f"communities.num_iters={communities.num_iters}")
-        if CUT_FLAG:
-            df = pd.DataFrame(cut_data)
-            output_path = os.path.join(folder_path, method.name, 'cut.csv')
-            df.to_csv(output_path)
+    if communities is None:
+        return
+    print(f"communities.num_iters={communities.num_iters}")
+    if not CUT_FLAG:
+        return
+    df = pd.DataFrame(cut_data)
+    output_path = os.path.join(folder_path, method.name, 'cut.csv')
+    df.to_csv(output_path)
+    method_folder_path = f'{folder_path}{method.name}/'
+    plot_cut(communities, method_folder_path)
 
 
 def cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = None, communities: Communities = None,
@@ -281,7 +287,8 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
-    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
+    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
+    method_list = [QUBOBipartiteProjectedCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),

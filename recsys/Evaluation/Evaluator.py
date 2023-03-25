@@ -253,7 +253,7 @@ class Evaluator(object):
         self._start_time_print = np.nan
         self._n_users_evaluated = np.nan
 
-        self._print(f"len(users_to_evaluate)={len(self.users_to_evaluate)}")
+        # self._print(f"len(users_to_evaluate)={len(self.users_to_evaluate)}")
 
 
     def _print(self, string):
