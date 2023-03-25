@@ -29,6 +29,7 @@ from results.read_results import print_result
 
 CUTOFF_LIST = [5, 10, 20, 30, 40, 50, 100]
 ADAPATIVE_METRIC = ['PRECISION', 'MAP', 'NDCG'][2] 
+ADAPATIVE_DATA = ['validation', 'test'][1]
 
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
@@ -76,14 +77,9 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     rec.save_model(output_folder_path, f'{recommender_name}_best_model_last')
 
 
-def get_recommender_on_community(recommender, community, urm_train, urm_validation=None):
+def get_recommender_on_community(recommender, community, urm_train):
     c_urm_train, _, _ = get_community_urm(urm_train, community=community, filter_items=False)
-    if urm_validation is not None:
-        c_urm_validation, _, _ = get_community_urm(urm_validation, community=community, filter_items=False)
-        c_urm_train_last_test = merge_sparse_matrices(c_urm_train, c_urm_validation)
-    else:
-        c_urm_train_last_test = c_urm_train
-    comm_recommender = recommender(c_urm_train_last_test)
+    comm_recommender = recommender(c_urm_train)
     comm_recommender.fit()
     return comm_recommender
 
@@ -257,18 +253,18 @@ def recommend_per_method(urm_train, urm_validation, urm_test, cd_urm, method, sa
                           folder_path, **kwargs)
 
 
-def adaptive_selection(urm_train, urm_validation, recommender, output_folder_path, communities: Communities = None):
+def adaptive_selection(urm_train, urm_test, recommender, output_folder_path, communities: Communities = None):
     if communities.s0 is not None:
-        adaptive_selection(urm_train, urm_validation, recommender, output_folder_path, communities.s0)
+        adaptive_selection(urm_train, urm_test, recommender, output_folder_path, communities.s0)
     if communities.s1 is not None:
-        adaptive_selection(urm_train, urm_validation, recommender, output_folder_path, communities.s1)
+        adaptive_selection(urm_train, urm_test, recommender, output_folder_path, communities.s1)
 
     def get_result_dict():
         cd_recommenders = []
         for community in communities.iter():
             comm_recommender = get_recommender_on_community(recommender, community, urm_train)
             cd_recommenders.append(comm_recommender)
-        return evaluate_recommender(urm_train, urm_validation, communities, cd_recommenders)
+        return evaluate_recommender(urm_train, urm_test, communities, cd_recommenders)
     
     result_dict_divide = get_result_dict()
     communities_s0 = communities.s0
@@ -327,7 +323,10 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, method, recom
 
     for recommender in recommender_list:
         adaptive_communities = copy.deepcopy(communities)
-        adaptive_selection(urm_train, urm_validation, recommender, output_folder_path, adaptive_communities)
+        if ADAPATIVE_DATA == 'validation':
+            adaptive_selection(urm_train, urm_validation, recommender, output_folder_path, adaptive_communities)
+        elif ADAPATIVE_DATA == 'test':
+            adaptive_selection(cd_urm, urm_test, recommender, output_folder_path, adaptive_communities)
         cd_recommenders = []
         n_comm = 0
         for community in adaptive_communities.iter():
@@ -441,7 +440,7 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [QUBOBipartiteCommunityDetection]
+    method_list = [QUBOBipartiteProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
