@@ -288,14 +288,14 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [QUBOBipartiteProjectedCommunityDetection]
+    method_list = [QUBOBipartiteCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     num_iters = 10
     result_folder_path = './results/'
-    clean_results(result_folder_path, data_reader_classes, method_list)
+    # clean_results(result_folder_path, data_reader_classes, method_list)
     # QUBOGraphCommunityDetection.set_alpha(args.alpha)
     # QUBOProjectedCommunityDetection.set_alpha(args.alpha)
     # HybridCommunityDetection.set_alpha(1/64)

@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 from CommunityDetection.Communities import Communities
 
 def plot_pies(ratios_list: list, user_nums_list: list,
-              vmin, vmax, label, file_name: str, cmap):
+              vmin, vmax, label, file_name: str, cmap = None):
   assert len(ratios_list) == len(user_nums_list)
   num_iters = len(ratios_list)
   fig, ax = plt.subplots()
-  # cmap = matplotlib.cm.get_cmap(name='RdBu').reversed()
+  if cmap is None:
+    cmap = matplotlib.cm.get_cmap(name='viridis')
   norm = matplotlib.colors.Normalize(vmin, vmax)
   smap = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
   fig.colorbar(smap, label=f'{label} % ratio')
@@ -64,33 +65,43 @@ def plot_cut(communities: Communities, output_folder: str = ''):
   ratios_list = [[] for i in range(num_iters + 1)]
   user_nums_list = [[] for i in range(num_iters + 1)]
 
-  def fun(_communities: Communities):
-    num = _communities.num_iters
+  def fun(_communities: Communities, num: int):
+    # num = _communities.num_iters
     n_users = len(_communities.user_index)
+    ratio = _communities.cut_ratio
     user_nums_list[num_iters - num].append(n_users)
-    ratios_list[num_iters - num].append(_communities.cut_ratio)
-    
+    ratios_list[num_iters - num].append(ratio)
+    # print(f'fun(num={num}, n_users={n_users}) start')
+    # print('-----s0-----')
     if _communities.s0 is None:
+      n0_users = len(_communities.c0.users)
+      # print(f'fill s0 with n_users={n0_users}')
       for i in range(num):
-        user_nums_list[num_iters - i].append(n_users)
-        ratios_list[num_iters - i].append(_communities.cut_ratio)
+        user_nums_list[num_iters - i].append(n0_users)
+        ratios_list[num_iters - i].append(ratio)
     else:
-      fun(_communities.s0)
-
+      # assert len(_communities.c0.users) == len(_communities.s0.user_index)
+      fun(_communities.s0, num - 1)
+    # print('-----s1-----')
     if _communities.s1 is None:
+      n1_users = len(_communities.c1.users)
+      # print(f'fill s1 with n_users={n1_users}')
       for i in range(num):
-        user_nums_list[num_iters - i].append(n_users)
-        ratios_list[num_iters - i].append(_communities.cut_ratio)
+        user_nums_list[num_iters - i].append(n1_users)
+        ratios_list[num_iters - i].append(ratio)
     else:
-      fun(_communities.s1)
+      # assert len(_communities.c1.users) == len(_communities.s1.user_index)
+      fun(_communities.s1, num - 1)
+    # print(f'fun(num={num}, n_users={n_users}) end')
+    # assert len(_communities.c0.users) + len(_communities.c1.users) == n_users
 
-
-  fun(communities)
+  fun(communities, num_iters)
   vmin = 1.0
   vmax = 0.0
   for ratios in ratios_list:
     for ratio in ratios:
       vmin = min(vmin, ratio)
       vmax = max(vmax, ratio)
-  cmap = matplotlib.cm.get_cmap(name='viridis')
-  plot_pies(ratios_list, user_nums_list, vmin, vmax, 'cut', output_folder + 'cut_info.png', cmap)
+  plot_pies(ratios_list, user_nums_list, vmin, vmax, 'cut', output_folder + 'cut_info.png')
+  # for user_nums in user_nums_list:
+    # print(user_nums)

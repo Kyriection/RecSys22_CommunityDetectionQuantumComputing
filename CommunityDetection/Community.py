@@ -11,6 +11,7 @@ class Community:
 
         self.user_mask: NDArray[bool] = user_mask
         self.item_mask: NDArray[bool] = item_mask
+
         self.result_dict_baseline: Optional[dict] = None
         self.result_dict_validation: Optional[dict] = None
         self.result_dict_test: Optional[dict] = None

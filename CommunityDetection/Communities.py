@@ -115,6 +115,7 @@ class Communities:
                                   data_dict['user_index'], data_dict['item_index'])
         communities.num_iters = data_dict['num_iters']
         communities.__adjust_masks(data_dict['n_users'], data_dict['n_items'])
+        communities.cut_ratio = data_dict['cut_ratio']
 
         if communities.num_iters > 0:
             assert n_iter is not None, 'Cannot load more iterations without the correct parameters.'
@@ -152,6 +153,7 @@ class Communities:
             'user_index': self.user_index,
             'item_index': self.item_index,
             'num_iters': self.num_iters,
+            'cut_ratio': self.cut_ratio,
         }
 
         dataIO.save_data(comm_file_name, data_dict_to_save)
