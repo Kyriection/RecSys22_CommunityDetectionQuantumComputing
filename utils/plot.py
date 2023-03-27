@@ -1,7 +1,19 @@
+from typing import List
+
 import matplotlib
 import matplotlib.pyplot as plt
 
 from CommunityDetection.Communities import Communities
+
+
+def percentile(a: List[list], p: int = 99):
+  b = [abs(j) for i in a for j in i]
+  b.sort()
+  idx = len(b) * p // 100
+  # for _p in [80, 90, 95, 98, 99]:
+    # print(_p, b[len(b) * _p // 100])
+  return b[idx]
+
 
 def plot_pies(ratios_list: list, user_nums_list: list,
               vmin, vmax, label, file_name: str, cmap = None):
@@ -37,7 +49,6 @@ def plot_metric(communities: Communities, output_folder: str = '',
   num_iters = communities.num_iters + 1
   ratios_list = []
   user_nums_list = []
-  vmax = 1.0
   for i in range(num_iters):
     ratios = []
     user_nums = []
@@ -47,18 +58,17 @@ def plot_metric(communities: Communities, output_folder: str = '',
       if value_baseline > 0:
         ratio = (value_test - value_baseline) / value_baseline
       else:
-        # ratio = -2.0 # INF tag
         ratio = 0.0
       ratios.append(ratio)
       user_nums.append(len(community.users))
-      vmax = max(vmax, ratio)
       # print(f'value_test={value_test}, value_baseline={value_baseline}, ratio={ratio}.')
     ratios_list.append(ratios)
     user_nums_list.append(user_nums)
   
   cmap = matplotlib.cm.get_cmap(name='RdBu').reversed()
-  # plot_pies(ratios_list, user_nums_list, -vmax, vmax, metric, output_folder + 'result_origin.png', cmap)
-  plot_pies(ratios_list, user_nums_list, -2.0, 2.0, metric, output_folder + 'result.png', cmap)
+  # v_range = percentile(ratios_list, 90)
+  # plot_pies(ratios_list, user_nums_list, -v_range, v_range, metric, output_folder + 'result.png', cmap)
+  plot_pies(ratios_list, user_nums_list, -2.0, 2.0, metric, output_folder + 'result_limited.png', cmap)
 
 
 def plot_cut(communities: Communities, output_folder: str = ''):
@@ -143,13 +153,6 @@ def plot_divide(communities: Communities, output_folder: str = ''):
     # assert len(_communities.c0.users) + len(_communities.c1.users) == n_users
 
   fun(communities, num_iters)
-  '''
-  vmin = 1.0
-  vmax = -1.0
-  for ratios in ratios_list:
-    for ratio in ratios:
-      vmin = min(vmin, ratio)
-      vmax = max(vmax, ratio)
-  '''
+  v_range = percentile(ratios_list, 99)
   cmap = matplotlib.cm.get_cmap(name='RdBu').reversed()
-  plot_pies(ratios_list, user_nums_list, -2.0, 2.0, 'cut', output_folder + 'divide_info.png', cmap)
+  plot_pies(ratios_list, user_nums_list, -v_range, v_range, 'divide', output_folder + 'divide_info.png', cmap)

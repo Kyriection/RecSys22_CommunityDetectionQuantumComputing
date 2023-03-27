@@ -29,7 +29,7 @@ from results.read_results import print_result
 
 CUTOFF_LIST = [5, 10, 20, 30, 40, 50, 100]
 ADAPATIVE_METRIC = ['PRECISION', 'MAP', 'NDCG'][2] 
-ADAPATIVE_DATA = ['validation', 'test'][1]
+ADAPATIVE_DATA = ['validation', 'test'][0]
 
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
@@ -253,11 +253,11 @@ def recommend_per_method(urm_train, urm_validation, urm_test, cd_urm, method, sa
                           folder_path, **kwargs)
 
 
-def adaptive_selection(urm_train, urm_test, recommender, output_folder_path, communities: Communities = None):
+def adaptive_selection(num_iters, urm_train, urm_test, recommender, output_folder_path, communities: Communities = None):
     if communities.s0 is not None:
-        adaptive_selection(urm_train, urm_test, recommender, output_folder_path, communities.s0)
+        adaptive_selection(num_iters, urm_train, urm_test, recommender, output_folder_path, communities.s0)
     if communities.s1 is not None:
-        adaptive_selection(urm_train, urm_test, recommender, output_folder_path, communities.s1)
+        adaptive_selection(num_iters, urm_train, urm_test, recommender, output_folder_path, communities.s1)
 
     def get_result_dict():
         cd_recommenders = []
@@ -293,7 +293,11 @@ def adaptive_selection(urm_train, urm_test, recommender, output_folder_path, com
     print(f"Communities: num_iter{communities.num_iters}, user: {communities.n_users}, items: {communities.n_items}")
     ratio = compare_result(result_dict_divide, result_dict_combine)
     communities.divide_info = ratio
-    if ratio > 0:
+    if ADAPATIVE_DATA == 'test':
+        threshold = 0
+    elif ADAPATIVE_DATA == 'validation':
+        threshold = (num_iters - communities.num_iters) * 0.025
+    if ratio > threshold:
         communities.divide_flag = True
         communities.result_dict_test = result_dict_divide
         print('choose divide')
@@ -325,9 +329,9 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, method, recom
     for recommender in recommender_list:
         adaptive_communities = copy.deepcopy(communities)
         if ADAPATIVE_DATA == 'validation':
-            adaptive_selection(urm_train, urm_validation, recommender, output_folder_path, adaptive_communities)
+            adaptive_selection(num_iters - 1, urm_train, urm_validation, recommender, output_folder_path, adaptive_communities)
         elif ADAPATIVE_DATA == 'test':
-            adaptive_selection(cd_urm, urm_test, recommender, output_folder_path, adaptive_communities)
+            adaptive_selection(num_iters - 1, cd_urm, urm_test, recommender, output_folder_path, adaptive_communities)
         cd_recommenders = []
         n_comm = 0
         for community in adaptive_communities.iter():
@@ -442,7 +446,7 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [QUBOBipartiteProjectedCommunityDetection]
+    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
