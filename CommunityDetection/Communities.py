@@ -35,7 +35,10 @@ class Communities:
         self.s1: Optional[Communities] = None
         self.num_iters = 0
 
-        self.cut_ratio: float = 0
+        self.cut_ratio: float = 0.0
+
+        self.divide_flag: bool = True
+        self.divide_info: float = 0.0
 
     def iter(self, n_iter: int = None):
         if n_iter is None:
@@ -48,11 +51,11 @@ class Communities:
             yield from self.s0.iter(n_iter - 1)
             yield from self.s1.iter(n_iter - 1)
         """
-        if n_iter == 0 or self.s0 is None:
+        if (n_iter == 0) or (self.s0 is None) or (not self.divide_flag):
             yield self.c0
         else:
             yield from self.s0.iter(n_iter - 1)
-        if n_iter == 0 or self.s1 is None:
+        if (n_iter == 0) or (self.s1 is None) or (not self.divide_flag):
             yield self.c1
         else:
             yield from self.s1.iter(n_iter - 1)

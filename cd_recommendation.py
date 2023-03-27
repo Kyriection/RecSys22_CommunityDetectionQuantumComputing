@@ -24,7 +24,7 @@ from recsys.Recommenders.NonPersonalizedRecommender import TopPop
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
-from utils.plot import plot_metric
+from utils.plot import plot_metric, plot_cut, plot_divide
 from results.read_results import print_result
 
 CUTOFF_LIST = [5, 10, 20, 30, 40, 50, 100]
@@ -267,37 +267,38 @@ def adaptive_selection(urm_train, urm_test, recommender, output_folder_path, com
         return evaluate_recommender(urm_train, urm_test, communities, cd_recommenders)
     
     result_dict_divide = get_result_dict()
-    communities_s0 = communities.s0
-    communities_s1 = communities.s1
-    communities.s0 = None
-    communities.s1 = None
-    if communities_s0 is None and communities_s1 is None:
+    if communities.s0 is None and communities.s1 is None:
         result_dict_combine = result_dict_divide
     else:
+        communities.divide_flag = False
         result_dict_combine = get_result_dict()
 
-    def compare_result(result_dict_1: dict, result_dict_2: dict) -> bool:
+    def compare_result(result_dict_0: dict, result_dict_1: dict) -> float:
         '''
-        return result_dict_1 better than result_dict_2
+        return (result_dict_0 - result_dict_1) / result_dict_1
         '''
         CutOff = 10
         Metrics = ADAPATIVE_METRIC
+        result_df_0 = result_dict_0['result_df']
         result_df_1 = result_dict_1['result_df']
-        result_df_2 = result_dict_2['result_df']
-        return result_df_1.loc[CutOff, Metrics] > result_df_2.loc[CutOff, Metrics]
+        metric_0 = result_df_0.loc[CutOff, Metrics]
+        metric_1 = result_df_1.loc[CutOff, Metrics]
+        if metric_1 > 0.0:
+            return (metric_0 - metric_1) / metric_1
+        else:
+            return 0.0
+        # return metric_0 > metric_1
 
-    # dataIO = DataIO(output_folder_path)
     print("-----------------------------")
     print(f"Communities: num_iter{communities.num_iters}, user: {communities.n_users}, items: {communities.n_items}")
-    recommender_name = recommender.RECOMMENDER_NAME
-    if compare_result(result_dict_divide, result_dict_combine):
-        communities.s0 = communities_s0
-        communities.s1 = communities_s1
+    ratio = compare_result(result_dict_divide, result_dict_combine)
+    communities.divide_info = ratio
+    if ratio > 0:
+        communities.divide_flag = True
         communities.result_dict_test = result_dict_divide
-        # dataIO.save_data(f'cd_{recommender_name}', result_dict_divide)
         print('choose divide')
     else:
-        # dataIO.save_data(f'cd_{recommender_name}', result_dict_combine)
+        communities.divide_flag = False
         communities.result_dict_test = result_dict_combine
         print('choose combine')
     print("-----------------------------")
@@ -339,6 +340,7 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, method, recom
         evaluate_recommender(cd_urm, urm_test, adaptive_communities, cd_recommenders, output_folder_path,
                              recommender.RECOMMENDER_NAME)
         plot_metric(adaptive_communities, output_folder_path, 10, ADAPATIVE_METRIC)
+        plot_divide(adaptive_communities, output_folder_path)
 
 
 def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, method, recommender_list, dataset_name, folder_path,
