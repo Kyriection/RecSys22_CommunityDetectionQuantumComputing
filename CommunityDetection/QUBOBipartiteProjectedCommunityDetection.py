@@ -60,5 +60,5 @@ class QUBOBipartiteProjectedCommunityDetection(QUBOCommunityDetection):
             if communities.user_mask[row] != communities.user_mask[col]:
                 cut += self.W[row, col]
         all = self.W.sum()
-        print(f'cut/all={cut}/{all}={cut/all}')
+        # print(f'cut/all={cut}/{all}={cut/all}')
         return cut, all

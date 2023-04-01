@@ -15,7 +15,8 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     QUBOBipartiteProjectedCommunityDetection, Communities, CommunityDetectionRecommender, \
     get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
-    HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection
+    HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
+    SpectralClustering
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from recsys.Evaluation.Evaluator import EvaluatorHoldout
@@ -446,8 +447,10 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
+    # method_list = [SpectralClustering]
     method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    sampler_list = [neal.SimulatedAnnealingSampler()]
+    # sampler_list = [neal.SimulatedAnnealingSampler()]
+    sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     result_folder_path = './results/'

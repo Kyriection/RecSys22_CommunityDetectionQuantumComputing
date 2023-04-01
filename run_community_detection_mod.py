@@ -11,7 +11,7 @@ from dwave.system import LeapHybridSampler
 from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
     UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
-    QUBOProjectedCommunityDetection, HybridCommunityDetection, QUBONcutCommunityDetection
+    QUBOProjectedCommunityDetection, HybridCommunityDetection, QUBONcutCommunityDetection, SpectralClustering
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from utils.DataIO import DataIO
@@ -19,7 +19,7 @@ from utils.types import Iterable, Type
 from utils.plot import plot_cut
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 
-CUT_FLAG = True
+CUT_FLAG = False
 cut_info = ['n_iter', 'n_users', 'n_items', 'c0_users', 'c0_items', 'c1_users', 'c1_items', 'cut_weight', 'all_weight', 'cut_ratio']
 cut_data = {key: [] for key in cut_info}
 
@@ -288,9 +288,10 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [QUBOBipartiteProjectedCommunityDetection]
-    # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    sampler_list = [neal.SimulatedAnnealingSampler()]
+    # method_list = [SpectralClustering]
+    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    # sampler_list = [neal.SimulatedAnnealingSampler()]
+    sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     num_iters = 10
