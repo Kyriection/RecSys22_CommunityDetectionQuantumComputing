@@ -117,6 +117,37 @@ def plot_cut(communities: Communities, output_folder: str = ''):
   # for user_nums in user_nums_list:
     # print(user_nums)
 
+
+def plot_density(communities: Communities, output_folder: str = ''):
+  num_iters = communities.num_iters
+  ratios_list = [[] for i in range(num_iters + 1)]
+  user_nums_list = [[] for i in range(num_iters + 1)]
+
+  def fun(_communities: Communities, num: int):
+    n_users = len(_communities.user_index)
+    ratio = _communities.density
+    user_nums_list[num_iters - num].append(n_users)
+    ratios_list[num_iters - num].append(ratio)
+    if _communities.s0 is None:
+      n0_users = len(_communities.c0.users)
+      for i in range(num):
+        user_nums_list[num_iters - i].append(n0_users)
+        ratios_list[num_iters - i].append(ratio)
+    else:
+      fun(_communities.s0, num - 1)
+    if _communities.s1 is None:
+      n1_users = len(_communities.c1.users)
+      for i in range(num):
+        user_nums_list[num_iters - i].append(n1_users)
+        ratios_list[num_iters - i].append(ratio)
+    else:
+      fun(_communities.s1, num - 1)
+
+  fun(communities, num_iters)
+  v_range = percentile(ratios_list, 98)
+  plot_pies(ratios_list, user_nums_list, 0, v_range, 'densiity', output_folder + 'density.png')
+
+
 def plot_divide(communities: Communities, output_folder: str = ''):
   num_iters = communities.num_iters
   ratios_list = [[] for i in range(num_iters + 1)]

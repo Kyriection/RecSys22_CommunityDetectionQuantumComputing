@@ -39,6 +39,7 @@ class Communities:
 
         self.divide_flag: bool = True
         self.divide_info: float = 0.0
+        self.density: float = 0.0
 
     def iter(self, n_iter: int = None):
         if n_iter is None:

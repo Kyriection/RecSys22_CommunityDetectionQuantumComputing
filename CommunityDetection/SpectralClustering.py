@@ -11,7 +11,7 @@ from utils.DataIO import DataIO
 class SpectralClustering(BaseCommunityDetection):
     is_qubo = False
     filter_items = False
-    name = 'HierarchicalClustering'
+    name = 'SpectralClustering'
 
     def __init__(self, urm, icm, ucm, *args, **kwargs):
         super(SpectralClustering, self).__init__(urm, *args, **kwargs)
@@ -29,13 +29,26 @@ class SpectralClustering(BaseCommunityDetection):
         start_time = time.time()
 
         clustering = sklearn.cluster.SpectralClustering(
-            n_clusters=2, assign_labels='discretize', random_state=1)
+            n_clusters=2,
+            eigen_solver='arpack',
+            # eigen_solver='lobpcg',
+            # eigen_solver='amg',
+            random_state=0,
+            assign_labels='discretize',
+            # affinity = 'precomputed', 
+            # n_init=1000,
+        )
         n_users, n_items = self.urm.shape
 
-        if n_users < 2:
+        urm: np.ndarray = self.urm.toarray()
+        urm[np.isnan(urm)] = 0
+        # urm.replace([-np.inf, np.inf], 0)
+        # urm = (urm - np.mean(urm)) / np.std(urm)
+        try:
+            users = clustering.fit_predict(urm)
+        except Exception as e:
             users = np.ones(n_users)
-        else:
-            users = clustering.fit_predict(self.urm.toarray())
+            print('[Error] spectral clustering: ', e)
 
         run_time = time.time() - start_time
 

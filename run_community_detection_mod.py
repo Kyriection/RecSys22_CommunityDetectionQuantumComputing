@@ -16,7 +16,7 @@ from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrus
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
-from utils.plot import plot_cut
+from utils.plot import plot_cut, plot_density
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 
 CUT_FLAG = False
@@ -35,6 +35,7 @@ def save_cut(cut: float, all: float, n_iter: int, communities: Communities):
     cut_data['all_weight'].append(all)
     cut_data['cut_ratio'].append(cut / all)
     communities.cut_ratio = cut / all
+    communities.density = all / communities.n_users
 
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
@@ -114,6 +115,7 @@ def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sa
     df.to_csv(output_path)
     method_folder_path = f'{folder_path}{method.name}/'
     plot_cut(communities, method_folder_path)
+    plot_density(communities, method_folder_path)
 
 
 def cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = None, communities: Communities = None,
@@ -288,15 +290,16 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    # method_list = [SpectralClustering]
-    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    # sampler_list = [neal.SimulatedAnnealingSampler()]
-    sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
+    method_list = [SpectralClustering]
+    # method_list = [QUBOBipartiteCommunityDetection]
+    sampler_list = [neal.SimulatedAnnealingSampler()]
+    # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
+    # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     num_iters = 10
     result_folder_path = './results/'
-    # clean_results(result_folder_path, data_reader_classes, method_list)
+    clean_results(result_folder_path, data_reader_classes, method_list)
     # QUBOGraphCommunityDetection.set_alpha(args.alpha)
     # QUBOProjectedCommunityDetection.set_alpha(args.alpha)
     # HybridCommunityDetection.set_alpha(1/64)

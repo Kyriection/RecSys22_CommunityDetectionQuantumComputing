@@ -7,7 +7,7 @@ import os, zipfile
 import pandas as pd
 
 QUBO = ["Hybrid", "QUBOBipartiteCommunityDetection", "QUBOBipartiteProjectedCommunityDetection", "KmeansCommunityDetection", "HierarchicalClustering", "UserCommunityDetection"]
-METHOD = ["SimulatedAnnealingSampler", ""]
+METHOD = ["LeapHybridSampler", "SimulatedAnnealingSampler", "SteepestDescentSolver", "TabuSampler", ""]
 CDR = "cd_TopPopRecommender.zip"
 RESULT = ".result_df.csv"
 COL = ["PRECISION", "MAP", "NDCG", "COVERAGE_ITEM_HIT"]

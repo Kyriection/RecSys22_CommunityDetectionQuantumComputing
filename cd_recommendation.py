@@ -29,6 +29,7 @@ from utils.plot import plot_metric, plot_cut, plot_divide
 from results.read_results import print_result
 
 CUTOFF_LIST = [5, 10, 20, 30, 40, 50, 100]
+ADAPATIVE_FLAG = False
 ADAPATIVE_METRIC = ['PRECISION', 'MAP', 'NDCG'][2] 
 ADAPATIVE_DATA = ['validation', 'test'][0]
 
@@ -327,6 +328,8 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, method, recom
                            folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
     plot_metric(communities, method_folder_path)
 
+    if not ADAPATIVE_FLAG:
+        return
     for recommender in recommender_list:
         adaptive_communities = copy.deepcopy(communities)
         if ADAPATIVE_DATA == 'validation':
@@ -436,7 +439,7 @@ def save_results(data_reader_classes, result_folder_path, *args):
         output_folder = os.path.join(output_folder, tag) 
         if not os.path.exists(output_folder):
             os.mkdir(output_folder)
-        print_result(dataset_name, False, output_folder)
+        print_result(dataset_name, True, output_folder)
 
 
 if __name__ == '__main__':
@@ -447,10 +450,11 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    # method_list = [SpectralClustering]
-    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    # sampler_list = [neal.SimulatedAnnealingSampler()]
-    sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
+    method_list = [SpectralClustering]
+    # method_list = [QUBOBipartiteCommunityDetection]
+    sampler_list = [neal.SimulatedAnnealingSampler()]
+    # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
+    # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     result_folder_path = './results/'
