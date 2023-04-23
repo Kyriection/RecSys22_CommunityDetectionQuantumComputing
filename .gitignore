@@ -12,3 +12,5 @@ empty.py
 test*
 
 *.log
+
+/tmp

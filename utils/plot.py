@@ -187,3 +187,16 @@ def plot_divide(communities: Communities, output_folder: str = ''):
   v_range = percentile(ratios_list, 99)
   cmap = matplotlib.cm.get_cmap(name='RdBu').reversed()
   plot_pies(ratios_list, user_nums_list, -v_range, v_range, 'divide', output_folder + 'divide_info.png', cmap)
+
+
+def plot_lines(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
+  for key in Y:
+    plt.plot(x, Y[key], label=key)
+  plt.legend() # 让图例生效
+  # plt.xticks(x, names, rotation=45)
+  # plt.margins(0)
+  # plt.subplots_adjust(bottom=0.15)
+  plt.xlabel(xlabel) #X轴标签
+  plt.ylabel(ylabel) #Y轴标签
+  plt.title("Figure") #标题
+  plt.savefig(f'{output}/{xlabel}_{ylabel}.png')
