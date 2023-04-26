@@ -22,6 +22,8 @@ class AC_Evaluator(object):
         MAE = np.zeros(self.n_items)
         RMSE = np.zeros(self.n_items)
         num_rating = np.ediff1d(self.URM_test.tocsc().indptr) # count of each colum
+        # print('num_rating:', num_rating)
+        # print('num_rating <= 1: ', (num_rating <= 1).sum()) # 758
 
         rows, cols = self.URM_test.nonzero()
         for row, col in zip(rows, cols):
@@ -32,6 +34,7 @@ class AC_Evaluator(object):
         num_rating_all = np.sum(num_rating)
         MAE_all = np.sum(MAE) / num_rating_all
         RMSE_all = np.sqrt(np.sum(RMSE) / num_rating_all)
+        num_rating[num_rating == 0] = 1
         MAE /= num_rating
         RMSE = np.sqrt(RMSE / num_rating)
 

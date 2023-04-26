@@ -44,14 +44,17 @@ def plot(urm, method, dataset_name, folder_path):
     print(MAE_data)
     print(RMSE_data)
     for data in (MAE_data, RMSE_data):
-        for key in data:
-            data[key] = sorted(data[key], key=lambda x:I_quantity[x], reverse=True)
+        for key in data: # sort data according I_quantity
+            data[key] = [x for _, x in sorted(zip(I_quantity, data[key]), reverse=True)]
     I_quantity = sorted(I_quantity, reverse=True)
     x = range(n_items)
     plot_lines(x, MAE_data, method_folder_path, 'item rank', 'MAE')
     plot_lines(x, RMSE_data, method_folder_path, 'item rank', 'RMSE')
 
+    print(MAE_data)
+    print(RMSE_data)
     x = list(set(I_quantity))
+    x.reverse()
     for data in (MAE_data, RMSE_data):
         for key in data:
             new_data = {}
@@ -63,6 +66,7 @@ def plot(urm, method, dataset_name, folder_path):
             for k in new_data:
                 new_data[k] /= cnt[k]
             data[key] = list(new_data.values())
+            data[key].reverse()
     plot_lines(x, MAE_data, method_folder_path, 'the number of ratings', 'MAE')
     plot_lines(x, RMSE_data, method_folder_path, 'the number of ratings', 'RMSE')
 
@@ -291,11 +295,12 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
                 train_all_data_recommender(recommender, urm_train_last_test, urm_test, ucm, icm, dataset_name, result_folder_path)
             else:
                 print(f'{recommender_name} already trained and evaluated on {dataset_name}.')
-
         for method in method_list:
+            '''
             recommend_per_method(urm_train, urm_validation, urm_test, urm_train_last_test, ucm, icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
                                  save_model=save_model)
+            '''
             plot(urm_train, method, dataset_name, result_folder_path)
 
 
