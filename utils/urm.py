@@ -125,16 +125,17 @@ def show_urm_info(urm):
     def show_quantity_info(quantity):
         min_val = np.min(quantity)
         max_val = np.max(quantity)
-        mean_val = np.mean(quantity)
-        var_val = np.var(quantity)
-        print(f'min={min_val}, max={max_val}, mean={mean_val}, variance={var_val}')
+        med_val = np.median(quantity)
+        mean_val = round(np.mean(quantity), 2)
+        var_val = round(np.var(quantity), 2)
+        print(f'min={min_val}, max={max_val}, median={med_val}, mean={mean_val}, variance={var_val}')
 
     print('--------------- show urm info ----------------')
     C_quantity = np.ediff1d(urm.tocsr().indptr) # count of each row
     I_quantity = np.ediff1d(urm.tocsc().indptr) # count of each colum
     print(f'urm.shape={urm.shape}, urm.size={urm.size}')
-    print('user info')
+    print('user info: ', end='')
     show_quantity_info(C_quantity)
-    print('item info')
+    print('item info: ', end='')
     show_quantity_info(I_quantity)
     print('----------------------------------------------')

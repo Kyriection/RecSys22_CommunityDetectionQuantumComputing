@@ -157,7 +157,6 @@ def cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = 
 
 def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: str, sampler: dimod.Sampler = None,
            community: Community = None, n_iter: int = 0, n_comm: int = None, **kwargs) -> Communities:
-    show_urm_info(cd_urm)
     n_users, n_items = cd_urm.shape
     user_index = np.arange(n_users)
     item_index = np.arange(n_items)
@@ -166,6 +165,7 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
         cd_urm, user_index, item_index, icm, ucm = get_community_urm(cd_urm, community, filter_users=method.filter_users,
                                                            filter_items=method.filter_items, remove=True, icm=icm, ucm=ucm)
     n_users, n_items = cd_urm.shape
+    show_urm_info(cd_urm)
 
     m: BaseCommunityDetection = method(cd_urm, icm, ucm)
 
