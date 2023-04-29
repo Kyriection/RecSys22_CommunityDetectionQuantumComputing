@@ -26,6 +26,18 @@ def KNN(item, item_related_variables, I_quantity, criterion:int = 0) -> List[int
             break
     return group
 
+def normalization(variables):
+    min_val = np.min(variables, axis=0)
+    max_val = np.max(variables, axis=0)
+    _range = max_val - min_val
+    _range[_range <= 0] = 1
+    return (variables - min_val) / _range
+
+def standardization(variables):
+    mu = np.mean(variables, axis=0)
+    sigma = np.std(variables, axis=0)
+    sigma[sigma <= 0] = 1
+    return (variables - mu) / sigma
 
 class CommunityDetectionAdaptiveClustering(BaseRecommender):
     """
@@ -79,6 +91,11 @@ class CommunityDetectionAdaptiveClustering(BaseRecommender):
                 C_seen_rating.reshape((-1, 1)),
                 c_ucm.toarray(),
             ])
+            item_related_variables = normalization(item_related_variables)
+            user_related_variables = normalization(user_related_variables)
+            # item_related_variables = standardization(item_related_variables)
+            # user_related_variables = standardization(user_related_variables)
+
             recommendor = AdaptiveClustering(c_urm)
             items = community.items
             # compute groups
