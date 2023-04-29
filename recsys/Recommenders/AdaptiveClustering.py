@@ -36,13 +36,14 @@ class AdaptiveClustering(BaseRecommender):
           y += Y[j]
         if len(x) == 0:
           print(f'[Warning] no data for item {i}.')
-          self.scores[i] = np.ones(self.n_users) * 2.5
+          self.scores[i] = np.ones(self.n_users) * 3.0
         else:
+          # print(f'model for item {i} fit with group_size {len(groups[i])}, data_size {len(y)}')
           model.fit(x, y)
           self.scores[i] = model.predict(user_related_variables)
         # self.models[i].fit(x, y)
         # self.scores[i] = self.models[i].predict(users_feat)
-      self.scores[self.scores < 0.0] = 0.0
+      self.scores[self.scores < 1.0] = 1.0
       self.scores[self.scores > 5.0] = 5.0
 
 

@@ -22,14 +22,14 @@ class AC_Evaluator(object):
         MAE = np.zeros(self.n_items)
         RMSE = np.zeros(self.n_items)
         num_rating = np.ediff1d(self.URM_test.tocsc().indptr) # count of each colum
-        # print('num_rating:', num_rating)
-        # print('num_rating <= 1: ', (num_rating <= 1).sum()) # 758
+        print('num_rating <= 1: ', (num_rating <= 1).sum()) # 370
 
         rows, cols = self.URM_test.nonzero()
         for row, col in zip(rows, cols):
             diff = abs(self.URM_test[row, col] - predict_scores[row, col])
             MAE[col] += diff
             RMSE[col] += diff ** 2
+            # print(f'[{row}, {col}]: test={self.URM_test[row, col]}, predict={predict_scores[row, col]}')
 
         num_rating_all = np.sum(num_rating)
         MAE_all = np.sum(MAE) / num_rating_all

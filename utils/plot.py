@@ -200,7 +200,7 @@ def plot_lines(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
   # plt.margins(0)
   # plt.subplots_adjust(bottom=0.15)
   ax.set_xlabel(xlabel)
-  ax.set_ylabel(xlabel)
+  ax.set_ylabel(ylabel)
   # plt.xlabel(xlabel) #X轴标签
   # plt.ylabel(ylabel) #Y轴标签
   # plt.title("Figure") #标题

@@ -19,7 +19,8 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
     SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
-    MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader
+    MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
+    MovielensSampleReader, MovielensSample2Reader
 # from recsys.Evaluation.Evaluator import EvaluatorHoldout
 from recsys.Evaluation.AC_Evaluator import AC_Evaluator
 from recsys.Recommenders.BaseRecommender import BaseRecommender
@@ -45,8 +46,8 @@ def plot(urm, method, dataset_name, folder_path):
     print(RMSE_data)
     for data in (MAE_data, RMSE_data):
         for key in data: # sort data according I_quantity
-            data[key] = [x for _, x in sorted(zip(I_quantity, data[key]), reverse=True)]
-    I_quantity = sorted(I_quantity, reverse=True)
+            data[key] = [x for _, x in sorted(zip(I_quantity, data[key]))]
+    I_quantity = sorted(I_quantity)
     x = range(n_items)
     plot_lines(x, MAE_data, method_folder_path, 'item rank', 'MAE')
     plot_lines(x, RMSE_data, method_folder_path, 'item rank', 'RMSE')
@@ -54,7 +55,6 @@ def plot(urm, method, dataset_name, folder_path):
     print(MAE_data)
     print(RMSE_data)
     x = list(set(I_quantity))
-    x.reverse()
     for data in (MAE_data, RMSE_data):
         for key in data:
             new_data = {}
@@ -66,7 +66,7 @@ def plot(urm, method, dataset_name, folder_path):
             for k in new_data:
                 new_data[k] /= cnt[k]
             data[key] = list(new_data.values())
-            data[key].reverse()
+            data[key]
     plot_lines(x, MAE_data, method_folder_path, 'the number of ratings', 'MAE')
     plot_lines(x, RMSE_data, method_folder_path, 'the number of ratings', 'RMSE')
 
@@ -302,6 +302,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
                                  save_model=save_model)
             '''
             plot(urm_train, method, dataset_name, result_folder_path)
+            # plot(urm_test, method, dataset_name, result_folder_path)
 
 
 def recommend_per_method(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, sampler_list, recommender_list,
@@ -428,7 +429,7 @@ def save_results(data_reader_classes, result_folder_path, *args):
 if __name__ == '__main__':
     args = parse_args()
     CRITERION = args.criterion
-    data_reader_classes = [MovielensSampleReader]
+    data_reader_classes = [MovielensSample2Reader]
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]

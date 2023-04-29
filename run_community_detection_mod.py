@@ -287,7 +287,7 @@ def clean_results(result_folder_path, data_reader_classes, method_list):
 
 if __name__ == '__main__':
     args = parse_args()
-    data_reader_classes = [MovielensSampleReader]
+    data_reader_classes = [MovielensSample2Reader]
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]

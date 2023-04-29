@@ -62,6 +62,8 @@ class CommunityDetectionAdaptiveClustering(BaseRecommender):
     def fit(self):
         for community in self.communities:
             c_urm, _, _, c_icm, c_ucm = get_community_urm(self.URM_train, community=community, filter_users=False, remove=True, ucm=self.ucm, icm=self.icm)
+            # c_urm_train_last_test = merge_sparse_matrices(c_urm_train, c_urm_validation)
+            # print(c_urm.shape, c_icm.shape, c_ucm.shape)
             C_aver_rating, C_quantity, C_seen_popularity, C_seen_rating,\
             I_aver_rating, I_quantity, I_likability = create_derived_variables(self.URM_train)
             item_related_variables = np.hstack([
