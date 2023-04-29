@@ -101,9 +101,10 @@ class CommunityDetectionAdaptiveClustering(BaseRecommender):
             # compute groups
             groups = [KNN(item, item_related_variables, I_quantity, self.criterion) for item in items]
             # fit
-            recommendor.fit(user_related_variables, groups)
+            MP = recommendor.fit(user_related_variables, groups)
             # concate scores
             self.scores[items] = recommendor.scores
+        return MP
 
 
     def _compute_item_score(self, user_id_array, items_to_compute = None):

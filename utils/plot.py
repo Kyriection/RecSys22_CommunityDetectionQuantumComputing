@@ -2,6 +2,8 @@ from typing import List
 
 import matplotlib
 import matplotlib.pyplot as plt
+from sklearn import manifold
+import numpy as np
 
 from CommunityDetection.Communities import Communities
 
@@ -207,3 +209,33 @@ def plot_lines(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
   # plt.savefig(f'{output}/{xlabel}_{ylabel}.png')
   fig.savefig(f'{output}/{xlabel}_{ylabel}.png')
   fig.clf()
+
+def plot_rating(x, y, output: str='tmp/rating.png'):
+  # t-SNE的最终结果的降维与可视化
+  ts_2d = manifold.TSNE(n_components=2, init='pca', random_state=0)
+  x_ts = ts_2d.fit_transform(x)
+  x_min, x_max = x_ts.min(0), x_ts.max(0)
+  x_range = x_max - x_min
+  x_range[x_range <= 0] = 1
+  x_2d = (x_ts - x_min) / x_range
+  ts_3d = manifold.TSNE(n_components=3, init='pca', random_state=0)
+  x_ts = ts_3d.fit_transform(x)
+  x_min, x_max = x_ts.min(0), x_ts.max(0)
+  x_range = x_max - x_min
+  x_range[x_range <= 0] = 1
+  x_3d = (x_ts - x_min) / x_range
+  # y \in [1, 5]
+  cmap = plt.get_cmap('viridis', 6)
+  color = [cmap(int(i)) for i in y]
+  fig = plt.figure(figsize=(12, 6))
+  plt.set_cmap(cmap)
+  # print 2d
+  ax_2d = fig.add_subplot(1, 2, 1)
+  im_2d = ax_2d.scatter(x_2d[:,0], x_2d[:,1], s=10, c=color, marker='.')
+  fig.colorbar(im_2d, format=matplotlib.ticker.FuncFormatter(lambda x,pos:int(x*5)))
+  # print 3d
+  ax_3d = fig.add_subplot(1, 2, 2, projection='3d')
+  im_3d = ax_3d.scatter(x_3d[:,0], x_3d[:,1], x_3d[:, 2], s=10, c=color, marker='.')
+  fig.colorbar(im_3d, format=matplotlib.ticker.FuncFormatter(lambda x,pos:int(x*5)))
+
+  fig.savefig(output)

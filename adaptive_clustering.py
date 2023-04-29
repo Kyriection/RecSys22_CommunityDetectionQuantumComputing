@@ -36,14 +36,18 @@ from results.read_results import print_result
 CRITERION: int = None
 MAE_data = {}
 RMSE_data = {}
+MP = {}
 
 def plot(urm, method, dataset_name, folder_path):
     method_folder_path = f'{folder_path}{dataset_name}/{method.name}/'
     I_quantity = np.ediff1d(urm.tocsc().indptr) # count of each colum
     n_items = I_quantity.size
 
-    print(MAE_data)
-    print(RMSE_data)
+    print(MP)
+    for key in MP:
+        print(f'[{key}] MAE = MAE[{MAE_data["EI"][MP[key]]}], RMSE_data[{RMSE_data["EI"][MP[key]]}]')
+    # print(MAE_data)
+    # print(RMSE_data)
     for data in (MAE_data, RMSE_data):
         for key in data: # sort data according I_quantity
             data[key] = [x for _, x in sorted(zip(I_quantity, data[key]))]
@@ -52,8 +56,8 @@ def plot(urm, method, dataset_name, folder_path):
     plot_lines(x, MAE_data, method_folder_path, 'item rank', 'MAE')
     plot_lines(x, RMSE_data, method_folder_path, 'item rank', 'RMSE')
 
-    print(MAE_data)
-    print(RMSE_data)
+    # print(MAE_data)
+    # print(RMSE_data)
     x = list(set(I_quantity))
     for data in (MAE_data, RMSE_data):
         for key in data:
@@ -100,7 +104,8 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     # EI
     time_on_train = time.time()
     rec = recommender(urm_train_last_test, ucm, icm)
-    rec.fit()
+    global MP
+    MP = rec.fit()
     time_on_train = time.time() - time_on_train
 
     time_on_test = time.time()
@@ -122,6 +127,7 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     rec.save_model(output_folder_path, f'{recommender_name}_EI')
 
     # AC
+    '''
     time_on_train = time.time()
     rec = recommender(urm_train_last_test, ucm, icm, CRITERION)
     rec.fit()
@@ -144,6 +150,7 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     output_dataIO.save_data('AC', data_dict_to_save)
 
     rec.save_model(output_folder_path, f'{recommender_name}_AC')
+    '''
 
 
 def train_recommender_on_community(recommender, community, urm_train, urm_validation, urm_test, ucm, icm, dataset_name,

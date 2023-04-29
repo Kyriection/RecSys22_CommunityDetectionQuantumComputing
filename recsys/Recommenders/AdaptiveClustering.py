@@ -3,6 +3,7 @@ from sklearn.linear_model import LinearRegression
 
 from recsys.Recommenders.BaseRecommender import BaseRecommender
 from utils.DataIO import DataIO
+from utils.plot import plot_rating
 
 class AdaptiveClustering(BaseRecommender):
     RECOMMENDER_NAME = "AdaptiveClustering"
@@ -17,6 +18,7 @@ class AdaptiveClustering(BaseRecommender):
 
 
     def fit(self, user_related_variables, groups: list = None):
+      mp = {}
       if groups is None: # EI
         groups = [[i] for i in range(self.n_items)]
       # prepare data
@@ -39,12 +41,17 @@ class AdaptiveClustering(BaseRecommender):
           self.scores[i] = np.ones(self.n_users) * 3.0
         else:
           # print(f'model for item {i} fit with group_size {len(groups[i])}, data_size {len(y)}')
+          if len(y) >= 370 or (len(y) % 50 <= 2 and len(y) > 10):
+            mp[len(y)] = i
+            print(f'mp[{len(y)}]={i}')
+            plot_rating(x, y, f'tmp/rating_{len(y)}.png')
           model.fit(x, y)
           self.scores[i] = model.predict(user_related_variables)
         # self.models[i].fit(x, y)
         # self.scores[i] = self.models[i].predict(users_feat)
       self.scores[self.scores < 1.0] = 1.0
       self.scores[self.scores > 5.0] = 5.0
+      return mp
 
 
     def _compute_item_score(self, user_id_array, items_to_compute = None):
