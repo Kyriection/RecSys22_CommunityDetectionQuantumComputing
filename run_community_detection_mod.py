@@ -18,7 +18,7 @@ from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrus
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.plot import plot_cut, plot_density
-from utils.urm import get_community_urm, load_data, merge_sparse_matrices
+from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_urm_info
 
 CUT_FLAG = False
 cut_info = ['n_iter', 'n_users', 'n_items', 'c0_users', 'c0_items', 'c1_users', 'c1_items', 'cut_weight', 'all_weight', 'cut_ratio']
@@ -156,6 +156,7 @@ def cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = 
 
 def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: str, sampler: dimod.Sampler = None,
            community: Community = None, n_iter: int = 0, n_comm: int = None, **kwargs) -> Communities:
+    show_urm_info(cd_urm)
     n_users, n_items = cd_urm.shape
     user_index = np.arange(n_users)
     item_index = np.arange(n_items)
@@ -226,7 +227,6 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
 
         dataIO.save_data(run_file_name, data_dict_to_save)
     
-    print(f"len(users):{len(users)}, len(items):{len(items)}")
     communities = Communities(users, items, user_index, item_index)
     # check_communities(communities, m.filter_users, m.filter_items)
     # return communities

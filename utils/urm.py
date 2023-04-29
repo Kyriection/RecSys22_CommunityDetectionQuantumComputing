@@ -119,3 +119,22 @@ def get_community_urm(urm, community: Community, filter_users=True, filter_items
         return new_urm, new_users, new_items, new_icm, new_ucm
     else:
         return new_urm, new_users, new_items
+
+
+def show_urm_info(urm):
+    def show_quantity_info(quantity):
+        min_val = np.min(quantity)
+        max_val = np.max(quantity)
+        mean_val = np.mean(quantity)
+        var_val = np.var(quantity)
+        print(f'min={min_val}, max={max_val}, mean={mean_val}, variance={var_val}')
+
+    print('--------------- show urm info ----------------')
+    C_quantity = np.ediff1d(urm.tocsr().indptr) # count of each row
+    I_quantity = np.ediff1d(urm.tocsc().indptr) # count of each colum
+    print(f'urm.shape={urm.shape}, urm.size={urm.size}')
+    print('user info')
+    show_quantity_info(C_quantity)
+    print('item info')
+    show_quantity_info(I_quantity)
+    print('----------------------------------------------')
