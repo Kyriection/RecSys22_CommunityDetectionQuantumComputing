@@ -26,7 +26,9 @@ def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True,
         urm_test = explicit_to_implicit_urm(urm_test, threshold=threshold)
 
     ICM_dict = data_splitter.get_loaded_ICM_dict()
-    icm = ICM_dict['ICM_genres']
+    icm_genres = ICM_dict['ICM_genres']
+    icm_year = ICM_dict['ICM_year']
+    icm = sps.hstack((icm_genres, icm_year))
 
     UCM_dict = data_splitter.get_loaded_UCM_dict()
     ucm = UCM_dict['UCM_all']
@@ -125,17 +127,16 @@ def show_urm_info(urm):
     def show_quantity_info(quantity):
         min_val = np.min(quantity)
         max_val = np.max(quantity)
-        med_val = np.median(quantity)
-        mean_val = round(np.mean(quantity), 2)
-        var_val = round(np.var(quantity), 2)
-        print(f'min={min_val}, max={max_val}, median={med_val}, mean={mean_val}, variance={var_val}')
+        mean_val = np.mean(quantity)
+        var_val = np.var(quantity)
+        print(f'min={min_val}, max={max_val}, mean={mean_val}, variance={var_val}')
 
     print('--------------- show urm info ----------------')
     C_quantity = np.ediff1d(urm.tocsr().indptr) # count of each row
     I_quantity = np.ediff1d(urm.tocsc().indptr) # count of each colum
     print(f'urm.shape={urm.shape}, urm.size={urm.size}')
-    print('user info: ', end='')
+    print('user info')
     show_quantity_info(C_quantity)
-    print('item info: ', end='')
+    print('item info')
     show_quantity_info(I_quantity)
     print('----------------------------------------------')
