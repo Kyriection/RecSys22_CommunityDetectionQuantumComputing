@@ -18,7 +18,6 @@ class AdaptiveClustering(BaseRecommender):
 
 
     def fit(self, user_related_variables, groups: list = None):
-      mp = {}
       if groups is None: # EI
         groups = [[i] for i in range(self.n_items)]
       # prepare data
@@ -51,7 +50,6 @@ class AdaptiveClustering(BaseRecommender):
         # self.scores[i] = self.models[i].predict(users_feat)
       self.scores[self.scores < 1.0] = 1.0
       self.scores[self.scores > 5.0] = 5.0
-      return mp
 
 
     def _compute_item_score(self, user_id_array, items_to_compute = None):

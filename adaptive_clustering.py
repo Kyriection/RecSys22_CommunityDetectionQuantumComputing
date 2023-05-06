@@ -36,16 +36,12 @@ from results.read_results import print_result
 CRITERION: int = None
 MAE_data = {}
 RMSE_data = {}
-MP = {}
 
 def plot(urm, method, dataset_name, folder_path):
     method_folder_path = f'{folder_path}{dataset_name}/{method.name}/'
     I_quantity = np.ediff1d(urm.tocsc().indptr) # count of each colum
     n_items = I_quantity.size
 
-    print(MP)
-    for key in MP:
-        print(f'[{key}] MAE = MAE[{MAE_data["EI"][MP[key]]}], RMSE_data[{RMSE_data["EI"][MP[key]]}]')
     # print(MAE_data)
     # print(RMSE_data)
     for data in (MAE_data, RMSE_data):
@@ -104,8 +100,7 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     # EI
     time_on_train = time.time()
     rec = recommender(urm_train_last_test, ucm, icm)
-    global MP
-    MP = rec.fit()
+    rec.fit()
     time_on_train = time.time() - time_on_train
 
     time_on_test = time.time()
