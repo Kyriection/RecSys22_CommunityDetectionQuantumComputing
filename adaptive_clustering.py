@@ -127,7 +127,6 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     rec.save_model(output_folder_path, f'{recommender_name}_EI')
 
     # AC
-    '''
     time_on_train = time.time()
     rec = recommender(urm_train_last_test, ucm, icm, CRITERION)
     rec.fit()
@@ -150,7 +149,6 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     output_dataIO.save_data('AC', data_dict_to_save)
 
     rec.save_model(output_folder_path, f'{recommender_name}_AC')
-    '''
 
 
 def train_recommender_on_community(recommender, community, urm_train, urm_validation, urm_test, ucm, icm, dataset_name,

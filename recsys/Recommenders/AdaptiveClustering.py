@@ -41,10 +41,10 @@ class AdaptiveClustering(BaseRecommender):
           self.scores[i] = np.ones(self.n_users) * 3.0
         else:
           # print(f'model for item {i} fit with group_size {len(groups[i])}, data_size {len(y)}')
-          if len(y) >= 370 or (len(y) % 50 <= 2 and len(y) > 10):
-            mp[len(y)] = i
-            print(f'mp[{len(y)}]={i}')
-            plot_rating(x, y, f'tmp/rating_{len(y)}.png')
+          # if len(y) >= 370 or (len(y) % 50 <= 2 and len(y) > 10):
+          #   mp[len(y)] = i
+          #   print(f'mp[{len(y)}]={i}')
+          #   plot_rating(x, y, f'tmp/rating_{len(y)}.png')
           model.fit(x, y)
           self.scores[i] = model.predict(user_related_variables)
         # self.models[i].fit(x, y)

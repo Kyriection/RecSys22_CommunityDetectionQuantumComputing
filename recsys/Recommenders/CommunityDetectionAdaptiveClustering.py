@@ -39,6 +39,32 @@ def standardization(variables):
     sigma[sigma <= 0] = 1
     return (variables - mu) / sigma
 
+
+def create_related_variables(urm, icm, ucm):
+    C_aver_rating, C_quantity, C_seen_popularity, C_seen_rating,\
+    I_aver_rating, I_quantity, I_likability = create_derived_variables(urm)
+    item_related_variables = np.hstack([
+        I_aver_rating.reshape((-1, 1)),
+        I_quantity.reshape((-1, 1)),
+        I_likability.reshape((-1, 1)),
+        icm.toarray(),
+    ])
+    user_related_variables = np.hstack([
+        C_aver_rating.reshape((-1, 1)),
+        C_quantity.reshape((-1, 1)),
+        C_seen_popularity.reshape((-1, 1)),
+        C_seen_rating.reshape((-1, 1)),
+        ucm.toarray(),
+    ])
+    item_related_variables = normalization(item_related_variables)
+    user_related_variables = normalization(user_related_variables)
+    # item_related_variables = standardization(item_related_variables)
+    # user_related_variables = standardization(user_related_variables)
+    return item_related_variables, user_related_variables
+
+
+
+
 class CommunityDetectionAdaptiveClustering(BaseRecommender):
     """
     EI: class(urm, ucm, icm, criterion=0, communities=None)
@@ -76,26 +102,9 @@ class CommunityDetectionAdaptiveClustering(BaseRecommender):
             c_urm, _, _, c_icm, c_ucm = get_community_urm(self.URM_train, community=community, filter_users=False, remove=True, ucm=self.ucm, icm=self.icm)
             # c_urm_train_last_test = merge_sparse_matrices(c_urm_train, c_urm_validation)
             # print(c_urm.shape, c_icm.shape, c_ucm.shape)
-            C_aver_rating, C_quantity, C_seen_popularity, C_seen_rating,\
-            I_aver_rating, I_quantity, I_likability = create_derived_variables(self.URM_train)
-            item_related_variables = np.hstack([
-                I_aver_rating.reshape((-1, 1)),
-                I_quantity.reshape((-1, 1)),
-                I_likability.reshape((-1, 1)),
-                c_icm.toarray(),
-            ])
-            user_related_variables = np.hstack([
-                C_aver_rating.reshape((-1, 1)),
-                C_quantity.reshape((-1, 1)),
-                C_seen_popularity.reshape((-1, 1)),
-                C_seen_rating.reshape((-1, 1)),
-                c_ucm.toarray(),
-            ])
-            item_related_variables = normalization(item_related_variables)
-            user_related_variables = normalization(user_related_variables)
-            # item_related_variables = standardization(item_related_variables)
-            # user_related_variables = standardization(user_related_variables)
-
+            I_quantity = np.ediff1d(c_urm.tocsc().indptr) # count of each colum
+            item_related_variables, user_related_variables = create_related_variables(c_urm, c_icm, c_ucm)
+            
             recommendor = AdaptiveClustering(c_urm)
             items = community.items
             # compute groups
