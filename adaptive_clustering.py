@@ -35,6 +35,7 @@ from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 from utils.plot import plot_line, plot_scatter
 from results.read_results import print_result
 
+logging.basicConfig(level=logging.INFO)
 CRITERION: int = None
 MAE_data = {}
 RMSE_data = {}
@@ -53,14 +54,6 @@ def plot(urm, method, dataset_name, folder_path):
     x = range(n_items)
     plot_scatter(x, MAE_data, method_folder_path, 'item rank', 'MAE')
     plot_scatter(x, RMSE_data, method_folder_path, 'item rank', 'RMSE')
-    with open(f'{method_folder_path}_evaluation.json', 'w') as f:
-        data_dict = dict(
-            x = x,
-            MAE_data = MAE_data,
-            RMSE_data = RMSE_data,
-        )
-        data_json = json.dumps(data_dict)
-        f.write(data_json)
 
     for data in (MAE_data, RMSE_data):
         for key in data:
@@ -75,11 +68,21 @@ def plot(urm, method, dataset_name, folder_path):
             for k in new_data:
                 new_data[k] /= cnt[k]
             data[key] = list(new_data.values())
+            # data[key] = [float(val) for val in new_data.values()]
     # plot by #ratings
-    x = sorted(list(set(I_quantity)))
+    # x = sorted(list(set(I_quantity)))
+    x = sorted([int(quantity) for quantity in set(I_quantity)])
     x = x[1:] # remove 0
     plot_scatter(x, MAE_data, method_folder_path, 'the number of ratings', 'MAE')
     plot_scatter(x, RMSE_data, method_folder_path, 'the number of ratings', 'RMSE')
+    with open(f'{method_folder_path}evaluation.json', 'w') as f:
+        data_dict = dict(
+            x = x,
+            MAE_data = MAE_data,
+            RMSE_data = RMSE_data,
+        )
+        data_json = json.dumps(data_dict)
+        f.write(data_json)
 
     max_x = I_quantity[-1]
     gap = max((max_x + PLOT_CUT - 1)  // PLOT_CUT, max_x // (PLOT_CUT - 1)) # max_x // gap = PLOT_CUT - 1

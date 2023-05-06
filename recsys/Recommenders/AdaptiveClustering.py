@@ -1,5 +1,5 @@
 import logging
-import tqdm
+from tqdm import tqdm
 
 import numpy as np
 from sklearn.linear_model import LinearRegression
@@ -20,7 +20,7 @@ class AdaptiveClustering(BaseRecommender):
         # self.models = [sklearn.linear_model.LinearRegression() for i in n_items]
 
 
-    def fit(self, user_related_variables, groups: list = None):
+    def fit(self, user_related_variables, item_related_variables, groups: list = None):
       if groups is None: # EI
         groups = [[i] for i in range(self.n_items)]
       # prepare data
@@ -28,7 +28,7 @@ class AdaptiveClustering(BaseRecommender):
       Y = [[] for i in range(self.n_items)]
       rows, cols = self.URM_train.nonzero()
       for row, col in zip(rows, cols):
-         X[col].append(user_related_variables[row])
+         X[col].append(np.hstack((user_related_variables[row], item_related_variables[col])))
          Y[col].append(self.URM_train[row, col])
       # model fit & predict
       model = LinearRegression()
@@ -48,7 +48,10 @@ class AdaptiveClustering(BaseRecommender):
           #   print(f'mp[{len(y)}]={i}')
           #   plot_rating(x, y, f'tmp/rating_{len(y)}.png')
           model.fit(x, y)
-          self.scores[i] = model.predict(user_related_variables)
+          self.scores[i] = model.predict(
+             np.hstack((user_related_variables,
+                        np.repeat(item_related_variables[i:i+1], self.n_users, axis=0)))
+          )
         # self.models[i].fit(x, y)
         # self.scores[i] = self.models[i].predict(users_feat)
       self.scores[self.scores < 1.0] = 1.0
