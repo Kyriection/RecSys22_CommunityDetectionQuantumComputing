@@ -191,12 +191,32 @@ def plot_divide(communities: Communities, output_folder: str = ''):
   plot_pies(ratios_list, user_nums_list, -v_range, v_range, 'divide', output_folder + 'divide_info.png', cmap)
 
 
-def plot_lines(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
+def plot_scatter(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
   fig = plt.figure()
   ax = fig.add_subplot(1, 1, 1)
   for key in Y:
     # plt.plot(x, Y[key], label=key)
-    ax.scatter(x, Y[key], label=key, s=2)
+    ax.scatter(x, Y[key], label=key, s=5)
+  plt.legend() # 让图例生效
+  # plt.xticks(x, names, rotation=45)
+  # plt.margins(0)
+  # plt.subplots_adjust(bottom=0.15)
+  ax.set_xlabel(xlabel)
+  ax.set_ylabel(ylabel)
+  # plt.xlabel(xlabel) #X轴标签
+  # plt.ylabel(ylabel) #Y轴标签
+  # plt.title("Figure") #标题
+  # plt.savefig(f'{output}/{xlabel}_{ylabel}.png')
+  fig.savefig(f'{output}/{xlabel}_{ylabel}.png')
+  fig.clf()
+
+
+def plot_line(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
+  fig = plt.figure()
+  ax = fig.add_subplot(1, 1, 1)
+  for key in Y:
+    # plt.plot(x, Y[key], label=key)
+    ax.plot(x, Y[key], label=key, marker='s')
   plt.legend() # 让图例生效
   # plt.xticks(x, names, rotation=45)
   # plt.margins(0)

@@ -2,6 +2,8 @@ import os
 import time
 import copy
 import shutil
+import logging
+import json
 from typing import List
 
 import argparse
@@ -30,45 +32,78 @@ from recsys.Recommenders.CommunityDetectionAdaptiveClustering import CommunityDe
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
-from utils.plot import plot_lines
+from utils.plot import plot_line, plot_scatter
 from results.read_results import print_result
 
 CRITERION: int = None
 MAE_data = {}
 RMSE_data = {}
+PLOT_CUT = 30
 
 def plot(urm, method, dataset_name, folder_path):
     method_folder_path = f'{folder_path}{dataset_name}/{method.name}/'
     I_quantity = np.ediff1d(urm.tocsc().indptr) # count of each colum
     n_items = I_quantity.size
 
-    # print(MAE_data)
-    # print(RMSE_data)
     for data in (MAE_data, RMSE_data):
         for key in data: # sort data according I_quantity
             data[key] = [x for _, x in sorted(zip(I_quantity, data[key]))]
     I_quantity = sorted(I_quantity)
+    # plot by item rank
     x = range(n_items)
-    plot_lines(x, MAE_data, method_folder_path, 'item rank', 'MAE')
-    plot_lines(x, RMSE_data, method_folder_path, 'item rank', 'RMSE')
+    plot_scatter(x, MAE_data, method_folder_path, 'item rank', 'MAE')
+    plot_scatter(x, RMSE_data, method_folder_path, 'item rank', 'RMSE')
+    with open(f'{method_folder_path}_evaluation.json', 'w') as f:
+        data_dict = dict(
+            x = x,
+            MAE_data = MAE_data,
+            RMSE_data = RMSE_data,
+        )
+        data_json = json.dumps(data_dict)
+        f.write(data_json)
 
-    # print(MAE_data)
-    # print(RMSE_data)
-    x = list(set(I_quantity))
     for data in (MAE_data, RMSE_data):
         for key in data:
             new_data = {}
             cnt = {}
             for i in range(n_items):
                 quantity = I_quantity[i]
+                if quantity == 0: # 0 interaction in train_set
+                    continue
                 new_data[quantity] = new_data.get(quantity, 0) + data[key][i]
                 cnt[quantity] = cnt.get(quantity, 0) + 1
             for k in new_data:
                 new_data[k] /= cnt[k]
             data[key] = list(new_data.values())
-            data[key]
-    plot_lines(x, MAE_data, method_folder_path, 'the number of ratings', 'MAE')
-    plot_lines(x, RMSE_data, method_folder_path, 'the number of ratings', 'RMSE')
+    # plot by #ratings
+    x = sorted(list(set(I_quantity)))
+    x = x[1:] # remove 0
+    plot_scatter(x, MAE_data, method_folder_path, 'the number of ratings', 'MAE')
+    plot_scatter(x, RMSE_data, method_folder_path, 'the number of ratings', 'RMSE')
+
+    max_x = I_quantity[-1]
+    gap = max((max_x + PLOT_CUT - 1)  // PLOT_CUT, max_x // (PLOT_CUT - 1)) # max_x // gap = PLOT_CUT - 1
+    # print(f'max_x={max(x)}, gap={gap}, max_quantity={I_quantity[-1]}')
+    for data in (MAE_data, RMSE_data):
+        for key in data:
+            new_data = [0.0] * PLOT_CUT
+            cnt = [0] * PLOT_CUT
+            assert len(data[key]) == len(x), f'[Error] len_data({len(data[key])}) != len_x({len(x)})'
+            for i, quantity in enumerate(x):
+                j = quantity // gap
+                assert j < PLOT_CUT, f'[Error] quantity // gap >= PLOT_CUT, {quantity} // {gap} = {quantity // gap} >= {PLOT_CUT}'
+                new_data[j] += data[key][i]
+                cnt[j] += 1
+            data[key] = []
+            for i in range(PLOT_CUT):
+                if cnt[i]:
+                    data[key].append(new_data[i] / cnt[i])
+                else:
+                    data[key].append(data[key][-1] if data[key] else 0.0)
+    # plot by #ratings(cluster)
+    x = range(PLOT_CUT) * gap
+    plot_line(x, MAE_data, method_folder_path, f'the number of ratings (cluster {gap})', 'MAE')
+    plot_line(x, RMSE_data, method_folder_path, f'the number of ratings (cluster {gap})', 'RMSE')
 
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):

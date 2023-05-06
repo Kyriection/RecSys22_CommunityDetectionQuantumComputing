@@ -1,3 +1,6 @@
+import logging
+import tqdm
+
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
@@ -29,7 +32,7 @@ class AdaptiveClustering(BaseRecommender):
          Y[col].append(self.URM_train[row, col])
       # model fit & predict
       model = LinearRegression()
-      for i in range(self.n_items):
+      for i in tqdm(range(self.n_items)):
         x = []
         y = []
         for j in groups[i]:

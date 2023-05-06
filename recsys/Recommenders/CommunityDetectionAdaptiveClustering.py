@@ -1,3 +1,6 @@
+import logging
+import tqdm
+
 import sklearn
 import numpy as np
 from typing import List
@@ -9,7 +12,10 @@ from utils.DataIO import DataIO
 from utils.urm import get_community_urm
 from utils.derived_variables import create_derived_variables
 
+LOGGER = logging.getLogger()
+
 def KNN(item, item_related_variables, I_quantity, criterion:int = 0) -> List[int]:
+    LOGGER.info('KNN start.')
     if criterion == 0:
         return [item]
     n_items = len(item_related_variables)
@@ -19,11 +25,12 @@ def KNN(item, item_related_variables, I_quantity, criterion:int = 0) -> List[int
     item_rank_id = sorted(range(n_items), key=lambda x:distance[x])
     group = []
     group_size = 0
-    for i in range(n_items):
+    for i in tqdm(range(n_items)):
         group.append(item_rank_id[i])
         group_size += I_quantity[item_rank_id[i]]
         if group_size >= criterion:
             break
+    LOGGER.info('KNN end.')
     return group
 
 def normalization(variables):
@@ -102,14 +109,17 @@ class CommunityDetectionAdaptiveClustering(BaseRecommender):
             c_urm, _, _, c_icm, c_ucm = get_community_urm(self.URM_train, community=community, filter_users=False, remove=True, ucm=self.ucm, icm=self.icm)
             # c_urm_train_last_test = merge_sparse_matrices(c_urm_train, c_urm_validation)
             # print(c_urm.shape, c_icm.shape, c_ucm.shape)
+            LOGGER.info('create_related_variables.')
             I_quantity = np.ediff1d(c_urm.tocsc().indptr) # count of each colum
             item_related_variables, user_related_variables = create_related_variables(c_urm, c_icm, c_ucm)
-            
+            LOGGER.info('AdaptiveClustering.')
             recommendor = AdaptiveClustering(c_urm)
             items = community.items
             # compute groups
+            LOGGER.info('compute groups.')
             groups = [KNN(item, item_related_variables, I_quantity, self.criterion) for item in items]
             # fit
+            LOGGER.info('fit')
             recommendor.fit(user_related_variables, groups)
             # concate scores
             self.scores[items] = recommendor.scores
