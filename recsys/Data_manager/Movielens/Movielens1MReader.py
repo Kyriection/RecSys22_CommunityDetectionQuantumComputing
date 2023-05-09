@@ -65,12 +65,14 @@ class Movielens1MReader(DataReader):
         UCM_dataframe.columns = ["UserID", "gender", "age_group", "occupation", "zip_code"]
 
         # For each user a list of features
-        UCM_list = [[feature_name + "_" + str(UCM_dataframe[feature_name][index]) for feature_name in ["gender", "age_group", "occupation", "zip_code"]] for index in range(len(UCM_dataframe))]
-        UCM_dataframe = pd.DataFrame(UCM_list, index=UCM_dataframe["UserID"]).stack()
-        UCM_dataframe = UCM_dataframe.reset_index()[[0, 'UserID']]
-        UCM_dataframe.columns = ['FeatureID', 'UserID']
-        UCM_dataframe["Data"] = 1
-
+        # UCM_list = [[feature_name + "_" + str(UCM_dataframe[feature_name][index]) for feature_name in ["gender", "age_group", "occupation", "zip_code"]] for index in range(len(UCM_dataframe))]
+        # UCM_dataframe = pd.DataFrame(UCM_list, index=UCM_dataframe["UserID"]).stack()
+        # UCM_dataframe = UCM_dataframe.reset_index()[[0, 'UserID']]
+        # UCM_dataframe.columns = ['FeatureID', 'UserID']
+        # UCM_dataframe["Data"] = 1
+        UCM_list = [[feature_name, str(index), UCM_dataframe[feature_name][index]] for feature_name in ["age_group"] for index in range(len(UCM_dataframe))] # num
+        UCM_list += [[f'{feature_name}_{UCM_dataframe[feature_name][index]}', str(index), 1] for feature_name in ["gender", "occupation"] for index in range(len(UCM_dataframe))] # one-hot
+        UCM_dataframe = pd.DataFrame(UCM_list, columns=['FeatureID', 'UserID', 'Data'])
 
         dataset_manager = DatasetMapperManager()
         dataset_manager.add_URM(URM_all_dataframe, "URM_all")

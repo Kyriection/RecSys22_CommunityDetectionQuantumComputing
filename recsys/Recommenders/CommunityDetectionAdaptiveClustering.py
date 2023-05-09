@@ -50,14 +50,14 @@ def create_related_variables(urm, icm, ucm):
     item_related_variables = np.hstack([
         I_aver_rating.reshape((-1, 1)),
         I_quantity.reshape((-1, 1)),
-        I_likability.reshape((-1, 1)),
+        # I_likability.reshape((-1, 1)),
         icm.toarray(),
     ])
     user_related_variables = np.hstack([
         C_aver_rating.reshape((-1, 1)),
         C_quantity.reshape((-1, 1)),
-        C_seen_popularity.reshape((-1, 1)),
-        C_seen_rating.reshape((-1, 1)),
+        # C_seen_popularity.reshape((-1, 1)),
+        # C_seen_rating.reshape((-1, 1)),
         ucm.toarray(),
     ])
     item_related_variables = normalization(item_related_variables)

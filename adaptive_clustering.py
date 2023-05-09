@@ -68,9 +68,7 @@ def plot(urm, method, dataset_name, folder_path):
             for k in new_data:
                 new_data[k] /= cnt[k]
             data[key] = list(new_data.values())
-            # data[key] = [float(val) for val in new_data.values()]
     # plot by #ratings
-    # x = sorted(list(set(I_quantity)))
     x = sorted([int(quantity) for quantity in set(I_quantity)])
     x = x[1:] # remove 0
     plot_scatter(x, MAE_data, method_folder_path, 'the number of ratings', 'MAE')
@@ -104,7 +102,7 @@ def plot(urm, method, dataset_name, folder_path):
                 else:
                     data[key].append(data[key][-1] if data[key] else 0.0)
     # plot by #ratings(cluster)
-    x = range(PLOT_CUT) * gap
+    x = np.arange(PLOT_CUT) * gap
     plot_line(x, MAE_data, method_folder_path, f'the number of ratings (cluster {gap})', 'MAE')
     plot_line(x, RMSE_data, method_folder_path, f'the number of ratings (cluster {gap})', 'RMSE')
 
@@ -467,8 +465,8 @@ def save_results(data_reader_classes, result_folder_path, *args):
 if __name__ == '__main__':
     args = parse_args()
     CRITERION = args.criterion
-    data_reader_classes = [MovielensSample2Reader]
-    # data_reader_classes = [Movielens1MReader]
+    # data_reader_classes = [MovielensSample2Reader]
+    data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [CommunityDetectionAdaptiveClustering]

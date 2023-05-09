@@ -221,6 +221,7 @@ def plot_line(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
   # plt.xticks(x, names, rotation=45)
   # plt.margins(0)
   # plt.subplots_adjust(bottom=0.15)
+  # ax.set_xscale('log')
   ax.set_xlabel(xlabel)
   ax.set_ylabel(ylabel)
   # plt.xlabel(xlabel) #X轴标签
