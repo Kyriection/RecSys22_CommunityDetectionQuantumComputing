@@ -8,9 +8,9 @@ import pandas as pd
 
 from recsys.Utils.seconds_to_biggest_unit import seconds_to_biggest_unit
 
-def _create_empty_metrics_dict(n_items):
+def _create_empty_metrics_dict(n_users):
     empty_dict = {}
-    for i in range(n_items):
+    for i in range(n_users):
         empty_dict[i] = {
             'MAE': 0.0,
             'MSE': 0.0,
@@ -61,6 +61,8 @@ class EvaluatorSeparate(object):
             self._print("Ignoring {} Items".format(len(ignore_items)))
             self.ignore_items_flag = True
             self.ignore_items_ID = np.array(ignore_items)
+
+        self.max_cutoff = 1 # no need for cutoff
 
         self.min_ratings_per_user = min_ratings_per_user
         self.exclude_seen = exclude_seen
@@ -149,12 +151,12 @@ class EvaluatorSeparate(object):
         if self.ignore_items_flag:
             recommender_object.reset_items_to_ignore()
 
-        results_df = pd.DataFrame(columns=results_dict[self.cutoff_list[0]].keys(),
-                                  index=self.cutoff_list)
-        results_df.index.rename("cutoff", inplace = True)
+        results_df = pd.DataFrame(columns=results_dict[0].keys(),
+                                  index=list(range(self.n_users)))
+        results_df.index.rename("user", inplace = True)
 
-        for cutoff in results_dict.keys():
-            results_df.loc[cutoff] = results_dict[cutoff]
+        for user in results_dict.keys():
+            results_df.loc[user] = results_dict[user]
 
         return results_df, ""
 
@@ -178,12 +180,10 @@ class EvaluatorSeparate(object):
 
 
 
-    def _compute_metrics_on_recommendation_list(self, test_user_batch_array, recommended_items_batch_list, scores_batch, results_dict: list):
+    def _compute_metrics_on_recommendation_list(self, test_user_batch_array, recommended_items_batch_list, scores_batch, results_dict):
 
-        assert recommended_items_batch_list is None, "recommended_items_batch_list is not None."
-
-        # assert len(recommended_items_batch_list) == len(test_user_batch_array), "{}: recommended_items_batch_list contained recommendations for {} users, expected was {}".format(
-            # self.EVALUATOR_NAME, len(recommended_items_batch_list), len(test_user_batch_array))
+        assert len(recommended_items_batch_list) == len(test_user_batch_array), "{}: recommended_items_batch_list contained recommendations for {} users, expected was {}".format(
+            self.EVALUATOR_NAME, len(recommended_items_batch_list), len(test_user_batch_array))
 
         assert scores_batch.shape[0] == len(test_user_batch_array), "{}: scores_batch contained scores for {} users, expected was {}".format(
             self.EVALUATOR_NAME, scores_batch.shape[0], len(test_user_batch_array))
@@ -208,15 +208,17 @@ class EvaluatorSeparate(object):
             MSE = 0.0
             num_rating = 0
             for i, item in enumerate(relevant_items):
-                diff = np.abs(relevant_items_rating[i] - all_items_predicted_ratings[item])
-                MAE += diff
-                RMSE += diff**2
+                diff = relevant_items_rating[i] - all_items_predicted_ratings[item]
+                MAE += np.abs(diff)
+                MSE += diff**2
                 num_rating += 1
             MAE /= num_rating
             MSE /= num_rating
 
             self._n_users_evaluated += 1
-            results_dict[batch_user_index] = [MAE, MSE, num_rating]
+            results_dict[batch_user_index]['MAE'] = MAE
+            results_dict[batch_user_index]['MSE'] = MSE
+            results_dict[batch_user_index]['num_rating'] = num_rating
 
 
 
@@ -275,7 +277,7 @@ class EvaluatorSeparateHoldout(EvaluatorSeparate):
             # Reduce block size if estimated memory requirement exceeds 4 GB
             block_size = min([1000, int(4*1e9*8/64/self.n_items), len(users_to_evaluate)])
 
-        results_dict = [[] for u in len(users_to_evaluate)]
+        results_dict = _create_empty_metrics_dict(self.n_users)
 
         if self.ignore_items_flag:
             recommender_object.set_items_to_ignore(self.ignore_items_ID)
@@ -295,6 +297,7 @@ class EvaluatorSeparateHoldout(EvaluatorSeparate):
             # Compute predictions for a batch of users using vectorization, much more efficient than computing it one at a time
             recommended_items_batch_list, scores_batch = recommender_object.recommend(test_user_batch_array,
                                                                       remove_seen_flag=self.exclude_seen,
+                                                                      cutoff = self.max_cutoff,
                                                                       remove_top_pop_flag=False,
                                                                       remove_custom_items_flag=self.ignore_items_flag,
                                                                       return_scores = True

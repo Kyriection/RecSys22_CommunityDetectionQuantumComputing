@@ -5,6 +5,8 @@
 @author: Anonymous
 """
 import logging
+import time
+from typing import Optional
 
 import numpy as np
 from sklearn.linear_model import LinearRegression
@@ -18,22 +20,34 @@ class LRRecommender(BaseRecommender):
 
     RECOMMENDER_NAME = "LRRecommender"
 
-    def __init__(self, URM_train, user, ucm, icm):
+    def __init__(self, URM_train, ucm, icm):
         super(LRRecommender, self).__init__(URM_train)
-        self.user = user
         self.ucm = ucm
         self.icm = icm
         self.model = LinearRegression()
         self.scores = None
 
 
-    def fit(self):
+    def fit(self, user: Optional[int] = None):
+        start_time = time.time()
+
         rows, cols = self.URM_train.nonzero()
         x = [np.hstack((self.ucm[row], self.icm[col])) for row, col in zip(rows, cols)]
         y = [self.URM_train[row, col] for row, col in zip(rows, cols)]
         self.model.fit(x, y)
-        x = [np.hstack((self.ucm[self.user], self.icm[i])) for i in range(self.n_items)]
-        self.scores = self.model.predict(x)
+
+        if user is None:
+            users = list(range(self.n_users))
+        else:
+            users = [user]
+        self.scores = np.zeros((self.n_users, self.n_items))
+        for user in users:
+            x = [np.hstack((self.ucm[user], self.icm[i])) for i in range(self.n_items)]
+            self.scores[user] = self.model.predict(x)
+        
+        self.scores[self.scores < 1.0] = 1.0
+        self.scores[self.scores > 5.0] = 5.0
+        logging.info(f'fit cost time {time.time() - start_time}s.')
 
 
     def _compute_item_score(self, user_id_array, items_to_compute = None):
