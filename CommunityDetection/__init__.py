@@ -1,4 +1,4 @@
-from CommunityDetection.Communities import Communities, get_community_folder_path
+from CommunityDetection.Communities import Communities, get_community_folder_path, CommunitiesEI
 from CommunityDetection.Community import Community
 from CommunityDetection.BaseCommunityDetection import BaseCommunityDetection
 from CommunityDetection.QUBOBipartiteCommunityDetection import QUBOBipartiteCommunityDetection

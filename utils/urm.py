@@ -57,7 +57,7 @@ def merge_sparse_matrices(matrix_a, matrix_b):
     row = np.concatenate((row_a, row_b))
     col = np.concatenate((col_a, col_b))
 
-    matrix = sps.coo_matrix((data, (row, col)))
+    matrix = sps.coo_matrix((data, (row, col)), shape=matrix_a.shape)
 
     n_users = max(matrix_a.shape[0], matrix_b.shape[0])
     n_items = max(matrix_a.shape[1], matrix_b.shape[1])
@@ -117,6 +117,10 @@ def get_community_urm(urm, community: Community, filter_users=True, filter_items
                 new_icm[items, :] = 0
 
     new_urm.eliminate_zeros()
+    if new_icm is not None:
+        new_icm.eliminate_zeros()
+    if new_ucm is not None:
+        new_ucm.eliminate_zeros()
     if icm is not None or ucm is not None:
         return new_urm, new_users, new_items, new_icm, new_ucm
     else:

@@ -299,7 +299,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 3
+    num_iters = 7
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list)
     # QUBOGraphCommunityDetection.set_alpha(args.alpha)

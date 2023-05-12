@@ -3,13 +3,14 @@ import time
 import copy
 import shutil
 import logging
-import json
+import tqdm
 
 import argparse
 import dimod
 import greedy
 import neal
 import numpy as np
+import scipy.sparse as sp
 import tabu
 from dwave.system import LeapHybridSampler
 
@@ -18,7 +19,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
-    SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection
+    SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
@@ -159,6 +160,7 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
     baseline: best_model fit(train + validation), predict(test)
     """
     recommender_name = recommender.RECOMMENDER_NAME
+    logging.info(f'len(community.users)={len(community.users)}')
     print(f'Training {recommender_name} on community {n_comm if n_comm is not None else ""} of iteration {n_iter}...')
     print(f"community.shape({len(community.users)}, {len(community.items)})")
 
@@ -178,7 +180,7 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
     evaluator_test = EvaluatorSeparateHoldout(c_urm_test, ignore_users=ignore_users)
 
     time_on_train = time.time()
-    validation_recommender = recommender(c_urm_train, c_ucm, c_icm)
+    validation_recommender = recommender(c_urm_train, c_ucm, c_icm, community.users)
     validation_recommender.fit()
     time_on_train = time.time() - time_on_train
 
@@ -197,7 +199,7 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
     community.result_dict_validation = copy.deepcopy(data_dict_to_save)
 
     time_on_train = time.time()
-    comm_recommender = recommender(c_urm_train_last_test, c_ucm, c_icm)
+    comm_recommender = recommender(c_urm_train_last_test, c_ucm, c_icm, community.users)
     comm_recommender.fit()
     time_on_train = time.time() - time_on_train
 
@@ -317,6 +319,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
 
         urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
         icm, ucm = create_related_variables(urm_train_last_test, icm, ucm) # should use urm_train_last_test ?
+        icm, ucm = sp.csr_matrix(icm), sp.csr_matrix(ucm)
 
         for recommender in recommender_list:
             recommender_name = recommender.RECOMMENDER_NAME
@@ -358,6 +361,10 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, met
     folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
     output_folder_path = get_community_folder_path(method_folder_path, n_iter=-1, folder_suffix=folder_suffix)
 
+    # Each-Item
+    n_users, n_items = urm_train.shape
+    recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
+                       folder_path, sampler=sampler, communities=CommunitiesEI(n_users, n_items), n_iter=-1, **kwargs)
     num_iters = communities.num_iters + 1
     for n_iter in range(num_iters):
         recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
@@ -378,7 +385,7 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, me
         if not os.path.exists(f'{output_folder_path}cd_{recommender_name}.zip'):
             n_comm = 0
             cd_recommenders = []
-            for community in communities.iter(n_iter):
+            for community in tqdm.tqdm(communities.iter(n_iter)):
                 comm_recommender = train_recommender_on_community(recommender, community, urm_train, urm_validation,
                                                                   urm_test, ucm, icm, dataset_name, folder_path,
                                                                   method_folder_path, n_iter=n_iter, n_comm=n_comm,
@@ -405,9 +412,14 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
         if not os.path.exists(dataset_folder_path):
             continue
         hybrid_folder_path = os.path.join(dataset_folder_path, 'Hybrid')
-        logging.info(f'clean {hybrid_folder_path}')
+        logging.debug(f'clean {hybrid_folder_path}')
         if os.path.exists(hybrid_folder_path):
             shutil.rmtree(hybrid_folder_path)
+        for recommender in recommender_list:
+            recommender_folder_path = os.path.join(dataset_folder_path, recommender.RECOMMENDER_NAME)
+            logging.debug(f'clean {recommender_folder_path}')
+            if os.path.exists(recommender_folder_path):
+                shutil.rmtree(recommender_folder_path)
         for method in method_list:
             method_folder_path = f'{dataset_folder_path}{method.name}/'
             if not os.path.exists(method_folder_path):
@@ -426,13 +438,13 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
                     # print('in: ', sampler_folder_path)
                     for recommender in recommender_list:
                         result_file = os.path.join(sampler_folder_path, f'cd_{recommender.RECOMMENDER_NAME}.zip')
-                        logging.info(f'clean {result_file}')
+                        logging.debug(f'clean {result_file}')
                         if os.path.exists(result_file):
                             # print('remove: ', result_file)
                             os.remove(result_file)
                         for c in os.listdir(sampler_folder_path):
                             c_folder_path = os.path.join(sampler_folder_path, c)
-                            logging.info(f'clean {c_folder_path}')
+                            logging.debug(f'clean {c_folder_path}')
                             if os.path.isdir(c_folder_path) and c[0] == 'c':
                                 # print('remove: ', c_folder_path)
                                 shutil.rmtree(c_folder_path)
