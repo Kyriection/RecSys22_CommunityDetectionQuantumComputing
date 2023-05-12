@@ -36,6 +36,7 @@ from results.read_results import print_result
 
 logging.basicConfig(level=logging.INFO)
 CRITERION: int = None
+EI: bool = False
 MAE_data = {}
 RMSE_data = {}
 PLOT_CUT = 30
@@ -332,7 +333,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         for method in method_list:
             recommend_per_method(urm_train, urm_validation, urm_test, urm_train_last_test, ucm, icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
-                                 save_model=save_model)
+                                 save_model=save_model, each_item=False)
             # plot(urm_train, method, dataset_name, result_folder_path)
             # plot(urm_test, method, dataset_name, result_folder_path)
 
@@ -350,25 +351,22 @@ def recommend_per_method(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, 
 
 
 def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name, folder_path,
-                      sampler: dimod.Sampler = None, **kwargs):
+                      sampler: dimod.Sampler = None, each_item: bool = False, **kwargs):
     dataset_folder_path = f'{folder_path}{dataset_name}/'
     communities = load_communities(dataset_folder_path, method, sampler)
     if communities is None:
         print(f'Could not load communitites for {dataset_folder_path}, {method}, {sampler}.')
         return
 
-    method_folder_path = f'{folder_path}{dataset_name}/{method.name}/'
-    folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
-    output_folder_path = get_community_folder_path(method_folder_path, n_iter=-1, folder_suffix=folder_suffix)
-
-    # Each-Item
-    n_users, n_items = urm_train.shape
-    recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
-                       folder_path, sampler=sampler, communities=CommunitiesEI(n_users, n_items), n_iter=-1, **kwargs)
-    num_iters = communities.num_iters + 1
-    for n_iter in range(num_iters):
+    if each_item:
+        n_users, n_items = urm_train.shape
         recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
-                           folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
+                           folder_path, sampler=sampler, communities=CommunitiesEI(n_users, n_items), n_iter=-1, **kwargs)
+    else:
+        num_iters = communities.num_iters + 1
+        for n_iter in range(num_iters):
+            recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
+                               folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
 
 def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name, folder_path,
                        sampler: dimod.Sampler = None, communities: Communities = None, n_iter: int = 0, **kwargs):
@@ -415,11 +413,13 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
         logging.debug(f'clean {hybrid_folder_path}')
         if os.path.exists(hybrid_folder_path):
             shutil.rmtree(hybrid_folder_path)
+        '''
         for recommender in recommender_list:
             recommender_folder_path = os.path.join(dataset_folder_path, recommender.RECOMMENDER_NAME)
             logging.debug(f'clean {recommender_folder_path}')
             if os.path.exists(recommender_folder_path):
                 shutil.rmtree(recommender_folder_path)
+        '''
         for method in method_list:
             method_folder_path = f'{dataset_folder_path}{method.name}/'
             if not os.path.exists(method_folder_path):

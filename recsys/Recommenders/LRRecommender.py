@@ -6,9 +6,11 @@
 """
 import logging
 import time
+import tqdm
 from typing import Optional
 
 import numpy as np
+import scipy.sparse as sp
 from sklearn.linear_model import LinearRegression
 
 from recsys.Recommenders.BaseRecommender import BaseRecommender
@@ -23,8 +25,8 @@ class LRRecommender(BaseRecommender):
 
     def __init__(self, URM_train, ucm, icm, user_id_array: Optional[list] = None):
         super(LRRecommender, self).__init__(URM_train)
-        self.ucm = ucm.toarray()
-        self.icm = icm.toarray()
+        self.ucm = ucm
+        self.icm = icm
         self.model = LinearRegression()
         if user_id_array is None:
             self.user_id_array = list(range(self.n_users))
@@ -38,7 +40,8 @@ class LRRecommender(BaseRecommender):
         start_time = time.time()
 
         rows, cols = self.URM_train.nonzero()
-        x = [np.hstack((self.ucm[row], self.icm[col])) for row, col in zip(rows, cols)]
+        # x = [np.hstack((self.ucm[row], self.icm[col])) for row, col in zip(rows, cols)]
+        x = [sp.hstack((self.ucm[row], self.icm[col])).A.flatten() for row, col in zip(rows, cols)]
         y = [self.URM_train[row, col] for row, col in zip(rows, cols)]
         
         n_users = len(self.user_id_array)
@@ -47,8 +50,8 @@ class LRRecommender(BaseRecommender):
             pass
         else:
             self.model.fit(x, y)
-            for i, user in enumerate(self.user_id_array):
-                x = [np.hstack((self.ucm[user], self.icm[i])) for i in range(self.n_items)]
+            for i, user in tqdm.tqdm(enumerate(self.user_id_array)):
+                x = [sp.hstack((self.ucm[user], self.icm[i])).A.flatten() for i in range(self.n_items)]
                 self.scores[i] = self.model.predict(x)
             self.scores[self.scores < 1.0] = 1.0
             self.scores[self.scores > 5.0] = 5.0
