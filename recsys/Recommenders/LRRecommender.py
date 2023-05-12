@@ -27,7 +27,7 @@ class LRRecommender(BaseRecommender):
         super(LRRecommender, self).__init__(URM_train)
         self.ucm = ucm
         self.icm = icm
-        self.model = LinearRegression()
+        self.model: LinearRegression = None
         if user_id_array is None:
             self.user_id_array = list(range(self.n_users))
         else:
@@ -44,22 +44,43 @@ class LRRecommender(BaseRecommender):
         x = [sp.hstack((self.ucm[row], self.icm[col])).A.flatten() for row, col in zip(rows, cols)]
         y = [self.URM_train[row, col] for row, col in zip(rows, cols)]
         
-        n_users = len(self.user_id_array)
-        self.scores = np.ones((n_users, self.n_items), dtype=np.float32) * 3
         if len(y) == 0:
             pass
         else:
+            self.model = LinearRegression()
             self.model.fit(x, y)
-            for i, user in tqdm.tqdm(enumerate(self.user_id_array)):
-                x = [sp.hstack((self.ucm[user], self.icm[i])).A.flatten() for i in range(self.n_items)]
-                self.scores[i] = self.model.predict(x)
-            self.scores[self.scores < 1.0] = 1.0
-            self.scores[self.scores > 5.0] = 5.0
-        logging.info(f'fit {n_users} users with {len(y)} ratings, scores.shape{self.scores.shape}, cost time {time.time() - start_time}s.')
+        logging.info(f'fit {len(self.user_id_array)} users with {len(y)} ratings, cost time {time.time() - start_time}s.')
 
+
+    def predict(self, user_id: int, items_id):
+        user = self.user_id_array.find(user_id)
+        assert user != -1, f'[Error] {user_id} is not in recommender.user_id_array.'
+        if items_id is None:
+            items_id = range(self.n_items)
+        elif isinstance(int, items_id):
+            items_id = [items_id]
+        if self.scores is not None:
+            return self.scores[user_id][items_id].copy()
+
+        x = [sp.hstack((self.ucm[user], self.icm[i])).A.flatten() for i in items_id]
+        scores = self.model.predict(x)
+        scores[scores < 1.0] = 1.0
+        scores[scores > 5.0] = 5.0
+        return scores
+
+
+    def predict_all(self):
+        if self.scores is not None:
+            return
+        n_users = len(self.user_id_array)
+        self.scores = np.ones((n_users, self.n_items), dtype=np.float32) * 3
+        if self.model is not None:
+            for i, user in tqdm.tqdm(enumerate(self.user_id_array)):
+                self.scores[i] = self.predict(user)
+        return self.scores
 
     def _compute_item_score(self, user_id_array, items_to_compute = None):
-
+        self.predict_all()
         fit_mask = np.in1d(user_id_array, self.user_id_array, assume_unique=True)
         choose_mask = np.in1d(self.user_id_array, user_id_array, assume_unique=True)
         item_scores = - np.ones((len(user_id_array), self.n_items), dtype=np.float32)*np.inf
