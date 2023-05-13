@@ -58,7 +58,10 @@ def plot(urm, output_folder_path, n_iter, result_df):
     RMSE_data = dict(TC_qa = [np.sqrt(mse) for mae, mse, num_rating in data])
     plot_scatter(x, MAE_data, output_folder_path, 'item rank', 'MAE')
     plot_scatter(x, RMSE_data, output_folder_path, 'item rank', 'RMSE')
-
+    # cluster by C_quantity
+    tot_mae = 0.0
+    tot_rmse = 0.0
+    tot_num_rating = 0
     cluster_data = {}
     for i in range(n_users):
         quantity = C_quantity[i]
@@ -69,6 +72,9 @@ def plot(urm, output_folder_path, n_iter, result_df):
         _data[0] += mae * num_rating
         _data[1] += mse * num_rating
         _data[2] += num_rating
+        tot_mae += mae * num_rating
+        tot_rmse += mse * num_rating
+        tot_num_rating += num_rating
         cluster_data[quantity] = _data
     # BTY, dict.items() == zip(dict.keys(), dict.values())
     x = list(cluster_data.keys())
@@ -83,7 +89,13 @@ def plot(urm, output_folder_path, n_iter, result_df):
     # plot by #ratings
     plot_scatter(x, MAE_data, output_folder_path, 'the number of ratings', 'MAE')
     plot_scatter(x, RMSE_data, output_folder_path, 'the number of ratings', 'RMSE')
+    # print tot
+    tot_mae /= tot_num_rating
+    tot_rmse = np.sqrt(tot_rmse / tot_num_rating)
+    print(f'Total MAE = {tot_mae}')
+    print(f'Total RMSE = {tot_rmse}')
 
+    # cluster to PLOT_CUT points
     cut_points = np.arange(1, PLOT_CUT + 1) * (n_users // PLOT_CUT)
     cut_points[-1] = n_users - 1
     x = C_quantity[cut_points]
@@ -342,32 +354,34 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         dataset_name = data_reader._get_dataset_name()
         urm_train, urm_validation, urm_test, icm, ucm = load_data(data_reader, split_quota=split_quota, user_wise=user_wise,
                                                         make_implicit=make_implicit, threshold=threshold, icm_ucm=True)
-        urm_train, urm_validation, urm_test, icm, ucm = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr(), ucm, icm # item is main charactor
-        h_urm_train, h_urm_validation, h_urm_test, h_icm, h_ucm,\
-        urm_train, urm_validation, urm_test, icm, ucm = head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm)
-        head_flag = h_urm_train.shape[0] > 0
-        logging.info(f'head shape: {h_urm_train.shape}, tail shape: {urm_train.shape}')
 
+        urm_train, urm_validation, urm_test, icm, ucm = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr(), ucm, icm # item is main charactor
         urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
         icm, ucm = create_related_variables(urm_train_last_test, icm, ucm) # should use urm_train_last_test ?
         icm, ucm = sp.csr_matrix(icm), sp.csr_matrix(ucm)
+
+        h_urm_train, h_urm_validation, h_urm_test, h_icm, h_ucm,\
+        t_urm_train, t_urm_validation, t_urm_test, t_icm, t_ucm = \
+            head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm)
+        head_flag = h_urm_train.shape[0] > 0
+        logging.info(f'head shape: {h_urm_train.shape}, tail shape: {t_urm_train.shape}')
+
+        t_urm_train_last_test = merge_sparse_matrices(t_urm_train, t_urm_validation)
         if head_flag:
             h_urm_train_last_test = merge_sparse_matrices(h_urm_train, h_urm_validation)
-            h_icm, h_ucm = create_related_variables(h_urm_train_last_test, h_icm, h_ucm) # should use urm_train_last_test ?
-            h_icm, h_ucm = sp.csr_matrix(h_icm), sp.csr_matrix(h_ucm)
 
         for recommender in recommender_list:
             recommender_name = recommender.RECOMMENDER_NAME
             output_folder_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
             if not os.path.exists(f'{output_folder_path}baseline.zip') or not os.path.exists(
                     f'{output_folder_path}{recommender_name}_best_model_last.zip'):
-                train_all_data_recommender(recommender, urm_train_last_test, urm_test, ucm, icm, dataset_name, result_folder_path)
+                train_all_data_recommender(recommender, t_urm_train_last_test, t_urm_test, t_ucm, t_icm, dataset_name, result_folder_path)
             else:
                 print(f'{recommender_name} already trained and evaluated on {dataset_name}.')
         for method in method_list:
-            recommend_per_method(urm_train, urm_validation, urm_test, urm_train_last_test, ucm, icm, method, sampler_list,
+            recommend_per_method(t_urm_train, t_urm_validation, t_urm_test, t_urm_train_last_test, t_ucm, t_icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
-                                 save_model=save_model, each_item=False)
+                                 save_model=save_model, each_item=True)
             if not head_flag:
                 return
             recommend_per_method(h_urm_train, h_urm_validation, h_urm_test, h_urm_train_last_test, h_ucm, h_icm, method, sampler_list,

@@ -212,8 +212,8 @@ class EvaluatorSeparate(object):
 
             elapsed_time = time.time()-self._start_time
             new_time_value, new_time_unit = seconds_to_biggest_unit(elapsed_time)
-
-            self._print("Processed {} ({:4.1f}%) in {:.2f} {}. Users per second: {:.0f}".format(
+            if len(self.users_to_evaluate) > 0:
+                self._print("Processed {} ({:4.1f}%) in {:.2f} {}. Users per second: {:.0f}".format(
                           self._n_users_evaluated,
                           100.0* float(self._n_users_evaluated)/len(self.users_to_evaluate),
                           new_time_value, new_time_unit,

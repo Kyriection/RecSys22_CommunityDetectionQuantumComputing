@@ -40,15 +40,12 @@ class LRRecommender(BaseRecommender):
         start_time = time.time()
 
         rows, cols = self.URM_train.nonzero()
-        # x = [np.hstack((self.ucm[row], self.icm[col])) for row, col in zip(rows, cols)]
         x = [sp.hstack((self.ucm[row], self.icm[col])).A.flatten() for row, col in zip(rows, cols)]
         y = [self.URM_train[row, col] for row, col in zip(rows, cols)]
-        
-        if len(y) == 0:
-            pass
-        else:
+        if len(y) > 0:
             self.model = LinearRegression()
             self.model.fit(x, y)
+
         logging.info(f'fit {len(self.user_id_array)} users with {len(y)} ratings, cost time {time.time() - start_time}s.')
 
 
@@ -61,6 +58,8 @@ class LRRecommender(BaseRecommender):
             items_id = [items_id]
         if self.scores is not None:
             return self.scores[user, items_id].copy()
+        if self.model is None:
+            return np.ones(len(items_id), dtype=np.float32) * 3
 
         x = [sp.hstack((self.ucm[user], self.icm[i])).A.flatten() for i in items_id]
         scores = self.model.predict(x)
