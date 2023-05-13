@@ -61,7 +61,7 @@ class LRRecommender(BaseRecommender):
         if self.model is None:
             return np.ones(len(items_id), dtype=np.float32) * 3
 
-        x = [sp.hstack((self.ucm[user], self.icm[i])).A.flatten() for i in items_id]
+        x = [sp.hstack((self.ucm[user_id], self.icm[i])).A.flatten() for i in items_id]
         scores = self.model.predict(x)
         scores[scores < 1.0] = 1.0
         scores[scores > 5.0] = 5.0

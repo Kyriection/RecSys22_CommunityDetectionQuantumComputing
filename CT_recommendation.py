@@ -381,7 +381,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         for method in method_list:
             recommend_per_method(t_urm_train, t_urm_validation, t_urm_test, t_urm_train_last_test, t_ucm, t_icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
-                                 save_model=save_model, each_item=True)
+                                 save_model=save_model, each_item=False)
             if not head_flag:
                 return
             recommend_per_method(h_urm_train, h_urm_validation, h_urm_test, h_urm_train_last_test, h_ucm, h_icm, method, sampler_list,

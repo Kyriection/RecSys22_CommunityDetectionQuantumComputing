@@ -228,6 +228,7 @@ def get_community_folder_path(folder_path, n_iter=None, n_comm=None, folder_suff
            f'{folder_suffix}' \
            f'{f"c{n_comm:02d}/" if n_comm is not None else ""}'
 
+
 class CommunitiesEI:
     def __init__(self, n_users, n_items):
         self.n_users = n_users
@@ -235,7 +236,7 @@ class CommunitiesEI:
     
     def iter(self, n_iter):
         items = np.arange(self.n_items)
-        item_mask = np.ones(self.n_users).astype(bool)
+        item_mask = np.ones(self.n_items).astype(bool)
         for i in range(self.n_users):
             users = np.array([i])
             user_mask = np.zeros(self.n_users).astype(bool)
