@@ -3,7 +3,7 @@ Author: Kaizyn
 Date: 2023-01-21 10:19:24
 LastEditTime: 2023-01-21 10:55:37
 '''
-import os, zipfile, sys
+import os, zipfile, sys, logging
 
 import pandas as pd
 import numpy as np
@@ -18,10 +18,12 @@ from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrus
     MovielensSampleReader, MovielensSample2Reader
 
 
+logging.basicConfig(level=logging.INFO)
 QUBO = ["Hybrid", "QUBOBipartiteCommunityDetection", "QUBOBipartiteProjectedCommunityDetection", "KmeansCommunityDetection", "HierarchicalClustering", "UserCommunityDetection"]
 # METHOD = ["LeapHybridSampler", "SimulatedAnnealingSampler", "SteepestDescentSolver", "TabuSampler", ""]
 METHOD = ["SimulatedAnnealingSampler"]
 CDR = "cd_LRRecommender.zip"
+RECOMMENDER = 'LRRecommender'
 RESULT = ".result_df.csv"
 TOTAL_DATA = {'C': {}, 'MAE': {}, 'RMSE': {}}
 MIN_RATING_NUM = 1
@@ -36,9 +38,16 @@ def init_global_data():
 
 
 def plot(output_folder_path):
+    df = pd.DataFrame(TOTAL_DATA)
+    output_path = os.path.join(output_folder_path, f'total_MAE_RMSE.csv')
+    df.to_csv(output_path)
+    if show:
+      print(df)
     for key in ['rank', 'rating']:
         data = DATA[key]
         x = data['x']
+        if x is None:
+           continue
         MAE_data = data['MAE']
         RMSE_data = data['RMSE']
         plot_scatter(x, MAE_data, output_folder_path, key, 'MAE')
@@ -46,6 +55,8 @@ def plot(output_folder_path):
     for key in ['cluster']:
         data = DATA[key]
         x = data['x']
+        if x is None:
+           continue
         MAE_data = data['MAE']
         RMSE_data = data['RMSE']
         plot_line(x, MAE_data, output_folder_path, key, 'MAE')
@@ -139,20 +150,34 @@ def collect_data(urm, n_iter, result_df, result_df_ei = None):
     DATA['cluster']['RMSE'][n_iter] = RMSE_data
 
 
-# print(__file__)
+def extract_file(file, cur):
+  try:
+    z = zipfile.ZipFile(file, 'r') 
+    file_path = z.extract(RESULT, path=cur + "/decompressed")
+    result_df = pd.read_csv(file_path, index_col="user")
+    return result_df
+  except FileNotFoundError as e:
+    print(e)
+    return None
 
 def print_result(data_reader_class, show: bool = True, output_folder: str = None):
-  global CT
+  global CT, RECOMMENDER
   data_reader = data_reader_class()
   urm_train, urm_validation, urm_test = load_data(data_reader, [80, 10, 10], False, False)
   urm_train, urm_validation, urm_test = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr()# item is main charactor
   dataset = data_reader._get_dataset_name()
   dataset = os.path.abspath("/app/results/" + dataset)
 
+  # special for baseline
+  path = os.path.join(dataset, RECOMMENDER)
+  file = os.path.join(path, 'baseline.zip')
+  result_df = extract_file(file, path)
+  collect_data(urm_train, -1, result_df)
+  plot(path)
   # for method in QUBO:
   for method in os.listdir(dataset):
     path = os.path.join(dataset, method)
-    if not os.path.exists(path) or os.path.isfile(path) or method == "LRRecommender":
+    if not os.path.exists(path) or os.path.isfile(path) or method == RECOMMENDER:
       continue
     if show:
       print(method)
@@ -163,59 +188,54 @@ def print_result(data_reader_class, show: bool = True, output_folder: str = None
     for m in METHOD:
       # if show:
         # print(m)
-      try:
-        init_global_data()
-        result_df_ei = None
-        if CT > 0.0:
-          name = 'iter-1'
-          d = os.path.join(path, name)
-          cur = os.path.join(path, d)
-          tmp = os.path.join(cur, m)
-          file = os.path.join(tmp, CDR)
-          z = zipfile.ZipFile(file, 'r') 
-          file_path = z.extract(RESULT, path=cur + "/decompressed")
-          result_df_ei = pd.read_csv(file_path, index_col="user")
-        for name in dir_file:
-          d = os.path.join(path, name)
-          if not os.path.isdir(d):
-            continue
-          # print(d)
-          cur = os.path.join(path, d)
-          # print(cur)
-          tmp = os.path.join(cur, m)
-          if not os.path.exists(tmp):
-            continue
-          N = int(name[4:]) + 1
-          if CT > 0.0 and N == 0:
-             continue
-          C = 0
-          for c in os.listdir(tmp):
-            if os.path.isdir(os.path.join(tmp, c)) and c[0] == 'c':
-              try:
-                C = max(C, int(c[1:]))
-              except:
-                continue
-          file = os.path.join(tmp, CDR)
-          # print(file)
-          z = zipfile.ZipFile(file, 'r') 
-          file_path = z.extract(RESULT, path=cur + "/decompressed")
-          result_df = pd.read_csv(file_path, index_col="user")
-          TOTAL_DATA['C'][N] = C + 1
-          collect_data(urm_train, N, result_df, result_df_ei)
+      init_global_data()
+      result_df_ei = None
+      if CT > 0.0:
+        name = 'iter-1'
+        d = os.path.join(path, name)
+        cur = os.path.join(path, d)
+        tmp = os.path.join(cur, m)
+        file = os.path.join(tmp, CDR)
+        z = zipfile.ZipFile(file, 'r') 
+        file_path = z.extract(RESULT, path=cur + "/decompressed")
+        result_df_ei = pd.read_csv(file_path, index_col="user")
+      for name in dir_file:
+        d = os.path.join(path, name)
+        if not os.path.isdir(d):
+          continue
+        # print(d)
+        cur = os.path.join(path, d)
+        # print(cur)
+        tmp = os.path.join(cur, m)
+        if not os.path.exists(tmp):
+          continue
+        N = int(name[4:]) + 1
+        if CT > 0.0 and N == 0:
+           continue
+        C = 0
+        for c in os.listdir(tmp):
+          if os.path.isdir(os.path.join(tmp, c)) and c[0] == 'c':
+            try:
+              C = max(C, int(c[1:]))
+            except:
+              continue
+        file = os.path.join(tmp, CDR)
+        result_df = extract_file(file, cur)
+        if result_df is None:
+           continue
+        # logging.info(f'extract_file({file}), resutl_df is None: {result_df is None}')
+        TOTAL_DATA['C'][N] = C + 1
+        collect_data(urm_train, N, result_df, result_df_ei)
 
-        df = pd.DataFrame(TOTAL_DATA)
-        if output_folder is None:
-          output_folder = path
-        output_path = os.path.join(output_folder, f'{method}_{m}.csv')
-        df.to_csv(output_path)
-        if show:
-          print(df)
-        plot(path)
+      # df = pd.DataFrame(TOTAL_DATA)
+      # if output_folder is None:
+      #   output_folder = path
+      # output_path = os.path.join(output_folder, f'{method}_{m}.csv')
+      # df.to_csv(output_path)
+      # if show:
+      #   print(df)
+      plot(path)
 
-      except FileNotFoundError as e:
-        print(e)
-    
-    
 
 if __name__ == '__main__':
   # dataset = input("input file folder name: ")

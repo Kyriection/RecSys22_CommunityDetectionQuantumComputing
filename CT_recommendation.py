@@ -382,7 +382,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         for method in method_list:
             recommend_per_method(t_urm_train, t_urm_validation, t_urm_test, t_urm_train_last_test, t_ucm, t_icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
-                                 save_model=save_model, each_item=False)
+                                 save_model=save_model, each_item=True)
             if not head_flag:
                 return
             recommend_per_method(h_urm_train, h_urm_validation, h_urm_test, h_urm_train_last_test, h_ucm, h_icm, method, sampler_list,
@@ -467,13 +467,11 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
         logging.debug(f'clean {hybrid_folder_path}')
         if os.path.exists(hybrid_folder_path):
             shutil.rmtree(hybrid_folder_path)
-        '''
         for recommender in recommender_list:
             recommender_folder_path = os.path.join(dataset_folder_path, recommender.RECOMMENDER_NAME)
             logging.debug(f'clean {recommender_folder_path}')
             if os.path.exists(recommender_folder_path):
                 shutil.rmtree(recommender_folder_path)
-        '''
         for method in method_list:
             method_folder_path = f'{dataset_folder_path}{method.name}/'
             if not os.path.exists(method_folder_path):
