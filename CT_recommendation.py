@@ -132,7 +132,7 @@ def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
     cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CUT_RATIO)]
     logging.info(f'head tail cut at {cut_quantity}')
     head_user_mask = C_quantity > cut_quantity
-    # tail_user_mask = C_quantity < cut_quantity
+    # tail_user_mask = C_quantity <= cut_quantity
     communities = Communities(head_user_mask, np.ones(n_items).astype(bool))
     tail_community, head_community = communities.c0, communities.c1
     t_urm_train, _, _, t_icm, t_ucm = get_community_urm(urm_train, community=tail_community, filter_items=False, remove=True, icm=icm, ucm=ucm)

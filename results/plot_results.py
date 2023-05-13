@@ -27,6 +27,7 @@ TOTAL_DATA = {'C': {}, 'MAE': {}, 'RMSE': {}}
 MIN_RATING_NUM = 1
 PLOT_CUT = 30
 DATA = {key : {'x': None, 'MAE': {}, 'RMSE': {}} for key in ['rank', 'rating', 'cluster']}
+CT: float = 0.0
 
 def init_global_data():
   global TOTAL_DATA, DATA
@@ -51,10 +52,19 @@ def plot(output_folder_path):
         plot_line(x, RMSE_data, output_folder_path, key, 'RMSE')
 
 
-def collect_data(urm, n_iter, result_df):
-    global MIN_RATING_NUM, PLOT_CUT
+def collect_data(urm, n_iter, result_df, result_df_ei = None):
+    global MIN_RATING_NUM, PLOT_CUT, CT
     C_quantity = np.ediff1d(urm.tocsr().indptr) # count of each row
-    data: np.ndarray = result_df.values # [MAE, MSE, num_rating]
+    if result_df_ei is not None:
+      cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CT)]
+      head_user_mask = C_quantity > cut_quantity
+      tail_user_mask = ~head_user_mask
+      data = np.zeros((C_quantity.size, 3)) # [MAE, MSE, num_rating]
+      # print(result_df_ei.values.shape, result_df.values.shape)
+      data[head_user_mask] = result_df_ei.values
+      data[tail_user_mask] = result_df.values 
+    else:
+      data: np.ndarray = result_df.values
     # delete users whose test rating num < MIN_RATING_NUM
     ignore_users = data[:, 2] < MIN_RATING_NUM
     data = data[~ignore_users]
@@ -132,6 +142,7 @@ def collect_data(urm, n_iter, result_df):
 # print(__file__)
 
 def print_result(data_reader_class, show: bool = True, output_folder: str = None):
+  global CT
   data_reader = data_reader_class()
   urm_train, urm_validation, urm_test = load_data(data_reader, [80, 10, 10], False, False)
   urm_train, urm_validation, urm_test = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr()# item is main charactor
@@ -154,6 +165,16 @@ def print_result(data_reader_class, show: bool = True, output_folder: str = None
         # print(m)
       try:
         init_global_data()
+        result_df_ei = None
+        if CT > 0.0:
+          name = 'iter-1'
+          d = os.path.join(path, name)
+          cur = os.path.join(path, d)
+          tmp = os.path.join(cur, m)
+          file = os.path.join(tmp, CDR)
+          z = zipfile.ZipFile(file, 'r') 
+          file_path = z.extract(RESULT, path=cur + "/decompressed")
+          result_df_ei = pd.read_csv(file_path, index_col="user")
         for name in dir_file:
           d = os.path.join(path, name)
           if not os.path.isdir(d):
@@ -164,6 +185,9 @@ def print_result(data_reader_class, show: bool = True, output_folder: str = None
           tmp = os.path.join(cur, m)
           if not os.path.exists(tmp):
             continue
+          N = int(name[4:]) + 1
+          if CT > 0.0 and N == 0:
+             continue
           C = 0
           for c in os.listdir(tmp):
             if os.path.isdir(os.path.join(tmp, c)) and c[0] == 'c':
@@ -176,9 +200,8 @@ def print_result(data_reader_class, show: bool = True, output_folder: str = None
           z = zipfile.ZipFile(file, 'r') 
           file_path = z.extract(RESULT, path=cur + "/decompressed")
           result_df = pd.read_csv(file_path, index_col="user")
-          N = int(name[4:]) + 1
           TOTAL_DATA['C'][N] = C + 1
-          collect_data(urm_train, N, result_df)
+          collect_data(urm_train, N, result_df, result_df_ei)
 
         df = pd.DataFrame(TOTAL_DATA)
         if output_folder is None:
@@ -196,6 +219,7 @@ def print_result(data_reader_class, show: bool = True, output_folder: str = None
 
 if __name__ == '__main__':
   # dataset = input("input file folder name: ")
+  CT = float(input('input CT cut ration: '))
   show = input("print on CMD or not: ")
   show = True if show else False
   print_result(MovielensSample2Reader, show)
