@@ -206,29 +206,36 @@ def plot_scatter(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
   # plt.xlabel(xlabel) #X轴标签
   # plt.ylabel(ylabel) #Y轴标签
   # plt.title("Figure") #标题
-  # plt.savefig(f'{output}/{xlabel}_{ylabel}.png')
-  fig.savefig(f'{output}/{xlabel}_{ylabel}.png')
+  tag = '_'.join(Y.keys())
+  fig.savefig(f'{output}/{ylabel}_{xlabel}_{tag}.png')
   fig.clf()
 
 
 def plot_line(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
   fig = plt.figure()
   ax = fig.add_subplot(1, 1, 1)
+  num = len(x)
+  xi = list(range(num))
   for key in Y:
     # plt.plot(x, Y[key], label=key)
-    ax.plot(x, Y[key], label=key, marker='s')
+    ax.plot(xi, Y[key], label=key, marker='s')
   plt.legend() # 让图例生效
   # plt.xticks(x, names, rotation=45)
   # plt.margins(0)
   # plt.subplots_adjust(bottom=0.15)
   # ax.set_xscale('log')
+  xi = [xi[i] for i in range(0, num, 2)]
+  x  = [ x[i] for i in range(0, num, 2)]
+  ax.set_xticks(xi)
+  ax.set_xticklabels(x)
   ax.set_xlabel(xlabel)
   ax.set_ylabel(ylabel)
   # plt.xlabel(xlabel) #X轴标签
   # plt.ylabel(ylabel) #Y轴标签
   # plt.title("Figure") #标题
   # plt.savefig(f'{output}/{xlabel}_{ylabel}.png')
-  fig.savefig(f'{output}/{xlabel}_{ylabel}.png')
+  tag = '_'.join(Y.keys())
+  fig.savefig(f'{output}/{ylabel}_{xlabel}_{tag}.png')
   fig.clf()
 
 def plot_rating(x, y, output: str='tmp/rating.png'):

@@ -37,14 +37,21 @@ from results.read_results import print_result
 logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
 PLOT_CUT = 30
+MIN_RATING_NUM = 1
 
 def plot(urm, output_folder_path, n_iter, result_df):
-# def plot(urm, method, dataset_name, folder_path):
+    global MIN_RATING_NUM, PLOT_CUT
     C_quantity = np.ediff1d(urm.tocsr().indptr) # count of each row
+    data: np.ndarray = result_df.values # [MAE, MSE, num_rating]
+    # delete users whose test rating num < MIN_RATING_NUM
+    ignore_users = data[:, 2] < MIN_RATING_NUM
+    data = data[~ignore_users]
+    C_quantity = C_quantity[~ignore_users]
     n_users = C_quantity.size
-    data: list = result_df.values.tolist() # [MAE, MSE, num_rating]
-    data = [x for _, x in sorted(zip(C_quantity, data))]
-    C_quantity = sorted(C_quantity)
+    # sort by train rating num
+    data = data[np.argsort(C_quantity)]
+    C_quantity = np.sort(C_quantity)
+
     # plot by item rank
     x = range(n_users)
     MAE_data = dict(TC_qa = [mae for mae, mse, num_rating in data])
@@ -77,31 +84,29 @@ def plot(urm, output_folder_path, n_iter, result_df):
     plot_scatter(x, MAE_data, output_folder_path, 'the number of ratings', 'MAE')
     plot_scatter(x, RMSE_data, output_folder_path, 'the number of ratings', 'RMSE')
 
-    '''
-    max_x = I_quantity[-1]
-    gap = max((max_x + PLOT_CUT - 1)  // PLOT_CUT, max_x // (PLOT_CUT - 1)) # max_x // gap = PLOT_CUT - 1
-    # print(f'max_x={max(x)}, gap={gap}, max_quantity={I_quantity[-1]}')
-    for data in (MAE_data, RMSE_data):
-        for key in data:
-            new_data = [0.0] * PLOT_CUT
-            cnt = [0] * PLOT_CUT
-            assert len(data[key]) == len(x), f'[Error] len_data({len(data[key])}) != len_x({len(x)})'
-            for i, quantity in enumerate(x):
-                j = quantity // gap
-                assert j < PLOT_CUT, f'[Error] quantity // gap >= PLOT_CUT, {quantity} // {gap} = {quantity // gap} >= {PLOT_CUT}'
-                new_data[j] += data[key][i]
-                cnt[j] += 1
-            data[key] = []
-            for i in range(PLOT_CUT):
-                if cnt[i]:
-                    data[key].append(new_data[i] / cnt[i])
-                else:
-                    data[key].append(data[key][-1] if data[key] else 0.0)
-    # plot by #ratings(cluster)
-    x = np.arange(PLOT_CUT) * gap
-    plot_line(x, MAE_data, output_folder_path, f'the number of ratings (cluster {gap})', 'MAE')
-    plot_line(x, RMSE_data, output_folder_path, f'the number of ratings (cluster {gap})', 'RMSE')
-    '''
+    cut_points = np.arange(1, PLOT_CUT + 1) * (n_users // PLOT_CUT)
+    cut_points[-1] = n_users - 1
+    x = C_quantity[cut_points]
+    MAE_data = []
+    RMSE_data = []
+    cd_key = list(cluster_data.keys())
+    cd_i = 0
+    for cut_quantity in x:
+        MAE = 0.0
+        MSE = 0.0
+        num_rating = 0
+        while cd_i < len(cd_key) and cd_key[cd_i] <= cut_quantity:
+            _data = cluster_data[cd_key[cd_i]]
+            MAE += _data[0]
+            MSE += _data[1]
+            num_rating += _data[2]
+            cd_i += 1
+        MAE_data.append(MAE / num_rating)
+        RMSE_data.append(np.sqrt(MSE / num_rating))
+    MAE_data = dict(TC_qa = MAE_data)
+    RMSE_data = dict(TC_qa = RMSE_data)
+    plot_line(x, MAE_data, output_folder_path, 'the number of ratings (clustered)', 'MAE')
+    plot_line(x, RMSE_data, output_folder_path, 'the number of ratings (clustered)', 'RMSE')
 
 
 def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):

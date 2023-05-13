@@ -201,14 +201,10 @@ class EvaluatorSeparate(object):
             # global_RMSE_object = results_dict[self.cutoff_list[0]][EvaluatorMetrics.RMSE.value]
             # global_RMSE_object.add_recommendations(all_items_predicted_ratings, relevant_items, relevant_items_rating)
             diff = relevant_items_rating - all_items_predicted_ratings
-            MAE = np.mean(np.abs(diff))
-            MSE = np.mean(diff**2)
-            num_rating = len(relevant_items)
-
+            results_dict[test_user]['MAE'] = np.mean(np.abs(diff))
+            results_dict[test_user]['MSE'] = np.mean(diff**2)
+            results_dict[test_user]['num_rating'] = len(relevant_items)
             self._n_users_evaluated += 1
-            results_dict[test_user]['MAE'] = MAE
-            results_dict[test_user]['MSE'] = MSE
-            results_dict[test_user]['num_rating'] = num_rating
 
 
 
