@@ -39,6 +39,7 @@ CUT_RATIO: float = None
 PLOT_CUT = 30
 MIN_RATING_NUM = 1
 TOTAL_DATA = {}
+EI: bool = False # EI if True else TC or CT
 
 def plot(urm, output_folder_path, n_iter, result_df):
     global MIN_RATING_NUM, PLOT_CUT
@@ -333,6 +334,7 @@ def create_related_variables(urm, icm, ucm):
 def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]],
          sampler_list: Iterable[dimod.Sampler], recommender_list: Iterable[Type[BaseRecommender]],
          result_folder_path: str):
+    global EI
     split_quota = [80, 10, 10]
     user_wise = False
     make_implicit = False
@@ -382,8 +384,8 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         for method in method_list:
             recommend_per_method(t_urm_train, t_urm_validation, t_urm_test, t_urm_train_last_test, t_ucm, t_icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
-                                 save_model=save_model, each_item=True)
-            if not head_flag:
+                                 save_model=save_model, each_item=EI)
+            if not head_flag or EI:
                 return
             recommend_per_method(h_urm_train, h_urm_validation, h_urm_test, h_urm_train_last_test, h_ucm, h_icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
