@@ -52,15 +52,15 @@ class LRRecommender(BaseRecommender):
         logging.info(f'fit {len(self.user_id_array)} users with {len(y)} ratings, cost time {time.time() - start_time}s.')
 
 
-    def predict(self, user_id: int, items_id):
-        user = self.user_id_array.find(user_id)
-        assert user != -1, f'[Error] {user_id} is not in recommender.user_id_array.'
+    def predict(self, user_id: int, items_id = None):
+        user = list(self.user_id_array).index(user_id)
+        # user = np.where(self.user_id_array == user_id)[0][0]
         if items_id is None:
             items_id = range(self.n_items)
-        elif isinstance(int, items_id):
+        elif isinstance(items_id, int):
             items_id = [items_id]
         if self.scores is not None:
-            return self.scores[user_id][items_id].copy()
+            return self.scores[user, items_id].copy()
 
         x = [sp.hstack((self.ucm[user], self.icm[i])).A.flatten() for i in items_id]
         scores = self.model.predict(x)
@@ -78,6 +78,7 @@ class LRRecommender(BaseRecommender):
             for i, user in tqdm.tqdm(enumerate(self.user_id_array)):
                 self.scores[i] = self.predict(user)
         return self.scores
+
 
     def _compute_item_score(self, user_id_array, items_to_compute = None):
         self.predict_all()

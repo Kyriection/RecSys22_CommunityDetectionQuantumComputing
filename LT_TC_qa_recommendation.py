@@ -24,7 +24,7 @@ from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrus
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
 # from recsys.Evaluation.Evaluator import EvaluatorHoldout
-from recsys.Evaluation.EvaluatorSeparate import EvaluatorSeparateHoldout
+from recsys.Evaluation.EvaluatorSeparate import EvaluatorSeparate
 from recsys.Recommenders.BaseRecommender import BaseRecommender
 from recsys.Recommenders.LRRecommender import LRRecommender
 from utils.DataIO import DataIO
@@ -126,7 +126,7 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     recommender_name = recommender.RECOMMENDER_NAME
     output_folder_path = f'{results_folder_path}{dataset_name}/{recommender_name}/'
 
-    evaluator_test = EvaluatorSeparateHoldout(urm_test) # TODO
+    evaluator_test = EvaluatorSeparate(urm_test) # TODO
 
     print(f'Training {recommender_name} on all data...')
 
@@ -177,8 +177,8 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
     c_urm_train_last_test = merge_sparse_matrices(c_urm_train, c_urm_validation)
 
     ignore_users = np.arange(c_urm_train_last_test.shape[0])[np.logical_not(community.user_mask)]
-    evaluator_validation = EvaluatorSeparateHoldout(c_urm_validation, ignore_users=ignore_users)
-    evaluator_test = EvaluatorSeparateHoldout(c_urm_test, ignore_users=ignore_users)
+    evaluator_validation = EvaluatorSeparate(c_urm_validation, ignore_users=ignore_users)
+    evaluator_test = EvaluatorSeparate(c_urm_test, ignore_users=ignore_users)
 
     time_on_train = time.time()
     validation_recommender = recommender(c_urm_train, c_ucm, c_icm, community.users)
@@ -222,7 +222,7 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
     base_recommender = recommender(c_urm_train_last_test, c_ucm, c_icm)
     recommender_file_name = f'{recommender_name}_best_model_last'
     base_recommender.load_model(base_recommender_path, recommender_file_name)
-    base_evaluator_test = EvaluatorSeparateHoldout(c_urm_test, ignore_users=ignore_users)
+    base_evaluator_test = EvaluatorSeparate(c_urm_test, ignore_users=ignore_users)
 
     time_on_test = time.time()
     result_df, result_string = base_evaluator_test.evaluateRecommender(base_recommender)
@@ -244,7 +244,7 @@ def evaluate_recommender(urm_train_last_test, urm_test, ucm, icm, communities, r
     recommender = CommunityDetectionRecommender(urm_train_last_test, communities=communities, recommenders=recommenders,
                                                 n_iter=n_iter)
 
-    evaluator_test = EvaluatorSeparateHoldout(urm_test)
+    evaluator_test = EvaluatorSeparate(urm_test)
     time_on_test = time.time()
     result_df, result_string = evaluator_test.evaluateRecommender(recommender)
     time_on_test = time.time() - time_on_test

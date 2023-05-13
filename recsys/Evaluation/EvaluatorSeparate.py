@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import logging
+import time
 
 import numpy as np
 import scipy.sparse as sps
@@ -131,6 +133,7 @@ class EvaluatorSeparate(object):
         :return results_df: dataframe with index the cutoff and columns the metric
         :return results_run_string: printable result string
         """
+        start_time = time.time()
 
         if self.ignore_items_flag:
             recommender_object.set_items_to_ignore(self.ignore_items_ID)
@@ -139,8 +142,12 @@ class EvaluatorSeparate(object):
         self._start_time_print = time.time()
         self._n_users_evaluated = 0
 
-        results_dict = self._run_evaluation_on_selected_users(recommender_object, self.users_to_evaluate)
+        # results_dict = self._run_evaluation_on_selected_users(recommender_object, self.users_to_evaluate)
+        if self.ignore_items_flag:
+            recommender_object.set_items_to_ignore(self.ignore_items_ID)
 
+        results_dict = _create_empty_metrics_dict(self.n_users)
+        results_dict = self._compute_metrics_on_recommendation_list(recommender_object, results_dict)
 
         if self._n_users_evaluated > 0:
             pass
@@ -158,6 +165,7 @@ class EvaluatorSeparate(object):
         for user in results_dict.keys():
             results_df.loc[user] = results_dict[user]
 
+        logging.info(f'evaluateRecommender cost time: {time.time() - start_time}')
         return results_df, ""
 
 
@@ -180,45 +188,27 @@ class EvaluatorSeparate(object):
 
 
 
-    def _compute_metrics_on_recommendation_list(self, test_user_batch_array, recommended_items_batch_list, scores_batch, results_dict):
-
-        assert len(recommended_items_batch_list) == len(test_user_batch_array), "{}: recommended_items_batch_list contained recommendations for {} users, expected was {}".format(
-            self.EVALUATOR_NAME, len(recommended_items_batch_list), len(test_user_batch_array))
-
-        assert scores_batch.shape[0] == len(test_user_batch_array), "{}: scores_batch contained scores for {} users, expected was {}".format(
-            self.EVALUATOR_NAME, scores_batch.shape[0], len(test_user_batch_array))
-
-        assert scores_batch.shape[1] == self.n_items, "{}: scores_batch contained scores for {} items, expected was {}".format(
-            self.EVALUATOR_NAME, scores_batch.shape[1], self.n_items)
-
-
-        # Compute recommendation quality for each user in batch
-        for batch_user_index in range(len(scores_batch)):
-
-            test_user = test_user_batch_array[batch_user_index]
+    def _compute_metrics_on_recommendation_list(self, recommender_object, results_dict):
+        
+        for test_user in self.users_to_evaluate:
 
             relevant_items = self.get_user_relevant_items(test_user)
 
             # Add the RMSE to the global object, no need to loop through the various cutoffs
             relevant_items_rating = self.get_user_test_ratings(test_user)
-            all_items_predicted_ratings = scores_batch[batch_user_index]
+            all_items_predicted_ratings = recommender_object.predict(test_user, relevant_items)
+            assert len(all_items_predicted_ratings) == len(relevant_items), f'scores size not match: {len(all_items_predicted_ratings)} != {len(relevant_items)}'
             # global_RMSE_object = results_dict[self.cutoff_list[0]][EvaluatorMetrics.RMSE.value]
             # global_RMSE_object.add_recommendations(all_items_predicted_ratings, relevant_items, relevant_items_rating)
-            MAE = 0.0
-            MSE = 0.0
-            num_rating = 0
-            for i, item in enumerate(relevant_items):
-                diff = relevant_items_rating[i] - all_items_predicted_ratings[item]
-                MAE += np.abs(diff)
-                MSE += diff**2
-                num_rating += 1
-            MAE /= num_rating
-            MSE /= num_rating
+            diff = relevant_items_rating - all_items_predicted_ratings
+            MAE = np.mean(np.abs(diff))
+            MSE = np.mean(diff**2)
+            num_rating = len(relevant_items)
 
             self._n_users_evaluated += 1
-            results_dict[batch_user_index]['MAE'] = MAE
-            results_dict[batch_user_index]['MSE'] = MSE
-            results_dict[batch_user_index]['num_rating'] = num_rating
+            results_dict[test_user]['MAE'] = MAE
+            results_dict[test_user]['MSE'] = MSE
+            results_dict[test_user]['num_rating'] = num_rating
 
 
 
@@ -237,76 +227,6 @@ class EvaluatorSeparate(object):
             sys.stderr.flush()
 
             self._start_time_print = time.time()
-
-
-        return results_dict
-
-
-
-
-
-
-
-class EvaluatorSeparateHoldout(EvaluatorSeparate):
-    """EvaluatorSeparateHoldout"""
-
-    EVALUATOR_NAME = "EvaluatorSeparateHoldout"
-
-    def __init__(self, URM_test_list, min_ratings_per_user=1, exclude_seen=True,
-                 diversity_object = None,
-                 ignore_items = None,
-                 ignore_users = None,
-                 verbose=True):
-
-
-        super(EvaluatorSeparateHoldout, self).__init__(URM_test_list, diversity_object = diversity_object,
-                                               min_ratings_per_user =min_ratings_per_user, exclude_seen=exclude_seen,
-                                               ignore_items = ignore_items, ignore_users = ignore_users,
-                                               verbose = verbose)
-
-
-
-
-
-    def _run_evaluation_on_selected_users(self, recommender_object, users_to_evaluate, block_size = None):
-        """
-        every bach run block_size of users in users_to_evaluate(list)
-        """
-
-        if block_size is None:
-            # Reduce block size if estimated memory requirement exceeds 4 GB
-            block_size = min([1000, int(4*1e9*8/64/self.n_items), len(users_to_evaluate)])
-
-        results_dict = _create_empty_metrics_dict(self.n_users)
-
-        if self.ignore_items_flag:
-            recommender_object.set_items_to_ignore(self.ignore_items_ID)
-
-        # Start from -block_size to ensure it to be 0 at the first block
-        user_batch_start = 0
-        user_batch_end = 0
-
-        while user_batch_start < len(users_to_evaluate):
-
-            user_batch_end = user_batch_start + block_size
-            user_batch_end = min(user_batch_end, len(users_to_evaluate))
-
-            test_user_batch_array = np.array(users_to_evaluate[user_batch_start:user_batch_end])
-            user_batch_start = user_batch_end
-
-            # Compute predictions for a batch of users using vectorization, much more efficient than computing it one at a time
-            recommended_items_batch_list, scores_batch = recommender_object.recommend(test_user_batch_array,
-                                                                      remove_seen_flag=self.exclude_seen,
-                                                                      cutoff = self.max_cutoff,
-                                                                      remove_top_pop_flag=False,
-                                                                      remove_custom_items_flag=self.ignore_items_flag,
-                                                                      return_scores = True
-                                                                     )
-
-            results_dict = self._compute_metrics_on_recommendation_list(test_user_batch_array = test_user_batch_array,
-                                                         recommended_items_batch_list = recommended_items_batch_list,
-                                                         scores_batch = scores_batch,
-                                                         results_dict = results_dict)
 
 
         return results_dict

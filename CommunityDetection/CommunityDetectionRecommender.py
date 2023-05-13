@@ -43,3 +43,11 @@ class CommunityDetectionRecommender(BaseRecommender):
             n_comm += 1
 
         return item_scores
+
+    def predict(self, user_id: int, items_id = None):
+        for n_comm, community in enumerate(self.communities.iter(self.n_iter)):
+            comm_users = community.users
+            user_mask = np.isin(user_id, comm_users, assume_unique=True)
+            recommender = self.recommenders[n_comm]
+            if user_mask:
+                return recommender.predict(user_id, items_id)
