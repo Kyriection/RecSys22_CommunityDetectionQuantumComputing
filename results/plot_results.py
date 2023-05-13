@@ -1,0 +1,202 @@
+'''
+Author: Kaizyn
+Date: 2023-01-21 10:19:24
+LastEditTime: 2023-01-21 10:55:37
+'''
+import os, zipfile, sys
+
+import pandas as pd
+import numpy as np
+
+p = os.path.abspath('.')
+sys.path.insert(1, p)
+
+from utils.plot import plot_line, plot_scatter
+from utils.urm import get_community_urm, load_data, merge_sparse_matrices
+from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
+    MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
+    MovielensSampleReader, MovielensSample2Reader
+
+
+QUBO = ["Hybrid", "QUBOBipartiteCommunityDetection", "QUBOBipartiteProjectedCommunityDetection", "KmeansCommunityDetection", "HierarchicalClustering", "UserCommunityDetection"]
+# METHOD = ["LeapHybridSampler", "SimulatedAnnealingSampler", "SteepestDescentSolver", "TabuSampler", ""]
+METHOD = ["SimulatedAnnealingSampler"]
+CDR = "cd_LRRecommender.zip"
+RESULT = ".result_df.csv"
+TOTAL_DATA = {'C': {}, 'MAE': {}, 'RMSE': {}}
+MIN_RATING_NUM = 1
+PLOT_CUT = 30
+DATA = {key : {'x': None, 'MAE': {}, 'RMSE': {}} for key in ['rank', 'rating', 'cluster']}
+
+def init_global_data():
+  global TOTAL_DATA, DATA
+  TOTAL_DATA = {'C': {}, 'MAE': {}, 'RMSE': {}}
+  DATA = {key : {'x': None, 'MAE': {}, 'RMSE': {}} for key in ['rank', 'rating', 'cluster']}
+
+
+def plot(output_folder_path):
+    for key in ['rank', 'rating']:
+        data = DATA[key]
+        x = data['x']
+        MAE_data = data['MAE']
+        RMSE_data = data['RMSE']
+        plot_scatter(x, MAE_data, output_folder_path, key, 'MAE')
+        plot_scatter(x, RMSE_data, output_folder_path, key, 'RMSE')
+    for key in ['cluster']:
+        data = DATA[key]
+        x = data['x']
+        MAE_data = data['MAE']
+        RMSE_data = data['RMSE']
+        plot_line(x, MAE_data, output_folder_path, key, 'MAE')
+        plot_line(x, RMSE_data, output_folder_path, key, 'RMSE')
+
+
+def collect_data(urm, n_iter, result_df):
+    global MIN_RATING_NUM, PLOT_CUT
+    C_quantity = np.ediff1d(urm.tocsr().indptr) # count of each row
+    data: np.ndarray = result_df.values # [MAE, MSE, num_rating]
+    # delete users whose test rating num < MIN_RATING_NUM
+    ignore_users = data[:, 2] < MIN_RATING_NUM
+    data = data[~ignore_users]
+    C_quantity = C_quantity[~ignore_users]
+    n_users = C_quantity.size
+    # sort by train rating num
+    data = data[np.argsort(C_quantity)]
+    C_quantity = np.sort(C_quantity)
+
+    # plot by item rank
+    DATA['rank']['x'] = list(range(n_users))
+    DATA['rank']['MAE'][n_iter] = [mae for mae, mse, num_rating in data]
+    DATA['rank']['RMSE'][n_iter] = [np.sqrt(mse) for mae, mse, num_rating in data]
+    # cluster by C_quantity
+    tot_mae = 0.0
+    tot_rmse = 0.0
+    tot_num_rating = 0
+    cluster_data = {}
+    for i in range(n_users):
+        quantity = C_quantity[i]
+        mae, mse, num_rating = data[i]
+        if num_rating == 0:
+            continue
+        _data = cluster_data.get(quantity, [0.0, 0.0, 0])
+        _data[0] += mae * num_rating
+        _data[1] += mse * num_rating
+        _data[2] += num_rating
+        tot_mae += mae * num_rating
+        tot_rmse += mse * num_rating
+        tot_num_rating += num_rating
+        cluster_data[quantity] = _data
+    # BTY, dict.items() == zip(dict.keys(), dict.values())
+    x = list(cluster_data.keys())
+    MAE_data = []
+    RMSE_data = []
+    for key in x:
+        mae, mse, num_rating = cluster_data[key]
+        MAE_data.append(mae / num_rating)
+        RMSE_data.append(np.sqrt(mse / num_rating))
+    # plot by #ratings
+    DATA['rating']['x'] = x
+    DATA['rating']['MAE'][n_iter] = MAE_data
+    DATA['rating']['RMSE'][n_iter] = RMSE_data
+    # print tot
+    tot_mae = round(tot_mae / tot_num_rating, 4)
+    tot_rmse = round(np.sqrt(tot_rmse / tot_num_rating), 4)
+    TOTAL_DATA['MAE'][n_iter] = tot_mae
+    TOTAL_DATA['RMSE'][n_iter] = tot_rmse
+
+    # cluster to PLOT_CUT points
+    cut_points = np.arange(1, PLOT_CUT + 1) * (n_users // PLOT_CUT)
+    cut_points[-1] = n_users - 1
+    x = C_quantity[cut_points]
+    MAE_data = []
+    RMSE_data = []
+    cd_key = list(cluster_data.keys())
+    cd_i = 0
+    for cut_quantity in x:
+        MAE = 0.0
+        MSE = 0.0
+        num_rating = 0
+        while cd_i < len(cd_key) and cd_key[cd_i] <= cut_quantity:
+            _data = cluster_data[cd_key[cd_i]]
+            MAE += _data[0]
+            MSE += _data[1]
+            num_rating += _data[2]
+            cd_i += 1
+        MAE_data.append(MAE / num_rating)
+        RMSE_data.append(np.sqrt(MSE / num_rating))
+    DATA['cluster']['x'] = x
+    DATA['cluster']['MAE'][n_iter] = MAE_data
+    DATA['cluster']['RMSE'][n_iter] = RMSE_data
+
+
+# print(__file__)
+
+def print_result(data_reader_class, show: bool = True, output_folder: str = None):
+  data_reader = data_reader_class()
+  urm_train, urm_validation, urm_test = load_data(data_reader, [80, 10, 10], False, False)
+  urm_train, urm_validation, urm_test = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr()# item is main charactor
+  dataset = data_reader._get_dataset_name()
+  dataset = os.path.abspath("/app/results/" + dataset)
+
+  # for method in QUBO:
+  for method in os.listdir(dataset):
+    path = os.path.join(dataset, method)
+    if not os.path.exists(path) or os.path.isfile(path) or method == "LRRecommender":
+      continue
+    if show:
+      print(method)
+      # print("N", COL)
+    # print(path)
+    dir_file = os.listdir(path)
+    dir_file.sort()
+    for m in METHOD:
+      # if show:
+        # print(m)
+      try:
+        init_global_data()
+        for name in dir_file:
+          d = os.path.join(path, name)
+          if not os.path.isdir(d):
+            continue
+          # print(d)
+          cur = os.path.join(path, d)
+          # print(cur)
+          tmp = os.path.join(cur, m)
+          if not os.path.exists(tmp):
+            continue
+          C = 0
+          for c in os.listdir(tmp):
+            if os.path.isdir(os.path.join(tmp, c)) and c[0] == 'c':
+              try:
+                C = max(C, int(c[1:]))
+              except:
+                continue
+          file = os.path.join(tmp, CDR)
+          # print(file)
+          z = zipfile.ZipFile(file, 'r') 
+          file_path = z.extract(RESULT, path=cur + "/decompressed")
+          result_df = pd.read_csv(file_path, index_col="user")
+          N = int(name[4:]) + 1
+          TOTAL_DATA['C'][N] = C + 1
+          collect_data(urm_train, N, result_df)
+
+        df = pd.DataFrame(TOTAL_DATA)
+        if output_folder is None:
+          output_folder = path
+        output_path = os.path.join(output_folder, f'{method}_{m}.csv')
+        df.to_csv(output_path)
+        if show:
+          print(df)
+        plot(path)
+
+      except FileNotFoundError as e:
+        print(e)
+    
+    
+
+if __name__ == '__main__':
+  # dataset = input("input file folder name: ")
+  show = input("print on CMD or not: ")
+  show = True if show else False
+  print_result(MovielensSample2Reader, show)
+  

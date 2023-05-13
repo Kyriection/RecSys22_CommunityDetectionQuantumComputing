@@ -38,6 +38,7 @@ logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
 PLOT_CUT = 30
 MIN_RATING_NUM = 1
+TOTAL_DATA = {}
 
 def plot(urm, output_folder_path, n_iter, result_df):
     global MIN_RATING_NUM, PLOT_CUT
@@ -90,10 +91,10 @@ def plot(urm, output_folder_path, n_iter, result_df):
     plot_scatter(x, MAE_data, output_folder_path, 'the number of ratings', 'MAE')
     plot_scatter(x, RMSE_data, output_folder_path, 'the number of ratings', 'RMSE')
     # print tot
-    tot_mae /= tot_num_rating
-    tot_rmse = np.sqrt(tot_rmse / tot_num_rating)
-    print(f'Total MAE = {tot_mae}')
-    print(f'Total RMSE = {tot_rmse}')
+    tot_mae = round(tot_mae / tot_num_rating, 4)
+    tot_rmse = round(np.sqrt(tot_rmse / tot_num_rating), 4)
+    TOTAL_DATA[n_iter] = dict(MAE=tot_mae, RMSE=tot_rmse)
+    print(f'n_iter:{n_iter}, Total MAE = {tot_mae}, Total RMSE = {tot_rmse}')
 
     # cluster to PLOT_CUT points
     cut_points = np.arange(1, PLOT_CUT + 1) * (n_users // PLOT_CUT)
