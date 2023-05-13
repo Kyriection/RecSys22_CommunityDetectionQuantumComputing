@@ -35,7 +35,7 @@ from utils.derived_variables import create_derived_variables
 from results.read_results import print_result
 
 logging.basicConfig(level=logging.INFO)
-CRITERION: int = None
+CUT_RATIO: float = None
 PLOT_CUT = 30
 
 def plot(urm, output_folder_path, n_iter, result_df):
@@ -104,6 +104,29 @@ def plot(urm, output_folder_path, n_iter, result_df):
     '''
 
 
+def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
+    '''
+    return (head)urm_train, urm_validation, urm_test, icm, ucm,\
+           (tail)urm_train, urm_validation, urm_test, icm, ucm
+    '''
+    n_users, n_items = urm_train.shape
+    C_quantity = np.ediff1d(urm_train.tocsr().indptr) # count of each row
+    cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CUT_RATIO)]
+    logging.info(f'head tail cut at {cut_quantity}')
+    head_user_mask = C_quantity > cut_quantity
+    # tail_user_mask = C_quantity < cut_quantity
+    communities = Communities(head_user_mask, np.ones(n_items).astype(bool))
+    tail_community, head_community = communities.c0, communities.c1
+    t_urm_train, _, _, t_icm, t_ucm = get_community_urm(urm_train, community=tail_community, filter_items=False, remove=True, icm=icm, ucm=ucm)
+    t_urm_validation, _, _ = get_community_urm(urm_validation, community=tail_community, filter_items=False, remove=True)
+    t_urm_test, _, _ = get_community_urm(urm_test, community=tail_community, filter_items=False, remove=True)
+    h_urm_train, _, _, h_icm, h_ucm = get_community_urm(urm_train, community=head_community, filter_items=False, remove=True, icm=icm, ucm=ucm)
+    h_urm_validation, _, _ = get_community_urm(urm_validation, community=head_community, filter_items=False, remove=True)
+    h_urm_test, _, _ = get_community_urm(urm_test, community=head_community, filter_items=False, remove=True)
+    return h_urm_train, h_urm_validation, h_urm_test, h_icm, h_ucm, \
+           t_urm_train, t_urm_validation, t_urm_test, t_icm, t_ucm
+
+
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
     method_folder_path = f'{folder_path}{method.name}/'
     folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
@@ -158,9 +181,10 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
     baseline: best_model fit(train + validation), predict(test)
     """
     recommender_name = recommender.RECOMMENDER_NAME
-    logging.info(f'len(community.users)={len(community.users)}')
     print(f'Training {recommender_name} on community {n_comm if n_comm is not None else ""} of iteration {n_iter}...')
-    print(f"community.shape({len(community.users)}, {len(community.items)})")
+    logging.info(f"community.size({len(community.users)}, {len(community.items)})")
+    logging.info(f"community.shape({len(community.user_mask)}, {len(community.item_mask)})")
+    logging.debug(f'urm.shape: {urm_train.shape}')
 
     output_folder_path = get_community_folder_path(method_folder_path, n_iter=n_iter, n_comm=n_comm,
                                                    folder_suffix=folder_suffix)
@@ -314,10 +338,18 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         urm_train, urm_validation, urm_test, icm, ucm = load_data(data_reader, split_quota=split_quota, user_wise=user_wise,
                                                         make_implicit=make_implicit, threshold=threshold, icm_ucm=True)
         urm_train, urm_validation, urm_test, icm, ucm = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr(), ucm, icm # item is main charactor
+        h_urm_train, h_urm_validation, h_urm_test, h_icm, h_ucm,\
+        urm_train, urm_validation, urm_test, icm, ucm = head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm)
+        head_flag = h_urm_train.shape[0] > 0
+        logging.info(f'head shape: {h_urm_train.shape}, tail shape: {urm_train.shape}')
 
         urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
         icm, ucm = create_related_variables(urm_train_last_test, icm, ucm) # should use urm_train_last_test ?
         icm, ucm = sp.csr_matrix(icm), sp.csr_matrix(ucm)
+        if head_flag:
+            h_urm_train_last_test = merge_sparse_matrices(h_urm_train, h_urm_validation)
+            h_icm, h_ucm = create_related_variables(h_urm_train_last_test, h_icm, h_ucm) # should use urm_train_last_test ?
+            h_icm, h_ucm = sp.csr_matrix(h_icm), sp.csr_matrix(h_ucm)
 
         for recommender in recommender_list:
             recommender_name = recommender.RECOMMENDER_NAME
@@ -331,6 +363,11 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
             recommend_per_method(urm_train, urm_validation, urm_test, urm_train_last_test, ucm, icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
                                  save_model=save_model, each_item=False)
+            if not head_flag:
+                return
+            recommend_per_method(h_urm_train, h_urm_validation, h_urm_test, h_urm_train_last_test, h_ucm, h_icm, method, sampler_list,
+                                 recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
+                                 save_model=save_model, each_item=True)
             # plot(urm_train, method, dataset_name, result_folder_path)
             # plot(urm_test, method, dataset_name, result_folder_path)
 
@@ -395,7 +432,7 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, me
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--criterion', type=int, default=50)
+    parser.add_argument('-c', '--cut_ratio', type=float, default=0.15)
     args = parser.parse_args()
     return args
 
@@ -468,14 +505,14 @@ def save_results(data_reader_classes, result_folder_path, *args):
 
 if __name__ == '__main__':
     args = parse_args()
-    CRITERION = args.criterion
+    CUT_RATIO = args.cut_ratio
     data_reader_classes = [MovielensSample2Reader]
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
-    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    # method_list = [QUBOBipartiteCommunityDetection]
+    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    method_list = [QUBOBipartiteProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
