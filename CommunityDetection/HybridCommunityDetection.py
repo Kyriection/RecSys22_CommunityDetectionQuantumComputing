@@ -1,7 +1,8 @@
 from CommunityDetection import QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, \
-    UserCommunityDetection, QUBOCommunityDetection
+    UserCommunityDetection, QUBOCommunityDetection, QUBOLongTailCommunityDetection
 
-HYBRID_LIST = [QUBOBipartiteCommunityDetection, UserCommunityDetection]
+HYBRID_LIST = [QUBOLongTailCommunityDetection, QUBOBipartiteCommunityDetection]
+# HYBRID_LIST = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
 assert len(HYBRID_LIST) >= 2
 
 class HybridCommunityDetection(*HYBRID_LIST):
@@ -49,3 +50,6 @@ class HybridCommunityDetection(*HYBRID_LIST):
         if HybridCommunityDetection.n_all_users == -1:
             HybridCommunityDetection.n_all_users = n_users
             print(f"{HybridCommunityDetection.name}: set n_all_users={n_users}")
+    
+    def get_graph_cut(self, *args):
+        pass
