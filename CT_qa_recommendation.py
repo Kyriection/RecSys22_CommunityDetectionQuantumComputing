@@ -13,15 +13,14 @@ import numpy as np
 import scipy.sparse as sp
 import tabu
 from dwave.system import LeapHybridSampler
-from sklearn.cluster import KMeans, SpectralClustering
 
 from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, CommunityDetectionRecommender, \
     get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
-    QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
-    TMPCD, QUBOLongTailCommunityDetection, Clusters
+    SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
+    TMPCD, QUBOLongTailCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
@@ -34,7 +33,7 @@ from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 from utils.plot import plot_line, plot_scatter
 from utils.derived_variables import create_derived_variables
-from results.plot_results import print_result
+from results.read_results import print_result
 
 logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
@@ -42,7 +41,6 @@ PLOT_CUT = 30
 MIN_RATING_NUM = 1
 TOTAL_DATA = {}
 EI: bool = False # EI if True else TC or CT
-N_CLUSTER = [2, 4, 8, 16, 32, 53, 81, 93, ]
 
 def plot(urm, output_folder_path, n_iter, result_df):
     global MIN_RATING_NUM, PLOT_CUT
@@ -148,7 +146,7 @@ def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
     return h_urm_train, h_urm_validation, h_urm_test, h_icm, h_ucm, \
            t_urm_train, t_urm_validation, t_urm_test, t_icm, t_ucm
 
-'''
+
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
     method_folder_path = f'{folder_path}{method.name}/'
     folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
@@ -160,30 +158,6 @@ def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
     except FileNotFoundError:
         print('No communities found to load. Computing new communities...')
         communities = None
-    return communities
-'''
-
-
-def load_communities(ucm, n_users, n_items):
-    communities = Clusters(n_users, n_items)
-    for n_clusters in tqdm.tqdm(N_CLUSTER, desc='Kmeans'):
-        clusters = [[] for i in range(n_clusters)]
-        model = KMeans(n_clusters=n_clusters, random_state=0).fit(ucm.toarray())
-        '''
-        model = SpectralClustering(
-            n_clusters=n_clusters,
-            eigen_solver='arpack',
-            # eigen_solver='lobpcg',
-            # eigen_solver='amg',
-            random_state=0,
-            assign_labels='discretize',
-            # affinity = 'precomputed', 
-            # n_init=1000,
-        ).fit(ucm.toarray())
-        '''
-        for i, cluster in enumerate(model.labels_):
-            clusters[cluster].append(i)
-        communities.add_iteration(clusters)
     return communities
   
 
@@ -436,19 +410,17 @@ def recommend_per_method(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, 
 def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name, folder_path,
                       sampler: dimod.Sampler = None, each_item: bool = False, **kwargs):
     dataset_folder_path = f'{folder_path}{dataset_name}/'
-    # communities = load_communities(dataset_folder_path, method, sampler)
-    n_users, n_items = urm_train.shape
-    communities = load_communities(ucm, n_users, n_items)
+    communities = load_communities(dataset_folder_path, method, sampler)
     if communities is None:
         print(f'Could not load communitites for {dataset_folder_path}, {method}, {sampler}.')
         return
 
     if each_item:
+        n_users, n_items = urm_train.shape
         recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
                            folder_path, sampler=sampler, communities=CommunitiesEI(n_users, n_items), n_iter=-1, **kwargs)
     else:
-        # num_iters = communities.num_iters + 1
-        num_iters = len(N_CLUSTER)
+        num_iters = communities.num_iters + 1
         for n_iter in range(num_iters):
             recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
                                folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
@@ -533,8 +505,7 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
                                 shutil.rmtree(c_folder_path)
 
 
-def save_results(data_reader_classes, result_folder_path, method_list, *args):
-    global CUT_RATIO
+def save_results(data_reader_classes, result_folder_path, *args):
     tag = []
     for arg in args:
         if arg is None:
@@ -550,7 +521,7 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
         output_folder = os.path.join(output_folder, tag) 
         if not os.path.exists(output_folder):
             os.mkdir(output_folder)
-        print_result(CUT_RATIO, data_reader, method_list, False, output_folder)
+        print_result(dataset_name, True, output_folder)
 
 
 if __name__ == '__main__':
@@ -571,4 +542,5 @@ if __name__ == '__main__':
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    save_results(data_reader_classes, result_folder_path, method_list, args.cut_ratio)
+    # save_results(data_reader_classes, result_folder_path, args.alpha, args.beta)
+    # save_results(data_reader_classes, result_folder_path, args.alpha)

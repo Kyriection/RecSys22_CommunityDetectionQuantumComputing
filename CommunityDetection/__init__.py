@@ -19,6 +19,7 @@ from CommunityDetection.SpectralClustering import SpectralClustering
 from CommunityDetection.QUBOBipartiteProjectedItemCommunityDetection import QUBOBipartiteProjectedItemCommunityDetection
 from CommunityDetection.QUBOLongTailCommunityDetection import QUBOLongTailCommunityDetection
 from CommunityDetection.TMPCD import TMPCD
+from CommunityDetection.Clusters import Clusters
 
 
 class EmptyCommunityError(Exception):

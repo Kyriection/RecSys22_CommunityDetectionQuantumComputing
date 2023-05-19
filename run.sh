@@ -10,10 +10,11 @@ alpha_list=(0)
 for alpha in ${alpha_list[*]}
 do
   echo alpha=$alpha
-  echo 'start run_community_detection_mod'
-  time python run_community_detection_mod.py -a $alpha > cd.log 2>&1
-  echo 'start cd_recommendation'
-  time python cd_recommendation.py -a $alpha > cdr.log 2>&1
+  echo 'start community detection'
+  # time python run_community_detection_mod.py -a $alpha > cd.log 2>&1
+  time python CT_community_detection.py -a $alpha > ctcd.log 2>&1
+  echo 'start recommendation'
+  time python CT_qa_recommendation.py -a $alpha > ctqr.log 2>&1
 done
 
 # for alpha in ${alpha_list[*]}

@@ -16,6 +16,13 @@ from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
+from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDetection, \
+    QUBOBipartiteProjectedCommunityDetection, Communities, CommunityDetectionRecommender, \
+    get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
+    QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
+    HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
+    QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
+    TMPCD, QUBOLongTailCommunityDetection, Clusters
 
 
 logging.basicConfig(level=logging.INFO)
@@ -37,10 +44,11 @@ def init_global_data():
   DATA = {key : {'x': None, 'MAE': {}, 'RMSE': {}} for key in ['rank', 'rating', 'cluster']}
 
 
-def plot(output_folder_path):
+def plot(output_folder_path, show: bool = False):
     df = pd.DataFrame(TOTAL_DATA)
     output_path = os.path.join(output_folder_path, f'total_MAE_RMSE.csv')
     df.to_csv(output_path)
+    print(output_path)
     if show:
       print(df)
     for key in ['rank', 'rating']:
@@ -160,27 +168,28 @@ def extract_file(file, cur):
     print(e)
     return None
 
-def print_result(data_reader_class, show: bool = True, output_folder: str = None):
+def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, output_folder: str = None):
   global CT, RECOMMENDER
+  CT = cut_ratio
   data_reader = data_reader_class()
   urm_train, urm_validation, urm_test = load_data(data_reader, [80, 10, 10], False, False)
   urm_train, urm_validation, urm_test = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr()# item is main charactor
   dataset = data_reader._get_dataset_name()
   dataset = os.path.abspath("/app/results/" + dataset)
-
   # special for baseline
   path = os.path.join(dataset, RECOMMENDER)
   file = os.path.join(path, 'baseline.zip')
   result_df = extract_file(file, path)
   collect_data(urm_train, -1, result_df)
-  plot(path)
+  plot(path, show)
   # for method in QUBO:
-  for method in os.listdir(dataset):
-    path = os.path.join(dataset, method)
-    if not os.path.exists(path) or os.path.isfile(path) or method == RECOMMENDER:
+  # for method in os.listdir(dataset):
+  for method in method_list:
+    path = os.path.join(dataset, method.name)
+    if not os.path.exists(path) or os.path.isfile(path):
       continue
     if show:
-      print(method)
+      print(method.name)
       # print("N", COL)
     # print(path)
     dir_file = os.listdir(path)
@@ -234,13 +243,16 @@ def print_result(data_reader_class, show: bool = True, output_folder: str = None
       # df.to_csv(output_path)
       # if show:
       #   print(df)
-      plot(path)
+      if output_folder is None:
+        output_folder = path
+      plot(output_folder, show)
 
 
 if __name__ == '__main__':
   # dataset = input("input file folder name: ")
-  CT = float(input('input CT cut ration: '))
-  show = input("print on CMD or not: ")
-  show = True if show else False
-  print_result(MovielensSample2Reader, show)
+  cut_ratio = float(input('input CT cut ration: '))
+  # show = input("print on CMD or not: ")
+  # show = True if show else False
+  show = True
+  print_result(cut_ratio, MovielensSample2Reader, [QUBOLongTailCommunityDetection], show)
   
