@@ -12,7 +12,8 @@ from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, Q
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
     UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
     QUBOProjectedCommunityDetection, HybridCommunityDetection, QUBONcutCommunityDetection, SpectralClustering, \
-    QUBOBipartiteProjectedItemCommunityDetection
+    QUBOBipartiteProjectedItemCommunityDetection, HybridCommunityDetection2, QUBOLongTailCommunityDetection, \
+    TMPCD
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader, \
     MovielensSample2Reader
@@ -32,11 +33,11 @@ def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
     n_users, n_items = urm_train.shape
     C_quantity = np.ediff1d(urm_train.tocsr().indptr) # count of each row
     cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CUT_RATIO)]
-    logging.info(f'head tail cut at {cut_quantity}')
     head_user_mask = C_quantity > cut_quantity
     # tail_user_mask = C_quantity < cut_quantity
     communities = Communities(head_user_mask, np.ones(n_items).astype(bool))
     tail_community, head_community = communities.c0, communities.c1
+    logging.info(f'head tail cut at {cut_quantity}, head size: {len(head_community.users)}, tail size: {len(tail_community.users)}')
     t_urm_train, _, _, t_icm, t_ucm = get_community_urm(urm_train, community=tail_community, filter_items=False, remove=True, icm=icm, ucm=ucm)
     t_urm_validation, _, _ = get_community_urm(urm_validation, community=tail_community, filter_items=False, remove=True)
     t_urm_test, _, _ = get_community_urm(urm_test, community=tail_community, filter_items=False, remove=True)
@@ -169,7 +170,11 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
     n_users, n_items = cd_urm.shape
     show_urm_info(cd_urm)
 
-    m: BaseCommunityDetection = method(cd_urm, icm, ucm)
+    if n_iter == 0:
+        m: BaseCommunityDetection = QUBOLongTailCommunityDetection(cd_urm, icm, ucm)
+    else:
+        m: BaseCommunityDetection = TMPCD(cd_urm, icm, ucm)
+    # m: BaseCommunityDetection = method(cd_urm, icm, ucm)
 
     method_folder_path = f'{folder_path}{m.name}/'
     folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
@@ -294,13 +299,13 @@ if __name__ == '__main__':
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
     # method_list = [QUBOBipartiteProjectedCommunityDetection]
-    method_list = [HybridCommunityDetection]
+    method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 8
+    num_iters = 10
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list)
     # QUBOGraphCommunityDetection.set_alpha(args.alpha)

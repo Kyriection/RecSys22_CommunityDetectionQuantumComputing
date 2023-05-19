@@ -19,7 +19,8 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
-    SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI
+    SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
+    TMPCD, QUBOLongTailCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
@@ -131,11 +132,11 @@ def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
     n_users, n_items = urm_train.shape
     C_quantity = np.ediff1d(urm_train.tocsr().indptr) # count of each row
     cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CUT_RATIO)]
-    logging.info(f'head tail cut at {cut_quantity}')
     head_user_mask = C_quantity > cut_quantity
     # tail_user_mask = C_quantity <= cut_quantity
     communities = Communities(head_user_mask, np.ones(n_items).astype(bool))
     tail_community, head_community = communities.c0, communities.c1
+    logging.info(f'head tail cut at {cut_quantity}, head size: {len(head_community.users)}, tail size: {len(tail_community.users)}')
     t_urm_train, _, _, t_icm, t_ucm = get_community_urm(urm_train, community=tail_community, filter_items=False, remove=True, icm=icm, ucm=ucm)
     t_urm_validation, _, _ = get_community_urm(urm_validation, community=tail_community, filter_items=False, remove=True)
     t_urm_test, _, _ = get_community_urm(urm_test, community=tail_community, filter_items=False, remove=True)
@@ -454,7 +455,7 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, me
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--cut_ratio', type=float, default=0.15)
+    parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
     args = parser.parse_args()
     return args
 
@@ -532,7 +533,7 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    method_list = [QUBOBipartiteProjectedCommunityDetection]
+    method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]

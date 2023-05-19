@@ -3,7 +3,6 @@ Author: Kaizyn
 Date: 2023-01-11 13:45:23
 LastEditTime: 2023-01-13 21:18:12
 '''
-import logging
 import time
 
 import numpy as np
@@ -11,15 +10,13 @@ import numpy as np
 from CommunityDetection.Communities import Communities
 from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
 
-logging.basicConfig(level=logging.INFO)
 
-
-class QUBOLongTailCommunityDetection(QUBOCommunityDetection):
+class TMPCD(QUBOCommunityDetection):
     filter_items = False
     name = 'QUBOLongTailCommunityDetection'
 
     def __init__(self, urm, icm, ucm, *args, **kwargs):
-        super(QUBOLongTailCommunityDetection, self).__init__(urm, *args, **kwargs)
+        super(TMPCD, self).__init__(urm, *args, **kwargs)
         self.icm = icm
         self.ucm = ucm
         self.W = None
@@ -41,17 +38,6 @@ class QUBOLongTailCommunityDetection(QUBOCommunityDetection):
         P = k @ k.T / (2 * m)
 
         B = W - P
-        C_quantity = np.ediff1d(self.urm.tocsr().indptr)
-        C_quantity = C_quantity / np.max(C_quantity) # normalization
-        n_users, n_items = self.urm.shape
-        # ratio = n_users / self.n_all_users
-        T = 12
-        diag = np.exp(C_quantity * T)
-        # diag = (diag - diag.mean()) * ratio**2
-        diag = (diag - diag.mean())
-        # logging.info(f'B_max={np.max(B)}, diag_max={np.max(diag)}')
-        for i in range(n_users):
-            B[i, i] += diag[i]
 
         if threshold is not None:
             B[np.abs(B) < threshold] = 0
@@ -63,17 +49,9 @@ class QUBOLongTailCommunityDetection(QUBOCommunityDetection):
 
     @staticmethod
     def get_comm_from_sample(sample, n_users, n_items=0):
-        users, _ = super(QUBOLongTailCommunityDetection,
-                         QUBOLongTailCommunityDetection).get_comm_from_sample(sample, n_users)
+        users, _ = super(TMPCD,
+                         TMPCD).get_comm_from_sample(sample, n_users)
         return users, np.zeros(n_items)
-
-    '''
-    @staticmethod
-    def set_n_all_users(n_users: int):
-        if QUBOLongTailCommunityDetection.n_all_users == -1:
-            QUBOLongTailCommunityDetection.n_all_users = n_users
-            print(f"{QUBOLongTailCommunityDetection.name}: set n_all_users={n_users}")
-    '''
 
     def get_graph_cut(self, communities: Communities):
         cut = 0.0

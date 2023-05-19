@@ -1,8 +1,8 @@
 from CommunityDetection import QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, \
     UserCommunityDetection, QUBOCommunityDetection, QUBOLongTailCommunityDetection
 
-HYBRID_LIST = [QUBOLongTailCommunityDetection, QUBOBipartiteCommunityDetection]
-# HYBRID_LIST = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+# HYBRID_LIST = [QUBOLongTailCommunityDetection, QUBOBipartiteCommunityDetection]
+HYBRID_LIST = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
 assert len(HYBRID_LIST) >= 2
 
 class HybridCommunityDetection(*HYBRID_LIST):
