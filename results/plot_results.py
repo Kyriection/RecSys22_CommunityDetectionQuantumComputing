@@ -74,13 +74,15 @@ def plot(output_folder_path, show: bool = False):
 def collect_data(urm, n_iter, result_df, result_df_ei = None):
     global MIN_RATING_NUM, PLOT_CUT, CT
     C_quantity = np.ediff1d(urm.tocsr().indptr) # count of each row
-    if result_df_ei is not None:
+    # if result_df_ei is not None:
+    if CT > 0.0:
       cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CT)]
       head_user_mask = C_quantity > cut_quantity
       tail_user_mask = ~head_user_mask
       data = np.zeros((C_quantity.size, 3)) # [MAE, MSE, num_rating]
       # print(result_df_ei.values.shape, result_df.values.shape)
-      data[head_user_mask] = result_df_ei.values
+      if result_df_ei is not None:
+        data[head_user_mask] = result_df_ei.values
       data[tail_user_mask] = result_df.values 
     else:
       data: np.ndarray = result_df.values
@@ -254,5 +256,6 @@ if __name__ == '__main__':
   # show = input("print on CMD or not: ")
   # show = True if show else False
   show = True
-  print_result(cut_ratio, MovielensSample2Reader, [QUBOLongTailCommunityDetection], show)
+  # print_result(cut_ratio, MovielensSample2Reader, [QUBOLongTailCommunityDetection], show)
+  print_result(cut_ratio, MovielensSample2Reader, [QUBOBipartiteProjectedCommunityDetection], show)
   

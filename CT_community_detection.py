@@ -24,6 +24,7 @@ from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_
 
 logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
+QA_CUT: float = False
 
 def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
     '''
@@ -170,11 +171,13 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
     n_users, n_items = cd_urm.shape
     show_urm_info(cd_urm)
 
-    if n_iter == 0:
-        m: BaseCommunityDetection = QUBOLongTailCommunityDetection(cd_urm, icm, ucm)
+    if QA_CUT:
+        if n_iter == 0:
+            m: BaseCommunityDetection = QUBOLongTailCommunityDetection(cd_urm, icm, ucm)
+        else:
+            m: BaseCommunityDetection = TMPCD(cd_urm, icm, ucm)
     else:
-        m: BaseCommunityDetection = TMPCD(cd_urm, icm, ucm)
-    # m: BaseCommunityDetection = method(cd_urm, icm, ucm)
+        m: BaseCommunityDetection = method(cd_urm, icm, ucm)
 
     method_folder_path = f'{folder_path}{m.name}/'
     folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
@@ -298,8 +301,8 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    # method_list = [QUBOBipartiteProjectedCommunityDetection]
-    method_list = [QUBOLongTailCommunityDetection]
+    method_list = [QUBOBipartiteProjectedCommunityDetection]
+    # method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]

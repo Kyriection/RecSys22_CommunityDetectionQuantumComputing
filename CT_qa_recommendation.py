@@ -33,7 +33,8 @@ from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 from utils.plot import plot_line, plot_scatter
 from utils.derived_variables import create_derived_variables
-from results.read_results import print_result
+# from results.read_results import print_result
+from results.plot_results import print_result
 
 logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
@@ -80,7 +81,7 @@ def plot(urm, output_folder_path, n_iter, result_df):
         tot_num_rating += num_rating
         cluster_data[quantity] = _data
     # BTY, dict.items() == zip(dict.keys(), dict.values())
-    x = list(cluster_data.keys())
+    x = sorted(list(cluster_data.keys()))
     MAE_data = []
     RMSE_data = []
     for key in x:
@@ -99,6 +100,49 @@ def plot(urm, output_folder_path, n_iter, result_df):
     print(f'n_iter:{n_iter}, Total MAE = {tot_mae}, Total RMSE = {tot_rmse}')
 
     # cluster to PLOT_CUT points
+    def get_cut_size(cut_num: int):
+        l = 1
+        r = urm.size
+        while l < r:
+            mid = (l + r + 1) // 2
+            cnt = 0
+            cur = 0
+            for key in cluster_data:
+                cur += cluster_data[key][2]
+                if cur >= mid:
+                    cur = 0
+                    cnt += 1
+            if cnt >= cut_num:
+                l = mid
+            else:
+                r = mid - 1
+        return l
+
+    cut_size = get_cut_size(PLOT_CUT)
+    x_ = x
+    x = []
+    MAE_data = []
+    RMSE_data = []
+    MAE = 0.0
+    MSE = 0.0
+    num_rating = 0
+    for key in x_:
+        data = cluster_data[key]
+        MAE += _data[0]
+        MSE += _data[1]
+        num_rating += _data[2]
+        if num_rating >= cut_size:
+            x.append(key)
+            MAE_data.append(MAE / num_rating)
+            RMSE_data.append(np.sqrt(MSE / num_rating))
+            MAE = 0.0
+            MSE = 0.0
+            num_rating = 0
+    if num_rating > 0:
+        x.append(x_[-1])
+        MAE_data.append(MAE / num_rating)
+        RMSE_data.append(np.sqrt(MSE / num_rating))
+    '''
     cut_points = np.arange(1, PLOT_CUT + 1) * (n_users // PLOT_CUT)
     cut_points[-1] = n_users - 1
     x = C_quantity[cut_points]
@@ -118,6 +162,7 @@ def plot(urm, output_folder_path, n_iter, result_df):
             cd_i += 1
         MAE_data.append(MAE / num_rating)
         RMSE_data.append(np.sqrt(MSE / num_rating))
+    '''
     MAE_data = dict(TC_qa = MAE_data)
     RMSE_data = dict(TC_qa = RMSE_data)
     plot_line(x, MAE_data, output_folder_path, 'the number of ratings (clustered)', 'MAE')
@@ -505,7 +550,8 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
                                 shutil.rmtree(c_folder_path)
 
 
-def save_results(data_reader_classes, result_folder_path, *args):
+def save_results(data_reader_classes, result_folder_path, method_list, *args):
+    global CUT_RATIO
     tag = []
     for arg in args:
         if arg is None:
@@ -521,7 +567,7 @@ def save_results(data_reader_classes, result_folder_path, *args):
         output_folder = os.path.join(output_folder, tag) 
         if not os.path.exists(output_folder):
             os.mkdir(output_folder)
-        print_result(dataset_name, True, output_folder)
+        print_result(CUT_RATIO, data_reader, method_list, False, output_folder)
 
 
 if __name__ == '__main__':
@@ -533,7 +579,8 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    method_list = [QUBOLongTailCommunityDetection]
+    method_list = [QUBOBipartiteProjectedCommunityDetection]
+    # method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
@@ -542,5 +589,4 @@ if __name__ == '__main__':
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    # save_results(data_reader_classes, result_folder_path, args.alpha, args.beta)
-    # save_results(data_reader_classes, result_folder_path, args.alpha)
+    save_results(data_reader_classes, result_folder_path, method_list, args.cut_ratio)
