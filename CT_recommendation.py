@@ -104,6 +104,7 @@ def plot(urm, output_folder_path, n_iter, result_df):
     cut_points = np.arange(1, PLOT_CUT + 1) * (n_users // PLOT_CUT)
     cut_points[-1] = n_users - 1
     x = C_quantity[cut_points]
+    x = sorted(set(x))
     MAE_data = []
     RMSE_data = []
     cd_key = list(cluster_data.keys())
@@ -168,8 +169,7 @@ def load_communities(ucm, n_users, n_items):
     communities = Clusters(n_users, n_items)
     for n_clusters in tqdm.tqdm(N_CLUSTER, desc='Kmeans'):
         clusters = [[] for i in range(n_clusters)]
-        model = KMeans(n_clusters=n_clusters, random_state=0).fit(ucm.toarray())
-        '''
+        # model = KMeans(n_clusters=n_clusters, random_state=0).fit(ucm.toarray())
         model = SpectralClustering(
             n_clusters=n_clusters,
             eigen_solver='arpack',
@@ -180,7 +180,6 @@ def load_communities(ucm, n_users, n_items):
             # affinity = 'precomputed', 
             # n_init=1000,
         ).fit(ucm.toarray())
-        '''
         for i, cluster in enumerate(model.labels_):
             clusters[cluster].append(i)
         communities.add_iteration(clusters)

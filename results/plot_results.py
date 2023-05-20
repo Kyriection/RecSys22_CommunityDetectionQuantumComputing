@@ -136,6 +136,54 @@ def collect_data(urm, n_iter, result_df, result_df_ei = None):
     TOTAL_DATA['RMSE'][n_iter] = tot_rmse
 
     # cluster to PLOT_CUT points
+    '''
+    def get_cut_size(cut_num: int):
+        l = 1
+        r = urm.size
+        while l < r:
+            mid = (l + r + 1) // 2
+            cnt = 0
+            cur = 0
+            for key in x:
+                cur += cluster_data[key][2]
+                if cur >= mid:
+                    cur = 0
+                    cnt += 1
+            if cur > 0:
+                cnt += 1
+            # logging.info(f'({l}, {r}), mid={mid}, cnt={cnt}')
+            if cnt >= cut_num:
+                l = mid
+            else:
+                r = mid - 1
+        return l
+
+    cut_size = get_cut_size(PLOT_CUT)
+    x_ = x
+    x = []
+    MAE_data = []
+    RMSE_data = []
+    MAE = 0.0
+    MSE = 0.0
+    num_rating = 0
+    for key in x_:
+        _data = cluster_data[key]
+        MAE += _data[0]
+        MSE += _data[1]
+        num_rating += _data[2]
+        if num_rating >= cut_size:
+            x.append(key)
+            MAE_data.append(MAE / num_rating)
+            RMSE_data.append(np.sqrt(MSE / num_rating))
+            MAE = 0.0
+            MSE = 0.0
+            num_rating = 0
+    if num_rating > 0:
+        x.append(x_[-1])
+        MAE_data.append(MAE / num_rating)
+        RMSE_data.append(np.sqrt(MSE / num_rating))
+    logging.info(f'cut_size={cut_size}, len(x)={len(x)}')
+    '''
     cut_points = np.arange(1, PLOT_CUT + 1) * (n_users // PLOT_CUT)
     cut_points[-1] = n_users - 1
     x = C_quantity[cut_points]

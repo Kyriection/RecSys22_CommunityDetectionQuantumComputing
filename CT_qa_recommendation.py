@@ -100,6 +100,7 @@ def plot(urm, output_folder_path, n_iter, result_df):
     print(f'n_iter:{n_iter}, Total MAE = {tot_mae}, Total RMSE = {tot_rmse}')
 
     # cluster to PLOT_CUT points
+    '''
     def get_cut_size(cut_num: int):
         l = 1
         r = urm.size
@@ -112,6 +113,8 @@ def plot(urm, output_folder_path, n_iter, result_df):
                 if cur >= mid:
                     cur = 0
                     cnt += 1
+            if cur > 0:
+                cnt += 1
             if cnt >= cut_num:
                 l = mid
             else:
@@ -142,10 +145,12 @@ def plot(urm, output_folder_path, n_iter, result_df):
         x.append(x_[-1])
         MAE_data.append(MAE / num_rating)
         RMSE_data.append(np.sqrt(MSE / num_rating))
+    logging.info(f'cut_size={cut_size}, len(x)={len(x)}')
     '''
     cut_points = np.arange(1, PLOT_CUT + 1) * (n_users // PLOT_CUT)
     cut_points[-1] = n_users - 1
     x = C_quantity[cut_points]
+    x = sorted(set(x))
     MAE_data = []
     RMSE_data = []
     cd_key = list(cluster_data.keys())
@@ -162,7 +167,6 @@ def plot(urm, output_folder_path, n_iter, result_df):
             cd_i += 1
         MAE_data.append(MAE / num_rating)
         RMSE_data.append(np.sqrt(MSE / num_rating))
-    '''
     MAE_data = dict(TC_qa = MAE_data)
     RMSE_data = dict(TC_qa = RMSE_data)
     plot_line(x, MAE_data, output_folder_path, 'the number of ratings (clustered)', 'MAE')
