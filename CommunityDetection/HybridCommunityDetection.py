@@ -1,8 +1,11 @@
+import logging
+
 from CommunityDetection import QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, \
     UserCommunityDetection, QUBOCommunityDetection, QUBOLongTailCommunityDetection
 
-# HYBRID_LIST = [QUBOLongTailCommunityDetection, QUBOBipartiteCommunityDetection]
-HYBRID_LIST = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+logging.basicConfig(level=logging.INFO)
+HYBRID_LIST = [UserCommunityDetection, QUBOBipartiteCommunityDetection]
+
 assert len(HYBRID_LIST) >= 2
 
 class HybridCommunityDetection(*HYBRID_LIST):
@@ -39,6 +42,7 @@ class HybridCommunityDetection(*HYBRID_LIST):
     @staticmethod
     def get_comm_from_sample(sample, n_users, n_items=0):
         method = HybridCommunityDetection.select_method(n_users)
+        logging.info(f'use {method.name}')
         return method.get_comm_from_sample(sample, n_users, n_items=n_items)
     
     @staticmethod

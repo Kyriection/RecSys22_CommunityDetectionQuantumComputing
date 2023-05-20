@@ -165,11 +165,16 @@ def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
 '''
 
 
-def load_communities(ucm, n_users, n_items):
+def load_communities(urm, ucm, n_users, n_items):
     communities = Clusters(n_users, n_items)
-    for n_clusters in tqdm.tqdm(N_CLUSTER, desc='Kmeans'):
+    X = ucm
+    # X = ucm.toarray()
+    # X = sp.hstack((urm, ucm))
+    for n_clusters in tqdm.tqdm(N_CLUSTER, desc='load_communities'):
         clusters = [[] for i in range(n_clusters)]
-        # model = KMeans(n_clusters=n_clusters, random_state=0).fit(ucm.toarray())
+        # model = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
+        model = SpectralClustering(n_clusters=n_clusters, random_state=0).fit(X)
+        '''
         model = SpectralClustering(
             n_clusters=n_clusters,
             eigen_solver='arpack',
@@ -179,10 +184,13 @@ def load_communities(ucm, n_users, n_items):
             assign_labels='discretize',
             # affinity = 'precomputed', 
             # n_init=1000,
-        ).fit(ucm.toarray())
+        ).fit(X)
+        '''
         for i, cluster in enumerate(model.labels_):
             clusters[cluster].append(i)
         communities.add_iteration(clusters)
+        cnt = sum([1 if len(cluster) > 0 else 0 for cluster in clusters])
+        logging.info(f'n_clusters = {n_clusters}, cnt = {cnt}.')
     return communities
   
 
@@ -437,7 +445,7 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, met
     dataset_folder_path = f'{folder_path}{dataset_name}/'
     # communities = load_communities(dataset_folder_path, method, sampler)
     n_users, n_items = urm_train.shape
-    communities = load_communities(ucm, n_users, n_items)
+    communities = load_communities(cd_urm, ucm, n_users, n_items)
     if communities is None:
         print(f'Could not load communitites for {dataset_folder_path}, {method}, {sampler}.')
         return

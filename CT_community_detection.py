@@ -247,7 +247,7 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
 
 
 def check_communities(communities: Communities, check_users, check_items):
-    MIN_COMMUNITIE_SIZE = 1
+    MIN_COMMUNITIE_SIZE = 5
     for community in communities.iter():
         if (check_users and community.users.size == 0) or (check_items and community.items.size == 0):
             # raise EmptyCommunityError('Empty community found.')
@@ -278,6 +278,7 @@ def clean_empty_iteration(n_iter: int, folder_path: str, method: Type[BaseCommun
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
+    parser.add_argument('-a', '--alpha', type=float, default=1.0)
     args = parser.parse_args()
     return args
 
@@ -301,17 +302,18 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [QUBOBipartiteProjectedCommunityDetection]
+    method_list = [HybridCommunityDetection]
+    method_list = [QUBOBipartiteCommunityDetection]
     # method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 10
+    num_iters = 7
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list)
     # QUBOGraphCommunityDetection.set_alpha(args.alpha)
     # QUBOProjectedCommunityDetection.set_alpha(args.alpha)
-    HybridCommunityDetection.set_alpha(0.99)
+    HybridCommunityDetection.set_alpha(args.alpha)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)
