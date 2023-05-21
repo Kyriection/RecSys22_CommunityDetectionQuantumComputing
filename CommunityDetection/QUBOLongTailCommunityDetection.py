@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO)
 class QUBOLongTailCommunityDetection(QUBOCommunityDetection):
     filter_items = False
     name = 'QUBOLongTailCommunityDetection'
+    alpha = 0.5
 
     def __init__(self, urm, icm, ucm, *args, **kwargs):
         super(QUBOLongTailCommunityDetection, self).__init__(urm, *args, **kwargs)
@@ -50,8 +51,9 @@ class QUBOLongTailCommunityDetection(QUBOCommunityDetection):
         # diag = (diag - diag.mean()) * ratio**2
         diag = (diag - diag.mean())
         # logging.info(f'B_max={np.max(B)}, diag_max={np.max(diag)}')
+        B *= self.alpha
         for i in range(n_users):
-            B[i, i] += diag[i]
+            B[i, i] += (1 - self.alpha) * diag[i]
 
         if threshold is not None:
             B[np.abs(B) < threshold] = 0
@@ -67,20 +69,6 @@ class QUBOLongTailCommunityDetection(QUBOCommunityDetection):
                          QUBOLongTailCommunityDetection).get_comm_from_sample(sample, n_users)
         return users, np.zeros(n_items)
 
-    '''
     @staticmethod
-    def set_n_all_users(n_users: int):
-        if QUBOLongTailCommunityDetection.n_all_users == -1:
-            QUBOLongTailCommunityDetection.n_all_users = n_users
-            print(f"{QUBOLongTailCommunityDetection.name}: set n_all_users={n_users}")
-    '''
-
-    def get_graph_cut(self, communities: Communities):
-        cut = 0.0
-        rows, cols = self.W.nonzero()
-        for row, col in zip(rows, cols):
-            if communities.user_mask[row] != communities.user_mask[col]:
-                cut += self.W[row, col]
-        all = self.W.sum()
-        # print(f'cut/all={cut}/{all}={cut/all}')
-        return cut, all
+    def set_alpha(alpha: float):
+        QUBOLongTailCommunityDetection.alpha = alpha

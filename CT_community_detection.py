@@ -24,7 +24,7 @@ from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_
 
 logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
-QA_CUT: float = False
+QA_CUT: float = True
 
 def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
     '''
@@ -302,9 +302,8 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [HybridCommunityDetection]
-    method_list = [QUBOBipartiteCommunityDetection]
-    # method_list = [QUBOLongTailCommunityDetection]
+    # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
+    method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
@@ -313,7 +312,8 @@ if __name__ == '__main__':
     num_iters = 7
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list)
-    # QUBOGraphCommunityDetection.set_alpha(args.alpha)
-    # QUBOProjectedCommunityDetection.set_alpha(args.alpha)
+    QUBOGraphCommunityDetection.set_alpha(args.alpha)
+    QUBOProjectedCommunityDetection.set_alpha(args.alpha)
     HybridCommunityDetection.set_alpha(args.alpha)
+    QUBOLongTailCommunityDetection.set_alpha(args.alpha)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)
