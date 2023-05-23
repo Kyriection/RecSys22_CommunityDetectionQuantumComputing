@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+import scipy.sparse as sp
 from sklearn.cluster import KMeans
 
 from CommunityDetection.BaseCommunityDetection import BaseCommunityDetection
@@ -36,6 +37,7 @@ class KmeansCommunityDetection(BaseCommunityDetection):
         if n_users < 2:
             users = np.ones(n_users)
         else:
+            '''
             X = np.zeros(shape=(n_users, n_genres), dtype=np.float32)
             urm = self.urm.toarray()
             icm = self.icm.toarray()
@@ -50,7 +52,11 @@ class KmeansCommunityDetection(BaseCommunityDetection):
                     X[i][j] /= cnt
             
             users = kmeans.fit_predict(X)
-            # users = kmeans.fit_predict(self.urm.toarray())
+            '''
+            # X = self.urm
+            # X = self.ucm
+            X = sp.hstack((self.urm, self.ucm))
+            users = kmeans.fit_predict(X)
 
         run_time = time.time() - start_time
 

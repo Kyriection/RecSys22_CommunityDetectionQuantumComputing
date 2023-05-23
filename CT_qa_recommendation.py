@@ -586,7 +586,7 @@ if __name__ == '__main__':
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     # method_list = [HybridCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [QUBOLongTailCommunityDetection]
+    method_list = [QUBOBipartiteProjectedCommunityDetection]
     # method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]

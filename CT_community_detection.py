@@ -24,7 +24,7 @@ from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_
 
 logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
-QA_CUT: float = True
+QA_CUT: float = False
 
 def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
     '''
@@ -247,7 +247,7 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
 
 
 def check_communities(communities: Communities, check_users, check_items):
-    MIN_COMMUNITIE_SIZE = 5
+    MIN_COMMUNITIE_SIZE = 1
     for community in communities.iter():
         if (check_users and community.users.size == 0) or (check_items and community.items.size == 0):
             # raise EmptyCommunityError('Empty community found.')
@@ -303,7 +303,7 @@ if __name__ == '__main__':
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [QUBOLongTailCommunityDetection]
+    method_list = [KmeansCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]

@@ -42,7 +42,8 @@ PLOT_CUT = 30
 MIN_RATING_NUM = 1
 TOTAL_DATA = {}
 EI: bool = False # EI if True else TC or CT
-N_CLUSTER = [2, 4, 8, 16, 32, 53, 81, 93, ]
+# N_CLUSTER = [2, 4, 8, 16, 32, 64, 128, ]
+N_CLUSTER = [2, 4, 8, 16, 32, 53, 81, ]
 
 def plot(urm, output_folder_path, n_iter, result_df):
     global MIN_RATING_NUM, PLOT_CUT
@@ -167,14 +168,13 @@ def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
 
 def load_communities(urm, ucm, n_users, n_items):
     communities = Clusters(n_users, n_items)
-    X = ucm
-    # X = ucm.toarray()
+    X = urm
+    # X = ucm
     # X = sp.hstack((urm, ucm))
     for n_clusters in tqdm.tqdm(N_CLUSTER, desc='load_communities'):
         clusters = [[] for i in range(n_clusters)]
         # model = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
-        model = SpectralClustering(n_clusters=n_clusters, random_state=0).fit(X)
-        '''
+        # model = SpectralClustering(n_clusters=n_clusters, random_state=0).fit(X)
         model = SpectralClustering(
             n_clusters=n_clusters,
             eigen_solver='arpack',
@@ -184,8 +184,8 @@ def load_communities(urm, ucm, n_users, n_items):
             assign_labels='discretize',
             # affinity = 'precomputed', 
             # n_init=1000,
+            random_state=0,
         ).fit(X)
-        '''
         for i, cluster in enumerate(model.labels_):
             clusters[cluster].append(i)
         communities.add_iteration(clusters)

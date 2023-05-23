@@ -28,7 +28,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
 logging.basicConfig(level=logging.INFO)
 QUBO = ["Hybrid", "QUBOBipartiteCommunityDetection", "QUBOBipartiteProjectedCommunityDetection", "KmeansCommunityDetection", "HierarchicalClustering", "UserCommunityDetection"]
 # METHOD = ["LeapHybridSampler", "SimulatedAnnealingSampler", "SteepestDescentSolver", "TabuSampler", ""]
-METHOD = ["SimulatedAnnealingSampler"]
+METHOD = ["SimulatedAnnealingSampler", ""]
 CDR = "cd_LRRecommender.zip"
 RECOMMENDER = 'LRRecommender'
 RESULT = ".result_df.csv"
@@ -46,6 +46,9 @@ def init_global_data():
 
 def plot(output_folder_path, show: bool = False):
     df = pd.DataFrame(TOTAL_DATA)
+    if df.shape[0] < 1:
+       print('data empty.')
+       return
     output_path = os.path.join(output_folder_path, f'total_MAE_RMSE.csv')
     df.to_csv(output_path)
     print(output_path)
@@ -255,9 +258,7 @@ def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, 
         cur = os.path.join(path, d)
         tmp = os.path.join(cur, m)
         file = os.path.join(tmp, CDR)
-        z = zipfile.ZipFile(file, 'r') 
-        file_path = z.extract(RESULT, path=cur + "/decompressed")
-        result_df_ei = pd.read_csv(file_path, index_col="user")
+        result_df_ei = extract_file(file, cur)
       for name in dir_file:
         d = os.path.join(path, name)
         if not os.path.isdir(d):
@@ -305,5 +306,5 @@ if __name__ == '__main__':
   # show = True if show else False
   show = True
   # print_result(cut_ratio, MovielensSample2Reader, [QUBOLongTailCommunityDetection], show)
-  print_result(cut_ratio, MovielensSample2Reader, [QUBOBipartiteProjectedCommunityDetection], show)
+  print_result(cut_ratio, MovielensSample2Reader, [KmeansCommunityDetection], show)
   
