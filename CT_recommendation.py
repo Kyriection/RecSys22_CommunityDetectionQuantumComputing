@@ -33,7 +33,7 @@ from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 from utils.plot import plot_line, plot_scatter
-from utils.derived_variables import create_derived_variables
+from utils.derived_variables import create_related_variables
 from results.plot_results import print_result
 
 logging.basicConfig(level=logging.INFO)
@@ -334,35 +334,6 @@ def evaluate_recommender(urm_train_last_test, urm_test, ucm, icm, communities, r
 
     plot(urm_train_last_test, output_folder_path, n_iter, result_df)
     return result_dict
-
-
-def normalization(variables):
-    min_val = np.min(variables, axis=0)
-    max_val = np.max(variables, axis=0)
-    _range = max_val - min_val
-    _range[_range <= 0] = 1
-    return (variables - min_val) / _range
-
-
-def create_related_variables(urm, icm, ucm):
-    C_aver_rating, C_quantity, C_seen_popularity, C_seen_rating,\
-    I_aver_rating, I_quantity, I_likability = create_derived_variables(urm)
-    item_related_variables = np.hstack([
-        I_aver_rating.reshape((-1, 1)),
-        I_quantity.reshape((-1, 1)),
-        # I_likability.reshape((-1, 1)),
-        icm.toarray(),
-    ])
-    user_related_variables = np.hstack([
-        C_aver_rating.reshape((-1, 1)),
-        C_quantity.reshape((-1, 1)),
-        # C_seen_popularity.reshape((-1, 1)),
-        # C_seen_rating.reshape((-1, 1)),
-        ucm.toarray(),
-    ])
-    item_related_variables = normalization(item_related_variables)
-    user_related_variables = normalization(user_related_variables)
-    return item_related_variables, user_related_variables
 
 
 def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]],

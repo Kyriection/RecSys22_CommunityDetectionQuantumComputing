@@ -1,6 +1,14 @@
 import numpy as np
 import numpy.typing as npt
 
+def normalization(variables):
+    min_val = np.min(variables, axis=0)
+    max_val = np.max(variables, axis=0)
+    _range = max_val - min_val
+    _range[_range <= 0] = 1
+    return (variables - min_val) / _range
+
+
 def create_derived_variables(urm: npt.ArrayLike):
   n_users, n_items = urm.shape
 
@@ -29,3 +37,24 @@ def create_derived_variables(urm: npt.ArrayLike):
 
   return C_aver_rating, C_quantity, C_seen_popularity, C_seen_rating,\
          I_aver_rating, I_quantity, I_likability
+
+
+def create_related_variables(urm, icm, ucm):
+    C_aver_rating, C_quantity, C_seen_popularity, C_seen_rating,\
+    I_aver_rating, I_quantity, I_likability = create_derived_variables(urm)
+    item_related_variables = np.hstack([
+        I_aver_rating.reshape((-1, 1)),
+        I_quantity.reshape((-1, 1)),
+        # I_likability.reshape((-1, 1)),
+        icm.toarray(),
+    ])
+    user_related_variables = np.hstack([
+        C_aver_rating.reshape((-1, 1)),
+        C_quantity.reshape((-1, 1)),
+        # C_seen_popularity.reshape((-1, 1)),
+        # C_seen_rating.reshape((-1, 1)),
+        ucm.toarray(),
+    ])
+    item_related_variables = normalization(item_related_variables)
+    user_related_variables = normalization(user_related_variables)
+    return item_related_variables, user_related_variables
