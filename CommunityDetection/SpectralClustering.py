@@ -2,6 +2,7 @@ import time
 
 import numpy as np
 import sklearn.cluster
+import scipy.sparse as sp
 # from sklearn.cluster import SpectralClustering
 
 from CommunityDetection.BaseCommunityDetection import BaseCommunityDetection
@@ -15,6 +16,8 @@ class SpectralClustering(BaseCommunityDetection):
 
     def __init__(self, urm, icm, ucm, *args, **kwargs):
         super(SpectralClustering, self).__init__(urm, *args, **kwargs)
+        self.icm = icm
+        self.ucm = ucm
 
 
     def save_model(self, folder_path, file_name):
@@ -40,12 +43,13 @@ class SpectralClustering(BaseCommunityDetection):
         )
         n_users, n_items = self.urm.shape
 
-        urm: np.ndarray = self.urm.toarray()
-        urm[np.isnan(urm)] = 0
+        X = sp.hstack((self.urm, self.ucm))
+        # urm: np.ndarray = self.urm.toarray()
+        # urm[np.isnan(urm)] = 0
         # urm.replace([-np.inf, np.inf], 0)
         # urm = (urm - np.mean(urm)) / np.std(urm)
         try:
-            users = clustering.fit_predict(urm)
+            users = clustering.fit_predict(X)
         except Exception as e:
             users = np.ones(n_users)
             print('[Error] spectral clustering: ', e)

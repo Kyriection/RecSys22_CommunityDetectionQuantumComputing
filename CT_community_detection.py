@@ -23,6 +23,7 @@ from utils.plot import plot_cut, plot_density
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_urm_info
 
 logging.basicConfig(level=logging.INFO)
+MIN_COMMUNITIE_SIZE = 5
 CUT_RATIO: float = None
 QA_CUT: float = False
 
@@ -87,7 +88,8 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         urm_train, urm_validation, urm_test, icm, ucm = load_data(data_reader, split_quota=split_quota, user_wise=user_wise,
                                                         make_implicit=make_implicit, threshold=threshold, icm_ucm=True)
 
-        urm_train, urm_validation, urm_test, icm, ucm = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr(), ucm, icm # item is main charactor
+        # item is main charactor, and remove year from item comtext
+        urm_train, urm_validation, urm_test, icm, ucm = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr(), ucm, icm[:, :-1]
         _, _, _, _, _, urm_train, urm_validation, urm_test, icm, ucm = head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm)
 
         urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
@@ -247,7 +249,7 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
 
 
 def check_communities(communities: Communities, check_users, check_items):
-    MIN_COMMUNITIE_SIZE = 1
+    global MIN_COMMUNITIE_SIZE
     for community in communities.iter():
         if (check_users and community.users.size == 0) or (check_items and community.items.size == 0):
             # raise EmptyCommunityError('Empty community found.')
@@ -303,7 +305,7 @@ if __name__ == '__main__':
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [HybridCommunityDetection]
+    method_list = [SpectralClustering]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]

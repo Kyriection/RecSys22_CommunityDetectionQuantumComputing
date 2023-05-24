@@ -4,7 +4,7 @@ from CommunityDetection import QUBOBipartiteCommunityDetection, QUBOBipartitePro
     UserCommunityDetection, QUBOCommunityDetection, QUBOLongTailCommunityDetection
 
 logging.basicConfig(level=logging.INFO)
-HYBRID_LIST = [UserCommunityDetection, QUBOBipartiteCommunityDetection]
+HYBRID_LIST = [QUBOBipartiteCommunityDetection, UserCommunityDetection]
 
 assert len(HYBRID_LIST) >= 2
 
