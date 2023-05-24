@@ -12,8 +12,8 @@ from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, Q
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
     UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
     QUBOProjectedCommunityDetection, HybridCommunityDetection, QUBONcutCommunityDetection, SpectralClustering, \
-    QUBOBipartiteProjectedItemCommunityDetection, HybridCommunityDetection2, QUBOLongTailCommunityDetection, \
-    TMPCD
+    QUBOBipartiteProjectedItemCommunityDetection, LTBipartiteProjectedCommunityDetection, \
+    QUBOBipartiteProjectedCommunityDetection2
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader, \
     MovielensSample2Reader
@@ -173,11 +173,8 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
     n_users, n_items = cd_urm.shape
     show_urm_info(cd_urm)
 
-    if QA_CUT:
-        if n_iter == 0:
-            m: BaseCommunityDetection = QUBOLongTailCommunityDetection(cd_urm, icm, ucm)
-        else:
-            m: BaseCommunityDetection = TMPCD(cd_urm, icm, ucm)
+    if QA_CUT and n_iter == 0:
+        m: BaseCommunityDetection = LTBipartiteProjectedCommunityDetection(cd_urm, icm, ucm)
     else:
         m: BaseCommunityDetection = method(cd_urm, icm, ucm)
 
@@ -305,17 +302,17 @@ if __name__ == '__main__':
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [SpectralClustering]
+    method_list = [QUBOBipartiteProjectedCommunityDetection2]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 8
+    num_iters = 7
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list)
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
     HybridCommunityDetection.set_alpha(args.alpha)
-    QUBOLongTailCommunityDetection.set_alpha(args.alpha)
+    LTBipartiteProjectedCommunityDetection.set_alpha(args.alpha)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)

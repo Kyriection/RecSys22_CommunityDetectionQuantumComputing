@@ -20,7 +20,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
     SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
-    TMPCD, QUBOLongTailCommunityDetection
+    LTBipartiteProjectedCommunityDetection, QUBOBipartiteProjectedCommunityDetection2
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
@@ -557,7 +557,7 @@ if __name__ == '__main__':
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     # method_list = [HybridCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [SpectralClustering]
+    method_list = [QUBOBipartiteProjectedCommunityDetection2]
     # method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]

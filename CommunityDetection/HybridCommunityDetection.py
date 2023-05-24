@@ -1,7 +1,7 @@
 import logging
 
 from CommunityDetection import QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, \
-    UserCommunityDetection, QUBOCommunityDetection, QUBOLongTailCommunityDetection
+    UserCommunityDetection, QUBOCommunityDetection, LTBipartiteProjectedCommunityDetection
 
 logging.basicConfig(level=logging.INFO)
 HYBRID_LIST = [QUBOBipartiteCommunityDetection, UserCommunityDetection]

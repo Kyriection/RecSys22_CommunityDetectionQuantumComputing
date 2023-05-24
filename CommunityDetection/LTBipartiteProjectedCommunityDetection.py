@@ -1,8 +1,3 @@
-'''
-Author: Kaizyn
-Date: 2023-01-11 13:45:23
-LastEditTime: 2023-01-13 21:18:12
-'''
 import logging
 import time
 
@@ -14,13 +9,13 @@ from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
 logging.basicConfig(level=logging.INFO)
 
 
-class QUBOLongTailCommunityDetection(QUBOCommunityDetection):
+class LTBipartiteProjectedCommunityDetection(QUBOCommunityDetection):
     filter_items = False
-    name = 'QUBOLongTailCommunityDetection'
+    name = 'QUBOBipartiteProjectedCommunityDetection'
     alpha = 0.5
 
     def __init__(self, urm, icm, ucm, *args, **kwargs):
-        super(QUBOLongTailCommunityDetection, self).__init__(urm, *args, **kwargs)
+        super(LTBipartiteProjectedCommunityDetection, self).__init__(urm, *args, **kwargs)
         self.icm = icm
         self.ucm = ucm
         self.W = None
@@ -44,15 +39,13 @@ class QUBOLongTailCommunityDetection(QUBOCommunityDetection):
         B = W - P
         C_quantity = np.ediff1d(self.urm.tocsr().indptr)
         C_quantity = C_quantity / np.max(C_quantity) # normalization
-        n_users, n_items = self.urm.shape
-        # ratio = n_users / self.n_all_users
         T = 12
-        diag = np.exp(C_quantity * T)
-        # diag = (diag - diag.mean()) * ratio**2
+        diag = np.exp(C_quantity / T)
+        diag /= np.sum(diag)
         diag = (diag - diag.mean())
         # logging.info(f'B_max={np.max(B)}, diag_max={np.max(diag)}')
         B *= self.alpha
-        for i in range(n_users):
+        for i in range(len(diag)):
             B[i, i] += (1 - self.alpha) * diag[i]
 
         if threshold is not None:
@@ -65,10 +58,10 @@ class QUBOLongTailCommunityDetection(QUBOCommunityDetection):
 
     @staticmethod
     def get_comm_from_sample(sample, n_users, n_items=0):
-        users, _ = super(QUBOLongTailCommunityDetection,
-                         QUBOLongTailCommunityDetection).get_comm_from_sample(sample, n_users)
+        users, _ = super(LTBipartiteProjectedCommunityDetection,
+                         LTBipartiteProjectedCommunityDetection).get_comm_from_sample(sample, n_users)
         return users, np.zeros(n_items)
 
     @staticmethod
     def set_alpha(alpha: float):
-        QUBOLongTailCommunityDetection.alpha = alpha
+        LTBipartiteProjectedCommunityDetection.alpha = alpha
