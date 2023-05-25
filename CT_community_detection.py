@@ -25,7 +25,7 @@ from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_
 logging.basicConfig(level=logging.INFO)
 MIN_COMMUNITIE_SIZE = 5
 CUT_RATIO: float = None
-QA_CUT: float = False
+QA_CUT: float = True
 
 def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
     '''
@@ -302,7 +302,7 @@ if __name__ == '__main__':
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [QUBOBipartiteProjectedCommunityDetection2]
+    method_list = [QUBOBipartiteProjectedCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]

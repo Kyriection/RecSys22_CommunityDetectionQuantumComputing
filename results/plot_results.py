@@ -22,7 +22,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
     QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
-    TMPCD, QUBOLongTailCommunityDetection, Clusters
+    Clusters
 
 
 logging.basicConfig(level=logging.INFO)

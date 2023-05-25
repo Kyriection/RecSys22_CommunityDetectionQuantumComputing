@@ -13,6 +13,7 @@ class LTBipartiteProjectedCommunityDetection(QUBOCommunityDetection):
     filter_items = False
     name = 'QUBOBipartiteProjectedCommunityDetection'
     alpha = 0.5
+    T = 5
 
     def __init__(self, urm, icm, ucm, *args, **kwargs):
         super(LTBipartiteProjectedCommunityDetection, self).__init__(urm, *args, **kwargs)
@@ -39,12 +40,13 @@ class LTBipartiteProjectedCommunityDetection(QUBOCommunityDetection):
         B = W - P
         C_quantity = np.ediff1d(self.urm.tocsr().indptr)
         C_quantity = C_quantity / np.max(C_quantity) # normalization
-        T = 12
-        diag = np.exp(C_quantity / T)
+        diag = np.exp(C_quantity * self.T)
         diag /= np.sum(diag)
-        diag = (diag - diag.mean())
+        diag -= diag.mean()
+        cnt = sum(diag > 0)
+        logging.info(f'{round(cnt / len(diag) * 100, 2)}%({cnt}) get benefit from C_quantity.')
         # logging.info(f'B_max={np.max(B)}, diag_max={np.max(diag)}')
-        B *= self.alpha
+        B *= self.alpha / np.max(np.abs(B))
         for i in range(len(diag)):
             B[i, i] += (1 - self.alpha) * diag[i]
 
@@ -52,7 +54,8 @@ class LTBipartiteProjectedCommunityDetection(QUBOCommunityDetection):
             B[np.abs(B) < threshold] = 0
 
         self.W = W
-        self._Q = -B / m  # Normalized QUBO matrix
+        # self._Q = -B / m  # Normalized QUBO matrix
+        self._Q = -B
 
         self._fit_time = time.time() - start_time
 
