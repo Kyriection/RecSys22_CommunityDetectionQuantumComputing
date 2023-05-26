@@ -44,9 +44,20 @@ def init_global_data():
   DATA = {key : {'x': None, 'MAE': {}, 'RMSE': {}} for key in ['rank', 'rating', 'cluster']}
 
 
+def process_total_data():
+  for key in TOTAL_DATA:
+    values = TOTAL_DATA[key].values()
+    if values:
+      TOTAL_DATA[key][-2] = min(values)
+    else:
+       return None
+  df = pd.DataFrame(TOTAL_DATA)
+  return df
+
+
 def plot(output_folder_path, show: bool = False):
-    df = pd.DataFrame(TOTAL_DATA)
-    if df.shape[0] < 1:
+    df = process_total_data()
+    if df is None:
        print('data empty.')
        return
     output_path = os.path.join(output_folder_path, f'total_MAE_RMSE.csv')
