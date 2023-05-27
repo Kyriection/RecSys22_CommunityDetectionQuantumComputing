@@ -29,9 +29,10 @@ from utils.plot import plot_metric, plot_cut, plot_divide
 from results.read_results import print_result
 
 CUTOFF_LIST = [5, 10, 20, 30, 40, 50, 100]
-ADAPATIVE_FLAG = False
+ADAPATIVE_FLAG = True
 ADAPATIVE_METRIC = ['PRECISION', 'MAP', 'NDCG'][2] 
 ADAPATIVE_DATA = ['validation', 'test'][0]
+MIN_RATINGS_PER_USER = 1
 
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
@@ -176,13 +177,13 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
 
 
 def evaluate_recommender(urm_train_last_test, urm_test, communities, recommenders, output_folder_path=None, recommender_name=None,
-                         n_iter=None):
+                         n_iter=None, min_ratings_per_user: int = 1):
     print(f'Evaluating {recommender_name} on the result of community detection.')
 
     recommender = CommunityDetectionRecommender(urm_train_last_test, communities=communities, recommenders=recommenders,
                                                 n_iter=n_iter)
 
-    evaluator_test = EvaluatorHoldout(urm_test, cutoff_list=CUTOFF_LIST)
+    evaluator_test = EvaluatorHoldout(urm_test, cutoff_list=CUTOFF_LIST, min_ratings_per_user=min_ratings_per_user)
     time_on_test = time.time()
     result_df, result_string = evaluator_test.evaluateRecommender(recommender)
     time_on_test = time.time() - time_on_test
@@ -266,7 +267,9 @@ def adaptive_selection(num_iters, urm_train, urm_test, recommender, output_folde
         for community in communities.iter():
             comm_recommender = get_recommender_on_community(recommender, community, urm_train)
             cd_recommenders.append(comm_recommender)
-        return evaluate_recommender(urm_train, urm_test, communities, cd_recommenders)
+        return evaluate_recommender(urm_train, urm_test, communities, cd_recommenders,
+                                    min_ratings_per_user=MIN_RATINGS_PER_USER)
+                                    # min_ratings_per_user=1 if ADAPATIVE_DATA == 'test' else MIN_RATINGS_PER_USER)
     
     result_dict_divide = get_result_dict()
     if communities.s0 is None and communities.s1 is None:
@@ -298,7 +301,7 @@ def adaptive_selection(num_iters, urm_train, urm_test, recommender, output_folde
     if ADAPATIVE_DATA == 'test':
         threshold = 0
     elif ADAPATIVE_DATA == 'validation':
-        threshold = (num_iters - communities.num_iters) * 0.025
+        threshold = (num_iters - communities.num_iters) * 0.01
     if ratio > threshold:
         communities.divide_flag = True
         communities.result_dict_test = result_dict_divide
@@ -346,7 +349,7 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, method, recom
             cd_recommenders.append(comm_recommender)
             n_comm += 1
         evaluate_recommender(cd_urm, urm_test, adaptive_communities, cd_recommenders, output_folder_path,
-                             recommender.RECOMMENDER_NAME)
+                             recommender.RECOMMENDER_NAME, min_ratings_per_user=MIN_RATINGS_PER_USER)
         plot_metric(adaptive_communities, output_folder_path, 10, ADAPATIVE_METRIC)
         plot_divide(adaptive_communities, output_folder_path)
 
@@ -374,7 +377,7 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, method, reco
                 cd_recommenders.append(comm_recommender)
                 n_comm += 1
             evaluate_recommender(cd_urm, urm_test, communities, cd_recommenders, output_folder_path,
-                                 recommender_name, n_iter=n_iter)
+                                 recommender_name, n_iter=n_iter, min_ratings_per_user=MIN_RATINGS_PER_USER)
         else:
             print('Recommender already trained and evaluated.')
 
@@ -423,7 +426,7 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
                             shutil.rmtree(c_folder_path)
 
 
-def save_results(data_reader_classes, result_folder_path, *args):
+def save_results(data_reader_classes, method_list, sampler_list, result_folder_path, *args):
     tag = []
     for arg in args:
         if arg is None:
@@ -439,18 +442,19 @@ def save_results(data_reader_classes, result_folder_path, *args):
         output_folder = os.path.join(output_folder, tag) 
         if not os.path.exists(output_folder):
             os.mkdir(output_folder)
-        print_result(dataset_name, True, output_folder)
+        print_result(dataset_name, method_list, sampler_list, True, output_folder)
 
 
 if __name__ == '__main__':
     args = parse_args()
+    # MIN_RATINGS_PER_USER = args.alpha
     data_reader_classes = [MovielensSampleReader]
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [TopPop]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
-    method_list = [SpectralClustering]
+    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     # method_list = [QUBOBipartiteCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
@@ -461,4 +465,4 @@ if __name__ == '__main__':
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
     # save_results(data_reader_classes, result_folder_path, args.alpha, args.beta)
-    save_results(data_reader_classes, result_folder_path, args.alpha)
+    save_results(data_reader_classes, method_list, sampler_list, result_folder_path, args.alpha)

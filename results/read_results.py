@@ -7,7 +7,7 @@ import os, zipfile
 import pandas as pd
 
 QUBO = ["Hybrid", "QUBOBipartiteCommunityDetection", "QUBOBipartiteProjectedCommunityDetection", "KmeansCommunityDetection", "HierarchicalClustering", "UserCommunityDetection"]
-METHOD = ["LeapHybridSampler", "SimulatedAnnealingSampler", "SteepestDescentSolver", "TabuSampler", ""]
+SAMPLER = ["LeapHybridSampler", "SimulatedAnnealingSampler", "SteepestDescentSolver", "TabuSampler", ""]
 CDR = "cd_TopPopRecommender.zip"
 RESULT = ".result_df.csv"
 COL = ["PRECISION", "MAP", "NDCG", "COVERAGE_ITEM_HIT"]
@@ -16,13 +16,21 @@ PD_COL = ["Baseline", "N", "C", *COL]
 
 # print(__file__)
 
-def print_result(dataset: str = None, show: bool = True, output_folder: str = None):
+def print_result(dataset: str = None, method_list = None, sampler_list = None, show: bool = True, output_folder: str = None):
   dataset = dataset or "MovielensSample"
   # dataset = "./" + dataset
   dataset = os.path.abspath("/app/results/" + dataset)
 
+  if method_list is None:
+    method_list = os.listdir(dataset)
+  else:
+    method_list = [method.name for method in method_list]
+  if sampler_list is None:
+    sampler_list = SAMPLER
+  else:
+    sampler_list = [sampler.__class__.__name__ for sampler in sampler_list]
   # for method in QUBO:
-  for method in os.listdir(dataset):
+  for method in method_list:
     path = os.path.join(dataset, method)
     if not os.path.exists(path) or os.path.isfile(path) or method == "TopPopRecommender":
       continue
@@ -33,7 +41,7 @@ def print_result(dataset: str = None, show: bool = True, output_folder: str = No
     data = {key: [] for key in PD_COL}
     dir_file = os.listdir(path)
     dir_file.sort()
-    for m in METHOD:
+    for m in sampler_list:
       # if show:
         # print(m)
       try:
@@ -83,5 +91,5 @@ if __name__ == '__main__':
   dataset = input("input file folder name: ")
   show = input("print on CMD or not: ")
   show = True if show else False
-  print_result(dataset, show)
+  print_result(dataset, show=True)
   
