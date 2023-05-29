@@ -12,8 +12,8 @@ logging.basicConfig(level=logging.INFO)
 class LTBipartiteProjectedCommunityDetection(QUBOCommunityDetection):
     filter_items = False
     name = 'QUBOBipartiteProjectedCommunityDetection'
-    alpha = 0.5
-    T = 5
+    alpha: float = 0.5
+    T: int = 5
 
     def __init__(self, urm, icm, ucm, *args, **kwargs):
         super(LTBipartiteProjectedCommunityDetection, self).__init__(urm, *args, **kwargs)
@@ -68,3 +68,7 @@ class LTBipartiteProjectedCommunityDetection(QUBOCommunityDetection):
     @staticmethod
     def set_alpha(alpha: float):
         LTBipartiteProjectedCommunityDetection.alpha = alpha
+
+    @staticmethod
+    def set_T(T: int):
+        LTBipartiteProjectedCommunityDetection.T = T

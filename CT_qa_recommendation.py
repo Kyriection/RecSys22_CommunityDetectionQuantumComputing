@@ -477,6 +477,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
     parser.add_argument('-a', '--alpha', type=float, default=1.0)
+    parser.add_argument('-t', '--T', type=int, default=5)
     args = parser.parse_args()
     return args
 
@@ -549,8 +550,8 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
 if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
-    data_reader_classes = [MovielensSample2Reader]
-    # data_reader_classes = [Movielens1MReader]
+    # data_reader_classes = [MovielensSample2Reader]
+    data_reader_classes = [Movielens100KReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
@@ -567,4 +568,5 @@ if __name__ == '__main__':
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    save_results(data_reader_classes, result_folder_path, method_list, args.cut_ratio, args.alpha)
+    # save_results(data_reader_classes, result_folder_path, method_list, args.cut_ratio, args.alpha)
+    save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)

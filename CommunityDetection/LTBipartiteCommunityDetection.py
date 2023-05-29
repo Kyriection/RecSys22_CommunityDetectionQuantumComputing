@@ -9,8 +9,8 @@ from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
 
 class LTBipartiteCommunityDetection(QUBOCommunityDetection):
     name = 'QUBOBipartiteCommunityDetection'
-    alpha = 0.5
-    T = 5
+    alpha: float = 0.5
+    T: int = 5
 
     def __init__(self, urm, icm, ucm, *args, **kwargs):
         super(LTBipartiteCommunityDetection, self).__init__(urm, *args, **kwargs)
@@ -59,4 +59,8 @@ class LTBipartiteCommunityDetection(QUBOCommunityDetection):
     @staticmethod
     def set_alpha(alpha: float):
         LTBipartiteCommunityDetection.alpha = alpha
+    
+    @staticmethod
+    def set_T(T: int):
+        LTBipartiteCommunityDetection.T = T
     

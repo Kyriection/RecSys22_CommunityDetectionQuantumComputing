@@ -10,28 +10,28 @@
 # alpha_list=(1.00 0.75 0.50 0.25 0.00)
 # alpha_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625)
 # alpha_list=(0.05 0.02 0.01 0.0005 0.0001)
-alpha_list=(3 5 10 12)
+alpha_list=(0 0.1)
 
-for alpha in ${alpha_list[*]}
-do
-  echo alpha=$alpha
-  echo 'start community detection'
-  # time python run_community_detection_mod.py -a $alpha > cd.log 2>&1
-  # time python CT_community_detection.py -a $alpha > ctcd.log 2>&1
-  if [ $? -ne 0 ]; then
-    echo 'error'
-    break
-  fi
-  echo 'start recommendation'
-  # time python CT_qa_recommendation.py -a $alpha > ctqr.log 2>&1
-  time python cd_recommendation.py -a $alpha > cdr.log 2>&1
-  if [ $? -ne 0 ]; then
-    echo 'error'
-    break
-  fi
-  # echo 'start non-quantum'
-  # time python CT_recommendation.py -c $alpha > ctr.log 2>&1
-done
+# for alpha in ${alpha_list[*]}
+# do
+#   echo alpha=$alpha
+#   echo 'start community detection'
+#   # time python run_community_detection_mod.py -a $alpha > cd.log 2>&1
+#   time python CT_community_detection.py -c $alpha > ctcd.log 2>&1
+#   if [ $? -ne 0 ]; then
+#     echo 'error'
+#     break
+#   fi
+#   echo 'start recommendation'
+#   time python CT_qa_recommendation.py -c $alpha > ctqr.log 2>&1
+#   # time python cd_recommendation.py -a $alpha > cdr.log 2>&1
+#   if [ $? -ne 0 ]; then
+#     echo 'error'
+#     break
+#   fi
+#   # echo 'start non-quantum'
+#   # time python CT_recommendation.py -c $alpha > ctr.log 2>&1
+# done
 
 # for alpha in ${alpha_list[*]}
 # do
@@ -49,3 +49,27 @@ done
 #     fi
 #   done
 # done
+
+# T_list=(1 3 7 9)
+T_list=(5)
+# alpha_list=(0.5 0.1 0.05 0.01 0.005 0.001 0.0005 0.0001 0.00005 0.00001 0)
+alpha_list=(0.05 0.005 0.0005 0.00005)
+for T in ${T_list[*]}
+do
+  for alpha in ${alpha_list[*]}
+  do
+    echo T=$T, alpha=$alpha
+    echo 'start community detection'
+    time python CT_community_detection.py -t $T -a $alpha > ctcd.log 2>&1
+    if [ $? -ne 0 ]; then
+      echo 'error'
+      break
+    fi
+    echo 'start recommendation'
+    time python CT_qa_recommendation.py -t $T -a $alpha > ctqr.log 2>&1
+    if [ $? -ne 0 ]; then
+      echo 'error'
+      break
+    fi
+  done
+done
