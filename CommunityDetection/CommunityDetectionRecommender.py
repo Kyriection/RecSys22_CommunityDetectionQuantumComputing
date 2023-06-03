@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 from CommunityDetection.Communities import Communities
@@ -14,7 +16,7 @@ class CommunityDetectionRecommender(BaseRecommender):
 
         self.communities = communities
         self.recommenders: List[BaseRecommender] = recommenders
-        self.n_iter: int = n_iter if n_iter is not None else self.communities.num_iters
+        self.n_iter: int = n_iter if n_iter is not None else communities.num_iters
 
         # assert len(self.recommenders) == 2 ** (self.n_iter + 1), \
             # 'Cannot use a different number of recommenders and communities.'
@@ -51,3 +53,5 @@ class CommunityDetectionRecommender(BaseRecommender):
             recommender = self.recommenders[n_comm]
             if user_mask:
                 return recommender.predict(user_id, items_id)
+        logging.error(f'user {user_id} not in CommunityDetectionRecommender')
+        return None

@@ -31,7 +31,7 @@ from recsys.Recommenders.LRRecommender import LRRecommender
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
-from utils.plot import plot_line, plot_scatter
+from utils.plot import plot_line, plot_scatter, plot_divide, plot_metric
 from utils.derived_variables import create_related_variables
 # from results.read_results import print_result
 from results.plot_results import print_result
@@ -41,7 +41,12 @@ CUT_RATIO: float = None
 PLOT_CUT = 30
 MIN_RATING_NUM = 1
 TOTAL_DATA = {}
-EI: bool = False # EI if True else TC or CT
+EI: bool = False # EI if True else (TC or CT)
+ADAPATIVE_FLAG = True
+ADAPATIVE_METRIC = ['MAE', 'RMSE'][0] 
+ADAPATIVE_DATA = ['validation', 'test'][0]
+MIN_RATINGS_PER_USER = 5
+
 
 def plot(urm, output_folder_path, n_iter, result_df):
     global MIN_RATING_NUM, PLOT_CUT
@@ -328,13 +333,13 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
 
 
 def evaluate_recommender(urm_train_last_test, urm_test, ucm, icm, communities, recommenders, output_folder_path=None, recommender_name=None,
-                         n_iter=None):
+                         n_iter=None, min_ratings_per_user: int = MIN_RATINGS_PER_USER, ignore_users=None):
     print(f'Evaluating {recommender_name} on the result of community detection.')
 
     recommender = CommunityDetectionRecommender(urm_train_last_test, communities=communities, recommenders=recommenders,
                                                 n_iter=n_iter)
 
-    evaluator_test = EvaluatorSeparate(urm_test)
+    evaluator_test = EvaluatorSeparate(urm_test, min_ratings_per_user=min_ratings_per_user, ignore_users=ignore_users)
     time_on_test = time.time()
     result_df, result_string = evaluator_test.evaluateRecommender(recommender)
     time_on_test = time.time() - time_on_test
@@ -347,8 +352,8 @@ def evaluate_recommender(urm_train_last_test, urm_test, ucm, icm, communities, r
     if output_folder_path is not None:
         dataIO = DataIO(output_folder_path)
         dataIO.save_data(f'cd_{recommender_name}', result_dict)
+        plot(urm_train_last_test, output_folder_path, n_iter, result_df)
 
-    plot(urm_train_last_test, output_folder_path, n_iter, result_df)
     return result_dict
 
 
@@ -426,6 +431,79 @@ def recommend_per_method(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, 
                           folder_path, **kwargs)
 
 
+def adaptive_selection(num_iters, urm_train, urm_test, ucm, icm, recommender, output_folder_path, communities: Communities = None):
+    if communities.s0 is not None:
+        adaptive_selection(num_iters, urm_train, urm_test, ucm, icm, recommender, output_folder_path, communities.s0)
+    if communities.s1 is not None:
+        adaptive_selection(num_iters, urm_train, urm_test, ucm, icm, recommender, output_folder_path, communities.s1)
+
+    def get_result_dict():
+        cd_recommenders = []
+        n_users, n_items = urm_train.shape
+        user_mask = np.zeros(n_users).astype(bool)
+        n_comm = 0
+        for community in communities.iter():
+            user_mask[community.user_mask] = True
+            c_urm_train, _, _, c_icm, c_ucm = get_community_urm(urm_train, community=community, filter_items=False, icm=icm, ucm=ucm)
+            comm_recommender = recommender(c_urm_train, c_ucm, c_icm, community.users)
+            comm_recommender.fit()
+            cd_recommenders.append(comm_recommender)
+            n_comm += 1
+        logging.info(f'divide to {n_comm} communities.')
+        ignore_users = np.arange(n_users)[np.logical_not(user_mask)]
+        return evaluate_recommender(urm_train, urm_test, ucm, icm, communities, cd_recommenders, ignore_users=ignore_users)
+    
+    result_dict_divide = get_result_dict()
+    if communities.s0 is None and communities.s1 is None:
+        result_dict_combine = result_dict_divide
+    else:
+        communities.divide_flag = False
+        result_dict_combine = get_result_dict()
+
+    def compare_result(result_dict_0: dict, result_dict_1: dict) -> float:
+        '''
+        return (result_dict_0 - result_dict_1) / result_dict_1
+        '''
+        def accumulate_result(result_df):
+            sum = 0.0
+            tot = 0
+            for i in range(len(result_df)):
+                metric = result_df.loc[i, ADAPATIVE_METRIC]
+                cnt = result_df.loc[i, 'num_rating']
+                sum += metric * cnt
+                tot += cnt
+            return sum / tot if tot > 0 else 0.0
+
+        result_df_0 = result_dict_0['result_df']
+        result_df_1 = result_dict_1['result_df']
+        metric_0 = accumulate_result(result_df_0)
+        metric_1 = accumulate_result(result_df_1)
+        logging.info(f'divide compare combine, {metric_0} : {metric_1}')
+        if metric_1 > 0.0:
+            return (metric_0 - metric_1) / metric_1
+        else:
+            return 0.0
+        # return metric_0 > metric_1
+
+    num_users = sum(communities.user_mask)
+    num_items = len(communities.item_mask)
+    logging.info(f"Communities: num_iter {communities.num_iters}, user: {num_users}, items: {num_items}")
+    ratio = compare_result(result_dict_divide, result_dict_combine)
+    communities.divide_info = ratio
+    if ADAPATIVE_DATA == 'test':
+        threshold = 0
+    elif ADAPATIVE_DATA == 'validation':
+        # threshold = (num_iters - communities.num_iters) * 0.01
+        threshold = 0
+    if ratio < threshold:
+        communities.divide_flag = True
+        communities.result_dict_test = result_dict_divide
+        logging.info('choose divide')
+    else:
+        communities.divide_flag = False
+        communities.result_dict_test = result_dict_combine
+        logging.info('choose combine')
+
 
 def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name, folder_path,
                       sampler: dimod.Sampler = None, each_item: bool = False, **kwargs):
@@ -441,9 +519,38 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, met
                            folder_path, sampler=sampler, communities=CommunitiesEI(n_users, n_items), n_iter=-1, **kwargs)
     else:
         num_iters = communities.num_iters + 1
-        for n_iter in range(num_iters):
-            recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
-                               folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
+        # for n_iter in range(num_iters):
+            # recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
+                            #    folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
+    # plot_metric(communities, method_folder_path)
+    
+    method_folder_path = f'{folder_path}{dataset_name}/{method.name}/'
+    folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
+    output_folder_path = get_community_folder_path(method_folder_path, n_iter=-1, folder_suffix=folder_suffix)
+    if not ADAPATIVE_FLAG:
+        return
+    logging.info('start adaptive selection')
+    for recommender in recommender_list:
+        adaptive_communities = copy.deepcopy(communities)
+        if ADAPATIVE_DATA == 'validation':
+            adaptive_selection(num_iters - 1, urm_train, urm_validation, ucm, icm, recommender, output_folder_path, adaptive_communities)
+        elif ADAPATIVE_DATA == 'test':
+            adaptive_selection(num_iters - 1, cd_urm, urm_test, ucm, icm, recommender, output_folder_path, adaptive_communities)
+        cd_recommenders = []
+        n_comm = 0
+        for community in adaptive_communities.iter():
+            comm_recommender = train_recommender_on_community(recommender, community, urm_train, urm_validation,
+                                                              urm_test, ucm, icm, dataset_name, folder_path,
+                                                              method_folder_path, n_iter=-1, n_comm=n_comm,
+                                                              folder_suffix=folder_suffix)
+            cd_recommenders.append(comm_recommender)
+            n_comm += 1
+        evaluate_recommender(cd_urm, urm_test, ucm, icm, adaptive_communities, cd_recommenders, output_folder_path,
+                             recommender.RECOMMENDER_NAME, min_ratings_per_user=MIN_RATINGS_PER_USER)
+        logging.info(f'adaptive_communities has {n_comm} communities.')
+        # plot_metric(adaptive_communities, output_folder_path, 10, ADAPATIVE_METRIC)
+        plot_divide(adaptive_communities, output_folder_path)
+
 
 def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name, folder_path,
                        sampler: dimod.Sampler = None, communities: Communities = None, n_iter: int = 0, **kwargs):
@@ -559,7 +666,7 @@ if __name__ == '__main__':
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     # method_list = [HybridCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [QUBOBipartiteCommunityDetection]
+    method_list = [QUBOBipartiteProjectedCommunityDetection]
     # method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
