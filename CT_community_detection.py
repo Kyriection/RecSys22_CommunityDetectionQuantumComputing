@@ -25,8 +25,8 @@ from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_
 logging.basicConfig(level=logging.INFO)
 MIN_COMMUNITIE_SIZE = 5
 CUT_RATIO: float = None
-QA_CUT: float = False
-LT_METHOD = LTBipartiteProjectedCommunityDetection
+LT_METHOD = LTBipartiteCommunityDetection
+A1_LAYER = 1
 
 def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
     '''
@@ -174,7 +174,7 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
     n_users, n_items = cd_urm.shape
     show_urm_info(cd_urm)
 
-    if QA_CUT and n_iter == 0:
+    if n_iter < A1_LAYER:
         LT_METHOD.name = method.name
         m: BaseCommunityDetection = LT_METHOD(cd_urm, icm, ucm)
     else:
@@ -281,6 +281,7 @@ def parse_args():
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
     parser.add_argument('-a', '--alpha', type=float, default=1.0)
     parser.add_argument('-t', '--T', type=int, default=5)
+    parser.add_argument('-l', '--layer', type=int, default=0)
     args = parser.parse_args()
     return args
 
@@ -299,6 +300,7 @@ def clean_results(result_folder_path, data_reader_classes, method_list):
 if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
+    A1_LAYER = args.layer
     # data_reader_classes = [MovielensSample2Reader]
     data_reader_classes = [Movielens100KReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,

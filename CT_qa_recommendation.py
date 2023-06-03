@@ -478,6 +478,7 @@ def parse_args():
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
     parser.add_argument('-a', '--alpha', type=float, default=1.0)
     parser.add_argument('-t', '--T', type=int, default=5)
+    parser.add_argument('-l', '--layer', type=int, default=0)
     args = parser.parse_args()
     return args
 
@@ -568,5 +569,5 @@ if __name__ == '__main__':
     result_folder_path = './results/'
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    # save_results(data_reader_classes, result_folder_path, method_list, args.cut_ratio, args.alpha)
-    save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)
+    # save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)
+    save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.layer)

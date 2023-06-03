@@ -45,7 +45,7 @@ def init_global_data():
 
 
 def process_total_data():
-  for key in TOTAL_DATA:
+  for key in ['MAE', 'RMSE']:
     values = TOTAL_DATA[key].values()
     if values:
       TOTAL_DATA[key][-2] = min(values)
@@ -317,5 +317,6 @@ if __name__ == '__main__':
   # show = True if show else False
   show = True
   # print_result(cut_ratio, MovielensSample2Reader, [QUBOLongTailCommunityDetection], show)
-  print_result(cut_ratio, MovielensSample2Reader, [KmeansCommunityDetection], show)
+  # print_result(cut_ratio, MovielensSample2Reader, [KmeansCommunityDetection], show)
+  print_result(cut_ratio, Movielens100KReader, [QUBOBipartiteCommunityDetection], show)
   
