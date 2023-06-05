@@ -653,15 +653,14 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
 if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
-    # data_reader_classes = [MovielensSample2Reader]
-    data_reader_classes = [Movielens100KReader]
+    # data_reader_classes = [Movielens100KReader]
+    data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
-    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     # method_list = [HybridCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [QUBOBipartiteCommunityDetection]
     # method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
@@ -672,4 +671,4 @@ if __name__ == '__main__':
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
     # save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)
-    save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.layer)
+    save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio, args.layer)
