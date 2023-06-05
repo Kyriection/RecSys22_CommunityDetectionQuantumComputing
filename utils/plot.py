@@ -71,6 +71,7 @@ def plot_metric(communities: Communities, output_folder: str = '',
   # v_range = percentile(ratios_list, 90)
   # plot_pies(ratios_list, user_nums_list, -v_range, v_range, metric, output_folder + 'result.png', cmap)
   plot_pies(ratios_list, user_nums_list, -2.0, 2.0, metric, output_folder + 'result_limited.png', cmap)
+  plt.close()
 
 
 def plot_cut(communities: Communities, output_folder: str = ''):
@@ -118,6 +119,7 @@ def plot_cut(communities: Communities, output_folder: str = ''):
   plot_pies(ratios_list, user_nums_list, vmin, vmax, 'cut', output_folder + 'cut_info.png')
   # for user_nums in user_nums_list:
     # print(user_nums)
+  plt.close()
 
 
 def plot_density(communities: Communities, output_folder: str = ''):
@@ -148,6 +150,7 @@ def plot_density(communities: Communities, output_folder: str = ''):
   fun(communities, num_iters)
   v_range = percentile(ratios_list, 98)
   plot_pies(ratios_list, user_nums_list, 0, v_range, 'densiity', output_folder + 'density.png')
+  plt.close()
 
 
 def plot_divide(communities: Communities, output_folder: str = ''):
@@ -189,6 +192,7 @@ def plot_divide(communities: Communities, output_folder: str = ''):
   v_range = percentile(ratios_list, 99)
   cmap = matplotlib.cm.get_cmap(name='RdBu').reversed()
   plot_pies(ratios_list, user_nums_list, -v_range, v_range, 'divide', output_folder + 'divide_info.png', cmap)
+  plt.close()
 
 
 def plot_scatter(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
@@ -210,6 +214,7 @@ def plot_scatter(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
   # fig.savefig(f'{output}/{ylabel}_{xlabel}_{tag}.png')
   fig.savefig(f'{output}/{ylabel}_{xlabel}.png')
   fig.clf()
+  plt.close()
 
 
 def plot_line(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
@@ -239,6 +244,8 @@ def plot_line(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
   # fig.savefig(f'{output}/{ylabel}_{xlabel}_{tag}.png')
   fig.savefig(f'{output}/{ylabel}_{xlabel}.png')
   fig.clf()
+  plt.close()
+
 
 def plot_rating(x, y, output: str='tmp/rating.png'):
   # t-SNE的最终结果的降维与可视化
@@ -269,3 +276,4 @@ def plot_rating(x, y, output: str='tmp/rating.png'):
   fig.colorbar(im_3d, format=matplotlib.ticker.FuncFormatter(lambda x,pos:int(x*5)))
 
   fig.savefig(output)
+  plt.close()

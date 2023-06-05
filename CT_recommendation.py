@@ -521,7 +521,9 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
     tag = '_'.join(tag) if tag else '_'
 
     for data_reader in data_reader_classes:
-        print_result(CUT_RATIO, data_reader, method_list, False, tag)
+        dataset_name = data_reader.DATASET_SUBFOLDER
+        output_folder = os.path.join(result_folder_path, dataset_name, 'results')
+        print_result(CUT_RATIO, data_reader, method_list, False, output_folder, tag)
 
 
 if __name__ == '__main__':

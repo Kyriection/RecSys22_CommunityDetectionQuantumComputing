@@ -232,7 +232,7 @@ def extract_file(file, cur):
     print(e)
     return None
 
-def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, output_tag: str = 'result'):
+def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, output_folder: str = None, output_tag: str = None):
   global CT, RECOMMENDER
   CT = cut_ratio
   data_reader = data_reader_class()
@@ -256,6 +256,13 @@ def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, 
       print(method.name)
       # print("N", COL)
     # print(path)
+    if output_folder is None:
+      output_path = os.path.join(path, output_tag)
+    else:
+      output_path = os.path.join(output_folder, method.name, output_tag)
+    if not os.path.exists(output_path):
+      os.system(f'mkdir -p {output_path}')
+
     dir_file = os.listdir(path)
     dir_file.sort()
     for m in METHOD:
@@ -298,17 +305,7 @@ def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, 
         TOTAL_DATA['C'][N] = C + 1
         collect_data(urm_train, N, result_df, result_df_ei)
 
-      # df = pd.DataFrame(TOTAL_DATA)
-      # if output_folder is None:
-      #   output_folder = path
-      # output_path = os.path.join(output_folder, f'{method}_{m}.csv')
-      # df.to_csv(output_path)
-      # if show:
-      #   print(df)
-      output_folder = os.path.join(path, output_tag)
-      if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
-      plot(output_folder, show)
+      plot(output_path, show)
 
 
 if __name__ == '__main__':

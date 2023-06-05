@@ -408,11 +408,12 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
             else:
                 print(f'{recommender_name} already trained and evaluated on {dataset_name}.')
         for method in method_list:
+            logging.info(f'------------start {method.name}----------')
             recommend_per_method(t_urm_train, t_urm_validation, t_urm_test, t_urm_train_last_test, t_ucm, t_icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
                                  save_model=save_model, each_item=EI)
             if not head_flag or EI:
-                return
+                continue
             recommend_per_method(h_urm_train, h_urm_validation, h_urm_test, h_urm_train_last_test, h_ucm, h_icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
                                  save_model=save_model, each_item=True)
@@ -647,7 +648,9 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
     tag = '_'.join(tag) if tag else '_'
 
     for data_reader in data_reader_classes:
-        print_result(CUT_RATIO, data_reader, method_list, False, tag)
+        dataset_name = data_reader.DATASET_SUBFOLDER
+        output_folder = os.path.join(result_folder_path, dataset_name, 'results')
+        print_result(CUT_RATIO, data_reader, method_list, False, output_folder, tag)
 
 
 if __name__ == '__main__':
