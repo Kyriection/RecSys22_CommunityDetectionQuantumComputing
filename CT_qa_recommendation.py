@@ -42,10 +42,10 @@ PLOT_CUT = 30
 MIN_RATING_NUM = 1
 TOTAL_DATA = {}
 EI: bool = False # EI if True else (TC or CT)
-ADAPATIVE_FLAG = True
+ADAPATIVE_FLAG = False
 ADAPATIVE_METRIC = ['MAE', 'RMSE'][0] 
 ADAPATIVE_DATA = ['validation', 'test'][0]
-MIN_RATINGS_PER_USER = 5
+MIN_RATINGS_PER_USER = 10
 
 
 def plot(urm, output_folder_path, n_iter, result_df):
@@ -333,7 +333,7 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
 
 
 def evaluate_recommender(urm_train_last_test, urm_test, ucm, icm, communities, recommenders, output_folder_path=None, recommender_name=None,
-                         n_iter=None, min_ratings_per_user: int = MIN_RATINGS_PER_USER, ignore_users=None):
+                         n_iter=None, min_ratings_per_user: int = 1, ignore_users=None):
     print(f'Evaluating {recommender_name} on the result of community detection.')
 
     recommender = CommunityDetectionRecommender(urm_train_last_test, communities=communities, recommenders=recommenders,
@@ -451,7 +451,8 @@ def adaptive_selection(num_iters, urm_train, urm_test, ucm, icm, recommender, ou
             n_comm += 1
         logging.info(f'divide to {n_comm} communities.')
         ignore_users = np.arange(n_users)[np.logical_not(user_mask)]
-        return evaluate_recommender(urm_train, urm_test, ucm, icm, communities, cd_recommenders, ignore_users=ignore_users)
+        return evaluate_recommender(urm_train, urm_test, ucm, icm, communities, cd_recommenders,
+                                    ignore_users=ignore_users, min_ratings_per_user=MIN_RATINGS_PER_USER)
     
     result_dict_divide = get_result_dict()
     if communities.s0 is None and communities.s1 is None:
@@ -519,9 +520,9 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, met
                            folder_path, sampler=sampler, communities=CommunitiesEI(n_users, n_items), n_iter=-1, **kwargs)
     else:
         num_iters = communities.num_iters + 1
-        # for n_iter in range(num_iters):
-            # recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
-                            #    folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
+        for n_iter in range(num_iters):
+            recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name,
+                               folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
     # plot_metric(communities, method_folder_path)
     
     method_folder_path = f'{folder_path}{dataset_name}/{method.name}/'
@@ -546,7 +547,8 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, met
             cd_recommenders.append(comm_recommender)
             n_comm += 1
         evaluate_recommender(cd_urm, urm_test, ucm, icm, adaptive_communities, cd_recommenders, output_folder_path,
-                             recommender.RECOMMENDER_NAME, min_ratings_per_user=MIN_RATINGS_PER_USER)
+                            #  recommender.RECOMMENDER_NAME, min_ratings_per_user=MIN_RATINGS_PER_USER)
+                             recommender.RECOMMENDER_NAME)
         logging.info(f'adaptive_communities has {n_comm} communities.')
         # plot_metric(adaptive_communities, output_folder_path, 10, ADAPATIVE_METRIC)
         plot_divide(adaptive_communities, output_folder_path)
@@ -645,14 +647,7 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
     tag = '_'.join(tag) if tag else '_'
 
     for data_reader in data_reader_classes:
-        dataset_name = data_reader.DATASET_SUBFOLDER
-        output_folder = os.path.join(result_folder_path, dataset_name, 'results')
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)
-        output_folder = os.path.join(output_folder, tag) 
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)
-        print_result(CUT_RATIO, data_reader, method_list, False, output_folder)
+        print_result(CUT_RATIO, data_reader, method_list, False, tag)
 
 
 if __name__ == '__main__':
@@ -661,12 +656,12 @@ if __name__ == '__main__':
     # data_reader_classes = [MovielensSample2Reader]
     data_reader_classes = [Movielens100KReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
-    #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
+                        #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     # method_list = [HybridCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    method_list = [QUBOBipartiteProjectedCommunityDetection]
+    method_list = [QUBOBipartiteCommunityDetection]
     # method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]

@@ -232,7 +232,7 @@ def extract_file(file, cur):
     print(e)
     return None
 
-def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, output_folder: str = None):
+def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, output_tag: str = 'result'):
   global CT, RECOMMENDER
   CT = cut_ratio
   data_reader = data_reader_class()
@@ -305,8 +305,9 @@ def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, 
       # df.to_csv(output_path)
       # if show:
       #   print(df)
-      if output_folder is None:
-        output_folder = path
+      output_folder = os.path.join(path, output_tag)
+      if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
       plot(output_folder, show)
 
 

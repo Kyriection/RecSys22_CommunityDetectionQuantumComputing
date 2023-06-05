@@ -521,20 +521,13 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
     tag = '_'.join(tag) if tag else '_'
 
     for data_reader in data_reader_classes:
-        dataset_name = data_reader.DATASET_SUBFOLDER
-        output_folder = os.path.join(result_folder_path, dataset_name, 'results')
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)
-        output_folder = os.path.join(output_folder, tag) 
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)
-        print_result(CUT_RATIO, data_reader, method_list, False, output_folder)
+        print_result(CUT_RATIO, data_reader, method_list, False, tag)
 
 
 if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
-    data_reader_classes = [MovielensSample2Reader]
+    data_reader_classes = [Movielens100KReader]
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]

@@ -53,9 +53,9 @@ class KmeansCommunityDetection(BaseCommunityDetection):
             
             users = kmeans.fit_predict(X)
             '''
-            # X = self.urm
+            X = self.urm
             # X = self.ucm
-            X = sp.hstack((self.urm, self.ucm))
+            # X = sp.hstack((self.urm, self.ucm))
             users = kmeans.fit_predict(X)
 
         run_time = time.time() - start_time
