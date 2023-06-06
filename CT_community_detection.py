@@ -88,7 +88,8 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
-        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+        # dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+        dataset_folder_path = os.path.join(result_folder_path, dataset_name)
         urm_train, urm_validation, urm_test, icm, ucm = load_data(data_reader, split_quota=split_quota, user_wise=user_wise,
                                                         make_implicit=make_implicit, threshold=threshold, icm_ucm=True)
 
@@ -286,6 +287,7 @@ def parse_args():
     parser.add_argument('-a', '--alpha', type=float, default=1.0)
     parser.add_argument('-t', '--T', type=int, default=5)
     parser.add_argument('-l', '--layer', type=int, default=0)
+    parser.add_argument('-o', '--ouput', type=str, default='results')
     args = parser.parse_args()
     return args
 
@@ -294,7 +296,8 @@ def clean_results(result_folder_path, data_reader_classes, method_list):
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
-        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+        # dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+        dataset_folder_path = os.path.join(result_folder_path, dataset_name)
         for method in method_list:
             method_folder_path = f'{dataset_folder_path}{method.name}/'
             logging.debug(f'rm {method_folder_path}')
@@ -317,7 +320,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     num_iters = 10
-    result_folder_path = './results/'
+    result_folder_path = os.path.abspath(args.ouput)
     clean_results(result_folder_path, data_reader_classes, method_list)
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)

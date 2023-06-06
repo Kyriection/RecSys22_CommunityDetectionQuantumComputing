@@ -401,7 +401,8 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
 
         for recommender in recommender_list:
             recommender_name = recommender.RECOMMENDER_NAME
-            output_folder_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
+            # output_folder_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
+            output_folder_path = os.path.join(result_folder_path, dataset_name, recommender_name)
             if not os.path.exists(f'{output_folder_path}baseline.zip') or not os.path.exists(
                     f'{output_folder_path}{recommender_name}_best_model_last.zip'):
                 train_all_data_recommender(recommender, t_urm_train_last_test, t_urm_test, t_ucm, t_icm, dataset_name, result_folder_path)
@@ -589,6 +590,7 @@ def parse_args():
     parser.add_argument('-a', '--alpha', type=float, default=1.0)
     parser.add_argument('-t', '--T', type=int, default=5)
     parser.add_argument('-l', '--layer', type=int, default=0)
+    parser.add_argument('-o', '--ouput', type=str, default='results')
     args = parser.parse_args()
     return args
 
@@ -596,7 +598,8 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
-        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+        # dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+        dataset_folder_path = os.path.join(result_folder_path, dataset_name)
         if not os.path.exists(dataset_folder_path):
             continue
         hybrid_folder_path = os.path.join(dataset_folder_path, 'Hybrid')
@@ -670,7 +673,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    result_folder_path = './results/'
+    result_folder_path = os.path.abspath(args.ouput)
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
     # save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)
