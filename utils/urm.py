@@ -28,7 +28,7 @@ def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True,
     ICM_dict = data_splitter.get_loaded_ICM_dict()
     icm_genres = ICM_dict['ICM_genres']
     icm_year = ICM_dict['ICM_year']
-    icm = sps.hstack((icm_genres, icm_year))
+    icm = sps.hstack((icm_genres, icm_year)).tocsr()
 
     UCM_dict = data_splitter.get_loaded_UCM_dict()
     ucm = UCM_dict['UCM_all']
