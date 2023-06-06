@@ -21,7 +21,7 @@ read -u5
   echo 'start community detection'
   time python CT_community_detection.py -c $cut -o results_$cut > logs/ctcd_$cut.log 2>&1
   echo 'start recommendation'
-  time python CT_qa_recommendation.py -c $cut -o results_$cut > logs/ctcd_$cut.log 2>&1
+  time python CT_qa_recommendation.py -c $cut -o results_$cut > logs/ctqr_$cut.log 2>&1
   echo ''>&5
 }&
 done

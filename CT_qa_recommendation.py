@@ -203,6 +203,7 @@ def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
     method_folder_path = f'{folder_path}{method.name}/'
+    # method_folder_path = os.path.join(folder_path, method.name)
     folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
 
     try:
@@ -219,6 +220,7 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
                                results_folder_path: str):
     recommender_name = recommender.RECOMMENDER_NAME
     output_folder_path = f'{results_folder_path}{dataset_name}/{recommender_name}/'
+    # output_folder_path = os.path.join(results_folder_path, dataset_name, recommender_name)
 
     evaluator_test = EvaluatorSeparate(urm_test) # TODO
 
@@ -263,8 +265,10 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
     output_folder_path = get_community_folder_path(method_folder_path, n_iter=n_iter, n_comm=n_comm,
                                                    folder_suffix=folder_suffix)
     output_folder_path = f'{output_folder_path}{recommender_name}/'
+    # output_folder_path = os.path.join(output_folder_path, recommender_name)
 
     base_recommender_path = f'{results_folder_path}{dataset_name}/{recommender_name}/'
+    # base_recommender_path = os.path.join(results_folder_path, dataset_name, recommender_name)
 
     c_urm_train, _, _, c_icm, c_ucm = get_community_urm(urm_train, community=community, filter_items=False, icm=icm, ucm=ucm)
     c_urm_validation, _, _ = get_community_urm(urm_validation, community=community, filter_items=False)
@@ -401,8 +405,8 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
 
         for recommender in recommender_list:
             recommender_name = recommender.RECOMMENDER_NAME
-            # output_folder_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
-            output_folder_path = os.path.join(result_folder_path, dataset_name, recommender_name)
+            output_folder_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
+            # output_folder_path = os.path.join(result_folder_path, dataset_name, recommender_name)
             if not os.path.exists(f'{output_folder_path}baseline.zip') or not os.path.exists(
                     f'{output_folder_path}{recommender_name}_best_model_last.zip'):
                 train_all_data_recommender(recommender, t_urm_train_last_test, t_urm_test, t_ucm, t_icm, dataset_name, result_folder_path)
@@ -528,6 +532,7 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, met
     # plot_metric(communities, method_folder_path)
     
     method_folder_path = f'{folder_path}{dataset_name}/{method.name}/'
+    # method_folder_path = os.path.join(folder_path, dataset_name, method.name)
     folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
     output_folder_path = get_community_folder_path(method_folder_path, n_iter=-1, folder_suffix=folder_suffix)
     if not ADAPATIVE_FLAG:
@@ -559,6 +564,7 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, met
 def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name, folder_path,
                        sampler: dimod.Sampler = None, communities: Communities = None, n_iter: int = 0, **kwargs):
     method_folder_path = f'{folder_path}{dataset_name}/{method.name}/'
+    # method_folder_path = os.path.join(folder_path, dataset_name, method.name)
     folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
 
     print(f'///Training recommenders for iteration {n_iter} on {dataset_name} with {method.name} and {folder_suffix}//')
@@ -652,8 +658,8 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
 
     for data_reader in data_reader_classes:
         dataset_name = data_reader.DATASET_SUBFOLDER
-        output_folder = os.path.join(result_folder_path, dataset_name, 'results')
-        print_result(CUT_RATIO, data_reader, method_list, False, output_folder, tag)
+        output_folder = os.path.join('./results/', dataset_name, 'results')
+        print_result(CUT_RATIO, data_reader, method_list, False, output_folder, tag, result_folder_path)
 
 
 if __name__ == '__main__':
@@ -673,7 +679,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    result_folder_path = os.path.abspath(args.ouput)
+    result_folder_path = f'{os.path.abspath(args.ouput)}/'
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
     # save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)

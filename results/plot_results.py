@@ -232,14 +232,14 @@ def extract_file(file, cur):
     print(e)
     return None
 
-def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, output_folder: str = None, output_tag: str = None):
+def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, output_folder: str = None, output_tag: str = None, result_folder_path: str = './results/'):
   global CT, RECOMMENDER
   CT = cut_ratio
   data_reader = data_reader_class()
   urm_train, urm_validation, urm_test = load_data(data_reader, [80, 10, 10], False, False)
   urm_train, urm_validation, urm_test = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr()# item is main charactor
   dataset = data_reader._get_dataset_name()
-  dataset = os.path.abspath("/app/results/" + dataset)
+  dataset = os.path.abspath(result_folder_path + dataset)
   # special for baseline
   path = os.path.join(dataset, RECOMMENDER)
   file = os.path.join(path, 'baseline.zip')
