@@ -19,13 +19,12 @@ read -u5
 {
   echo cut_ratio=$cut%
   echo 'start community detection'
-  time python CT_community_detection.py -c $cut -o results_$cut > logs/ctcd_$cut.log 2>&1
+  time python CT_community_detection.py -c $cut -o results-$cut > logs/ctcd-$cut.log 2>&1
   echo 'start recommendation'
-  time python CT_qa_recommendation.py -c $cut -o results_$cut > logs/ctqr_$cut.log 2>&1
+  time python CT_qa_recommendation.py -c $cut -o results-$cut > logs/ctqr-$cut.log 2>&1
   echo ''>&5
 }&
 done
-wait
 
 # -----------layer of A1-------------
 # layer_list=(0 1 2 3 4 5 6 7 8 9 10)
@@ -57,13 +56,12 @@ do
   {
     echo T=$T, alpha=$alpha
     echo 'start community detection'
-    time python CT_community_detection.py -t $T -a $alpha > logs/ctcd_$T_$alpha.log 2>&1
+    time python CT_community_detection.py -t $T -a $alpha -o results-$T-$alpha > logs/ctcd-$T-$alpha.log 2>&1
     echo 'start recommendation'
-    time python CT_qa_recommendation.py -t $T -a $alpha > logs/ctqr_$T_$alpha.log 2>&1
+    time python CT_qa_recommendation.py -t $T -a $alpha -o results-$T-$alpha > logs/ctqr-$T-$alpha.log 2>&1
     echo ''>&5
   }
   done
-  wait
 done
 
 #--------thead---------
