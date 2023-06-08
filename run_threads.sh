@@ -56,9 +56,9 @@ do
   {
     echo T=$T, alpha=$alpha
     echo 'start community detection'
-    time python CT_community_detection.py -t $T -a $alpha -o results-$T-$alpha > logs/ctcd-$T-$alpha.log 2>&1
+    time python CT_community_detection.py -t $T -a $alpha -l 100 -o results-$T-$alpha > logs/ctcd-$T-$alpha.log 2>&1
     echo 'start recommendation'
-    time python CT_qa_recommendation.py -t $T -a $alpha -o results-$T-$alpha > logs/ctqr-$T-$alpha.log 2>&1
+    time python CT_qa_recommendation.py -t $T -a $alpha -l 100 -o results-$T-$alpha > logs/ctqr-$T-$alpha.log 2>&1
     echo ''>&5
   }
   done
