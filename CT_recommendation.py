@@ -20,8 +20,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
-    QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
-    TMPCD, QUBOLongTailCommunityDetection, Clusters
+    QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, Clusters
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
@@ -42,8 +41,8 @@ PLOT_CUT = 30
 MIN_RATING_NUM = 1
 TOTAL_DATA = {}
 EI: bool = False # EI if True else TC or CT
-# N_CLUSTER = [2, 4, 8, 16, 32, 64, 128, ]
-N_CLUSTER = [2, 4, 8, 16, 32, 53, 81, ]
+N_CLUSTER = [2, 4, 8, 16, 32, 64, 128, ]
+# N_CLUSTER = [2, 4, 8, 16, 32, 53, 81, ]
 
 def plot(urm, output_folder_path, n_iter, result_df):
     global MIN_RATING_NUM, PLOT_CUT
@@ -173,19 +172,18 @@ def load_communities(urm, ucm, n_users, n_items):
     # X = sp.hstack((urm, ucm))
     for n_clusters in tqdm.tqdm(N_CLUSTER, desc='load_communities'):
         clusters = [[] for i in range(n_clusters)]
-        # model = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
+        model = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
         # model = SpectralClustering(n_clusters=n_clusters, random_state=0).fit(X)
-        model = SpectralClustering(
-            n_clusters=n_clusters,
-            eigen_solver='arpack',
-            # eigen_solver='lobpcg',
-            # eigen_solver='amg',
-            random_state=0,
-            assign_labels='discretize',
-            # affinity = 'precomputed', 
-            # n_init=1000,
-            random_state=0,
-        ).fit(X)
+        # model = SpectralClustering(
+        #     n_clusters=n_clusters,
+        #     eigen_solver='arpack',
+        #     # eigen_solver='lobpcg',
+        #     # eigen_solver='amg',
+        #     random_state=0,
+        #     assign_labels='discretize',
+        #     # affinity = 'precomputed', 
+        #     # n_init=1000,
+        # ).fit(X)
         for i, cluster in enumerate(model.labels_):
             clusters[cluster].append(i)
         communities.add_iteration(clusters)
@@ -462,6 +460,7 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, me
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
+    parser.add_argument('-o', '--ouput', type=str, default='results')
     args = parser.parse_args()
     return args
 
@@ -522,8 +521,8 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
 
     for data_reader in data_reader_classes:
         dataset_name = data_reader.DATASET_SUBFOLDER
-        output_folder = os.path.join(result_folder_path, dataset_name, 'results')
-        print_result(CUT_RATIO, data_reader, method_list, False, output_folder, tag)
+        output_folder = os.path.join('./results/', dataset_name, 'results')
+        print_result(CUT_RATIO, data_reader, method_list, False, output_folder, tag, result_folder_path)
 
 
 if __name__ == '__main__':
@@ -541,7 +540,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    result_folder_path = './results/'
+    result_folder_path = f'{os.path.abspath(args.ouput)}/'
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
     save_results(data_reader_classes, result_folder_path, method_list, args.cut_ratio)
