@@ -12,8 +12,8 @@ from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, Q
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
     UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
     QUBOProjectedCommunityDetection, HybridCommunityDetection, QUBONcutCommunityDetection, SpectralClustering, \
-    QUBOBipartiteProjectedItemCommunityDetection, LTBipartiteProjectedCommunityDetection, \
-    QUBOBipartiteProjectedCommunityDetection2, LTBipartiteCommunityDetection
+    QUBOBipartiteProjectedItemCommunityDetection, LTBipartiteProjectedCommunityDetection, QuantityDivision, \
+    QUBOBipartiteProjectedCommunityDetection2, LTBipartiteCommunityDetection, METHOD_DICT
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader, \
     MovielensSample2Reader
@@ -129,6 +129,9 @@ def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sa
     if communities is None:
         return
     print(f"communities.num_iters={communities.num_iters}")
+
+    method_folder_path = f'{folder_path}{method.name}/'
+    plot_density(communities, method_folder_path)
 
 
 def cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = None, communities: Communities = None,
@@ -249,6 +252,9 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
     # return communities
     # return check_communities(communities, m.filter_users, m.filter_items)
     communities = check_communities(communities, m.filter_users, m.filter_items)
+    if communities is not None:
+        logging.debug(f'{cd_urm.size} / {communities.n_users}')
+        communities.density = cd_urm.size / communities.n_users
     return communities
 
 
@@ -288,6 +294,7 @@ def parse_args():
     parser.add_argument('-t', '--T', type=int, default=5)
     parser.add_argument('-l', '--layer', type=int, default=0)
     parser.add_argument('-o', '--ouput', type=str, default='results')
+    parser.add_argument('-m', '--method', type=str, default='QUBOBipartiteCommunityDetection')
     args = parser.parse_args()
     return args
 
@@ -296,8 +303,7 @@ def clean_results(result_folder_path, data_reader_classes, method_list):
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
-        # dataset_folder_path = f'{result_folder_path}{dataset_name}/'
-        dataset_folder_path = os.path.join(result_folder_path, dataset_name)
+        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
         for method in method_list:
             method_folder_path = f'{dataset_folder_path}{method.name}/'
             logging.debug(f'rm {method_folder_path}')
@@ -308,18 +314,20 @@ if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
     A1_LAYER = args.layer
-    # data_reader_classes = [Movielens100KReader]
-    data_reader_classes = [Movielens1MReader]
+    data_reader_classes = [Movielens100KReader]
+    # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
-    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection]
     method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
+    # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
+    # method_list = [KmeansCommunityDetection]
+    # method_list = [METHOD_DICT[args.method]]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 10
+    num_iters = 6
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
     clean_results(result_folder_path, data_reader_classes, method_list)
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
@@ -327,6 +335,11 @@ if __name__ == '__main__':
     HybridCommunityDetection.set_alpha(args.alpha)
     LTBipartiteProjectedCommunityDetection.set_alpha(args.alpha)
     LTBipartiteCommunityDetection.set_alpha(args.alpha)
+    LTBipartiteProjectedCommunityDetection.set_alpha(0.00001)
+    LTBipartiteCommunityDetection.set_alpha(0.005)
     LTBipartiteProjectedCommunityDetection.set_T(args.T)
     LTBipartiteCommunityDetection.set_T(args.T)
+    LTBipartiteProjectedCommunityDetection.set_T(5)
+    LTBipartiteCommunityDetection.set_T(1)
+    QuantityDivision.set_T(args.T)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)

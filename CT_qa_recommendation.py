@@ -20,7 +20,8 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
     SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
-    LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection
+    LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection, QuantityDivision, \
+    METHOD_DICT
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
@@ -597,6 +598,7 @@ def parse_args():
     parser.add_argument('-t', '--T', type=int, default=5)
     parser.add_argument('-l', '--layer', type=int, default=0)
     parser.add_argument('-o', '--ouput', type=str, default='results')
+    parser.add_argument('-m', '--method', type=str, default='QUBOBipartiteCommunityDetection')
     args = parser.parse_args()
     return args
 
@@ -604,8 +606,8 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
-        # dataset_folder_path = f'{result_folder_path}{dataset_name}/'
-        dataset_folder_path = os.path.join(result_folder_path, dataset_name)
+        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+        # dataset_folder_path = os.path.join(result_folder_path, dataset_name)
         if not os.path.exists(dataset_folder_path):
             continue
         hybrid_folder_path = os.path.join(dataset_folder_path, 'Hybrid')
@@ -665,13 +667,14 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
 if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
-    # data_reader_classes = [Movielens100KReader]
-    data_reader_classes = [Movielens1MReader]
+    data_reader_classes = [Movielens100KReader]
+    # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
     method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    # method_list = [HybridCommunityDetection]
+    method_list = [METHOD_DICT[args.method]]
+    # method_list = [KmeansCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     # method_list = [QUBOLongTailCommunityDetection]
     sampler_list = [neal.SimulatedAnnealingSampler()]

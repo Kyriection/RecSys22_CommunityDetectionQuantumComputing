@@ -20,7 +20,13 @@ from CommunityDetection.QUBOBipartiteProjectedItemCommunityDetection import QUBO
 from CommunityDetection.LTBipartiteProjectedCommunityDetection import LTBipartiteProjectedCommunityDetection
 from CommunityDetection.LTBipartiteCommunityDetection import LTBipartiteCommunityDetection
 from CommunityDetection.Clusters import Clusters
+from CommunityDetection.QuantityDivision import QuantityDivision
 
+METHOD_LIST = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection, \
+               KmeansCommunityDetection, QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, \
+               HybridCommunityDetection, MultiHybridCommunityDetection, QUBOBipartiteProjectedItemCommunityDetection, \
+               SpectralClustering, LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection, QuantityDivision]
+METHOD_DICT = {method.name : method for method in METHOD_LIST}
 
 class EmptyCommunityError(Exception):
     pass

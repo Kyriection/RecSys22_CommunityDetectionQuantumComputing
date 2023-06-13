@@ -20,7 +20,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
-    QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, Clusters
+    QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, Clusters, METHOD_DICT
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
@@ -40,7 +40,7 @@ CUT_RATIO: float = None
 PLOT_CUT = 30
 MIN_RATING_NUM = 1
 TOTAL_DATA = {}
-EI: bool = False # EI if True else TC or CT
+EI: bool = True # EI if True else TC or CT
 N_CLUSTER = [2, 4, 8, 16, 32, 64, 128, ]
 # N_CLUSTER = [2, 4, 8, 16, 32, 53, 81, ]
 
@@ -461,6 +461,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
     parser.add_argument('-o', '--ouput', type=str, default='results')
+    parser.add_argument('-m', '--method', type=str, default='QUBOBipartiteCommunityDetection')
     args = parser.parse_args()
     return args
 
@@ -534,7 +535,8 @@ if __name__ == '__main__':
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    method_list = [QUBOBipartiteProjectedCommunityDetection]
+    method_list = [UserCommunityDetection]
+    method_list = [METHOD_DICT[args.method]]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
