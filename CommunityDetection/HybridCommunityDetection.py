@@ -4,14 +4,14 @@ from CommunityDetection import QUBOBipartiteCommunityDetection, QUBOBipartitePro
     UserCommunityDetection, QUBOCommunityDetection, LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection
 
 logging.basicConfig(level=logging.INFO)
-HYBRID_LIST = [QUBOBipartiteCommunityDetection, UserCommunityDetection]
+HYBRID_LIST = [LTBipartiteCommunityDetection, UserCommunityDetection]
 
 assert len(HYBRID_LIST) >= 2
 
 class HybridCommunityDetection(*HYBRID_LIST):
     name = 'HybridCommunityDetection'
     n_all_users = -1
-    alpha = 0.5
+    beta = 0.5
 
     def __init__(self, urm, icm, ucm):
         super().__init__(urm, icm, ucm, icm, ucm)
@@ -29,8 +29,8 @@ class HybridCommunityDetection(*HYBRID_LIST):
     @staticmethod
     def check_select_method(n_users: int) -> int:
         n_all_users = HybridCommunityDetection.n_all_users
-        alpha = HybridCommunityDetection.alpha
-        if n_users > n_all_users * alpha:
+        beta = HybridCommunityDetection.beta
+        if n_users > n_all_users * beta:
             return 0
         else:
             return 1
@@ -46,8 +46,8 @@ class HybridCommunityDetection(*HYBRID_LIST):
         return method.get_comm_from_sample(sample, n_users, n_items=n_items)
     
     @staticmethod
-    def set_alpha(alpha: float):
-        HybridCommunityDetection.alpha = alpha
+    def set_beta(beta: float):
+        HybridCommunityDetection.beta = beta
     
     @staticmethod
     def set_n_all_users(n_users: int):

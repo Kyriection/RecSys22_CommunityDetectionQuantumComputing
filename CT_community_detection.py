@@ -335,7 +335,7 @@ if __name__ == '__main__':
     clean_results(result_folder_path, data_reader_classes, method_list)
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
-    HybridCommunityDetection.set_alpha(args.alpha)
+    HybridCommunityDetection.set_beta(args.alpha)
     LTBipartiteProjectedCommunityDetection.set_alpha(args.alpha)
     LTBipartiteCommunityDetection.set_alpha(args.alpha)
     LTBipartiteProjectedCommunityDetection.set_alpha(0.00001)

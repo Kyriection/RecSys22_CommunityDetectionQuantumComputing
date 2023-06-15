@@ -231,9 +231,9 @@ def plot_line(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
   ax.set_xlabel(xlabel)
   ax.set_ylabel(ylabel)
   ax.set_xlim(0, x[-1])
-  if ylabel == 'MAE':
+  if ylabel in ['MAE', 'W-MAE']:
     ax.set_ylim(0.75, 1.15)
-  if ylabel == 'RMSE':
+  elif ylabel in ['RMSE', 'W-RMSE']:
     ax.set_ylim(0.95, 1.35)
   # plt.title("Figure") #标题
   # plt.savefig(f'{output}/{xlabel}_{ylabel}.png')
