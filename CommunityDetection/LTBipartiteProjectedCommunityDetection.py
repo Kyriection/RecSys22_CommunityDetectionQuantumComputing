@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 class LTBipartiteProjectedCommunityDetection(QUBOCommunityDetection):
     filter_items = False
-    name = 'QUBOBipartiteProjectedCommunityDetection'
+    name = 'LTBipartiteProjectedCommunityDetection'
     alpha: float = 0.5
     T: int = 5
 

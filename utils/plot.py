@@ -220,6 +220,31 @@ def plot_scatter(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
 def plot_line(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
   fig = plt.figure()
   ax = fig.add_subplot(1, 1, 1)
+  for key in Y:
+    # plt.plot(x, Y[key], label=key)
+    ax.plot(x, Y[key], label=key)
+  plt.legend() # 让图例生效
+  # plt.xticks(x, names, rotation=45)
+  # plt.margins(0)
+  # plt.subplots_adjust(bottom=0.15)
+  # ax.set_xscale('log')
+  ax.set_xlabel(xlabel)
+  ax.set_ylabel(ylabel)
+  ax.set_xlim(0, x[-1])
+  if ylabel == 'MAE':
+    ax.set_ylim(0.75, 1.15)
+  if ylabel == 'RMSE':
+    ax.set_ylim(0.95, 1.35)
+  # plt.title("Figure") #标题
+  # plt.savefig(f'{output}/{xlabel}_{ylabel}.png')
+  fig.savefig(f'{output}/{ylabel}_{xlabel}.png')
+  fig.clf()
+  plt.close()
+
+
+def plot_line_xticks(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y'):
+  fig = plt.figure()
+  ax = fig.add_subplot(1, 1, 1)
   num = len(x)
   xi = list(range(num))
   for key in Y:

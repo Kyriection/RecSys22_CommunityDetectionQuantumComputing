@@ -111,10 +111,37 @@ alpha_list=(0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1 0.0)
 #   done
 # done
 
-echo 'start community detection'
-time python CT_community_detection.py -m UserCommunityDetection > ctcd.log 2>&1
-echo 'start recommendation'
-time python CT_qa_recommendation.py -m UserCommunityDetection > ctqr.log 2>&1
+# echo 'HybridCommunityDetection'
+# alpha_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
+# for alpha in ${alpha_list[*]}
+# do
+#   echo $alpha
+#   time python CT_community_detection.py -m HybridCommunityDetection -a $alpha -o results-$alpha > logs/ctcd-$alpha.log 2>&1
+#   time python CT_qa_recommendation.py -m HybridCommunityDetection -a $alpha -o results-$alpha > logs/ctqr-$alpha.log 2>&1
+# done
+# echo 'CascadeCommunityDetection'
+# alpha_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
+# for alpha in ${alpha_list[*]}
+# do
+#   echo $alpha
+#   time python CT_community_detection.py -m CascadeCommunityDetection -a $alpha -o results-$alpha > logs/ctcd-$alpha.log 2>&1
+#   time python CT_qa_recommendation.py -m CascadeCommunityDetection -a $alpha -o results-$alpha > logs/ctqr-$alpha.log 2>&1
+# done
+# echo 'QUBOBipartiteCommunityDetection'
+# time python CT_community_detection.py -m QUBOBipartiteCommunityDetection > ctcd.log 2>&1
+# time python CT_qa_recommendation.py -m QUBOBipartiteCommunityDetection > ctqr.log 2>&1
+# echo 'QUBOBipartiteProjectedCommunityDetection'
+# time python CT_community_detection.py -m QUBOBipartiteProjectedCommunityDetection > ctcd.log 2>&1
+# time python CT_qa_recommendation.py -m QUBOBipartiteProjectedCommunityDetection > ctqr.log 2>&1
+echo 'LTBipartiteCommunityDetection'
+time python CT_community_detection.py -m LTBipartiteCommunityDetection > ctcd.log 2>&1
+time python CT_qa_recommendation.py -m LTBipartiteCommunityDetection > ctqr.log 2>&1
+echo 'LTBipartiteProjectedCommunityDetection'
+time python CT_community_detection.py -m LTBipartiteProjectedCommunityDetection > ctcd.log 2>&1
+time python CT_qa_recommendation.py -m LTBipartiteProjectedCommunityDetection > ctqr.log 2>&1
+# echo 'QuantityDivision'
+# time python CT_community_detection.py -m QuantityDivision -t 5 > ctcd.log 2>&1
+# time python CT_qa_recommendation.py -m QuantityDivision -t 5 > ctqr.log 2>&1
 
 # T_list=(1 3 5 7 9)
 # for T in ${T_list[*]}

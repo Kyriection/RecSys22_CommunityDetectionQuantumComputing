@@ -11,7 +11,7 @@ import numpy as np
 p = os.path.abspath('.')
 sys.path.insert(1, p)
 
-from utils.plot import plot_line, plot_scatter
+from utils.plot import plot_line, plot_scatter, plot_line_xticks
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
@@ -32,61 +32,68 @@ METHOD = ["SimulatedAnnealingSampler", ""]
 CDR = "cd_LRRecommender.zip"
 RECOMMENDER = 'LRRecommender'
 RESULT = ".result_df.csv"
-TOTAL_DATA = {'C': {}, 'MAE': {}, 'RMSE': {}}
+TOTAL_DATA = {'C': {}, 'MAE': {}, 'RMSE': {}, 'W-MAE': {}, 'W-RMSE': {}}
+TAIL_DATA = {}
 MIN_RATING_NUM = 1
 PLOT_CUT = 30
-DATA = {key : {'x': None, 'MAE': {}, 'RMSE': {}} for key in ['rank', 'rating', 'cluster']}
+DATA = {key : {'x': None, 'MAE': {}, 'RMSE': {}, 'W-MAE': {}, 'W-RMSE': {}} for key in ['rank', 'rating', 'cluster', 'Number of tail items']}
 CT: float = 0.0
+STEP = 10
 
 def init_global_data():
-  global TOTAL_DATA, DATA
-  TOTAL_DATA = {'C': {}, 'MAE': {}, 'RMSE': {}}
-  DATA = {key : {'x': None, 'MAE': {}, 'RMSE': {}} for key in ['rank', 'rating', 'cluster']}
+  global TOTAL_DATA, DATA, TAIL_DATA
+  TOTAL_DATA = {'C': {}, 'MAE': {}, 'RMSE': {}, 'W-MAE': {}, 'W-RMSE': {}}
+  DATA = {key : {'x': None, 'MAE': {}, 'RMSE': {}, 'W-MAE': {}, 'W-RMSE': {}} for key in ['rank', 'rating', 'cluster', 'Number of tail items']}
+  TAIL_DATA = {}
 
 
 def process_total_data():
-  for key in ['MAE', 'RMSE']:
+  for key in ['MAE', 'RMSE', 'W-MAE', 'W-RMSE']:
     values = TOTAL_DATA[key].values()
     if values:
       TOTAL_DATA[key][-2] = min(values)
     else:
-       return None
-  df = pd.DataFrame(TOTAL_DATA)
-  return df
+       return None, None
+  df_total = pd.DataFrame(TOTAL_DATA)
+  df_tail = pd.DataFrame(TAIL_DATA)
+  df_tail.sort_index(inplace=True)
+  return df_total, df_tail
 
 
 def plot(output_folder_path, show: bool = False):
-    df = process_total_data()
-    if df is None:
+    df_total, df_tail = process_total_data()
+    if df_total is None:
        print('data empty.')
        return
-    output_path = os.path.join(output_folder_path, f'total_MAE_RMSE.csv')
-    df.to_csv(output_path)
-    print(output_path)
+    df_total.to_csv(os.path.join(output_folder_path, f'total_MAE_RMSE.csv'))
+    df_tail.to_csv(os.path.join(output_folder_path, f'tail_MAE_RMSE.csv'))
+    logging.info(f'save results in {output_folder_path}')
     if show:
-      print(df)
-    for key in ['rank', 'rating']:
+      print(df_total)
+    for key in DATA:
         data = DATA[key]
         x = data['x']
         if x is None:
            continue
         MAE_data = data['MAE']
         RMSE_data = data['RMSE']
-        plot_scatter(x, MAE_data, output_folder_path, key, 'MAE')
-        plot_scatter(x, RMSE_data, output_folder_path, key, 'RMSE')
-    for key in ['cluster']:
-        data = DATA[key]
-        x = data['x']
-        if x is None:
-           continue
-        MAE_data = data['MAE']
-        RMSE_data = data['RMSE']
-        plot_line(x, MAE_data, output_folder_path, key, 'MAE')
-        plot_line(x, RMSE_data, output_folder_path, key, 'RMSE')
+        WMAE_data = data['W-MAE']
+        WRMSE_data = data['W-RMSE']
+        if key in ['rank', 'rating']:
+          plot_scatter(x, MAE_data, output_folder_path, key, 'MAE')
+          plot_scatter(x, RMSE_data, output_folder_path, key, 'RMSE')
+        elif key in ['cluster']:
+          plot_line_xticks(x, MAE_data, output_folder_path, key, 'MAE')
+          plot_line_xticks(x, RMSE_data, output_folder_path, key, 'RMSE')
+        elif key in ['Number of tail items']:
+          plot_line(x, MAE_data, output_folder_path, key, 'MAE')
+          plot_line(x, RMSE_data, output_folder_path, key, 'RMSE')
+          plot_line(x, WMAE_data, output_folder_path, key, 'W-MAE')
+          plot_line(x, WRMSE_data, output_folder_path, key, 'W-RMSE')
 
 
 def collect_data(urm, n_iter, result_df, result_df_ei = None):
-    global MIN_RATING_NUM, PLOT_CUT, CT
+    global MIN_RATING_NUM, PLOT_CUT, CT, STEP
     C_quantity = np.ediff1d(urm.tocsr().indptr) # count of each row
     # if result_df_ei is not None:
     if CT > 0.0:
@@ -113,11 +120,20 @@ def collect_data(urm, n_iter, result_df, result_df_ei = None):
     DATA['rank']['x'] = list(range(n_users))
     DATA['rank']['MAE'][n_iter] = [mae for mae, mse, num_rating in data]
     DATA['rank']['RMSE'][n_iter] = [np.sqrt(mse) for mae, mse, num_rating in data]
+    # calc total error rate at tail 10%, 20% ... 100%
+    TAIL_DATA[n_iter] = {}
     # cluster by C_quantity
     tot_mae = 0.0
-    tot_rmse = 0.0
+    tot_mse = 0.0
     tot_num_rating = 0
     cluster_data = {}
+    x = []
+    MAE_data = []
+    RMSE_data = []
+    tot_wmae = 0.0
+    tot_wmse = 0.0
+    WMAE_data = []
+    WRMSE_data = []
     for i in range(n_users):
         quantity = C_quantity[i]
         mae, mse, num_rating = data[i]
@@ -128,9 +144,38 @@ def collect_data(urm, n_iter, result_df, result_df_ei = None):
         _data[1] += mse * num_rating
         _data[2] += num_rating
         tot_mae += mae * num_rating
-        tot_rmse += mse * num_rating
+        tot_mse += mse * num_rating
         tot_num_rating += num_rating
         cluster_data[quantity] = _data
+        tot_wmae += mae
+        tot_wmse += mse
+
+        if tot_num_rating == 0:
+           continue
+        percent = i / n_users
+        p = int(percent * 10)
+        mae = round(tot_mae / tot_num_rating, 4)
+        rmse = round(np.sqrt(tot_mse / tot_num_rating), 4)
+        TAIL_DATA[n_iter][f'MAE-{p * 10 + 10}%'] = mae
+        TAIL_DATA[n_iter][f'RMSE-{p * 10 + 10}%'] = rmse
+
+        if i % STEP != (n_users - 1) % STEP:
+           continue
+        x.append(i)
+        MAE_data.append(round(tot_mae / tot_num_rating, 4))
+        RMSE_data.append(round(np.sqrt(tot_mse / tot_num_rating), 4))
+        WMAE_data.append(round(tot_wmae / (i + 1), 4))
+        WRMSE_data.append(round(np.sqrt(tot_wmse / (i + 1)), 4))
+    # accumulate error rate from tail to head
+    DATA['Number of tail items']['x'] = x
+    DATA['Number of tail items']['MAE'][n_iter] = MAE_data
+    DATA['Number of tail items']['RMSE'][n_iter] = RMSE_data
+    DATA['Number of tail items']['W-MAE'][n_iter] = WMAE_data
+    DATA['Number of tail items']['W-RMSE'][n_iter] = WRMSE_data
+    TOTAL_DATA['MAE'][n_iter] = MAE_data[-1]
+    TOTAL_DATA['RMSE'][n_iter] = RMSE_data[-1]
+    TOTAL_DATA['W-MAE'][n_iter] = WMAE_data[-1]
+    TOTAL_DATA['W-RMSE'][n_iter] = WRMSE_data[-1]
     # BTY, dict.items() == zip(dict.keys(), dict.values())
     x = list(cluster_data.keys())
     MAE_data = []
@@ -143,11 +188,6 @@ def collect_data(urm, n_iter, result_df, result_df_ei = None):
     DATA['rating']['x'] = x
     DATA['rating']['MAE'][n_iter] = MAE_data
     DATA['rating']['RMSE'][n_iter] = RMSE_data
-    # print tot
-    tot_mae = round(tot_mae / tot_num_rating, 4)
-    tot_rmse = round(np.sqrt(tot_rmse / tot_num_rating), 4)
-    TOTAL_DATA['MAE'][n_iter] = tot_mae
-    TOTAL_DATA['RMSE'][n_iter] = tot_rmse
 
     # cluster to PLOT_CUT points
     '''
@@ -310,11 +350,14 @@ def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, 
 
 if __name__ == '__main__':
   # dataset = input("input file folder name: ")
-  cut_ratio = float(input('input CT cut ration: '))
+  # cut_ratio = float(input('input CT cut ration: '))
   # show = input("print on CMD or not: ")
   # show = True if show else False
   show = True
   # print_result(cut_ratio, MovielensSample2Reader, [QUBOLongTailCommunityDetection], show)
   # print_result(cut_ratio, MovielensSample2Reader, [KmeansCommunityDetection], show)
-  print_result(cut_ratio, Movielens100KReader, [QUBOBipartiteCommunityDetection], show)
+  # print_result(cut_ratio, Movielens100KReader, [QUBOBipartiteCommunityDetection], show)
+  result_folder_path = 'results/'
+  output_folder = os.path.join('./results/', 'Movielens100K', 'results')
+  print_result(0, Movielens100KReader, [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection], False, output_folder, '5_1.0_0.0_0', result_folder_path)
   

@@ -8,7 +8,7 @@ from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
 
 
 class LTBipartiteCommunityDetection(QUBOCommunityDetection):
-    name = 'QUBOBipartiteCommunityDetection'
+    name = 'LTBipartiteCommunityDetection'
     alpha: float = 0.5
     T: int = 5
 

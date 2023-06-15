@@ -13,7 +13,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, Q
     UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
     QUBOProjectedCommunityDetection, HybridCommunityDetection, QUBONcutCommunityDetection, SpectralClustering, \
     QUBOBipartiteProjectedItemCommunityDetection, LTBipartiteProjectedCommunityDetection, QuantityDivision, \
-    QUBOBipartiteProjectedCommunityDetection2, LTBipartiteCommunityDetection, METHOD_DICT
+    QUBOBipartiteProjectedCommunityDetection2, LTBipartiteCommunityDetection, METHOD_DICT, CascadeCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader, \
     MovielensSample2Reader
@@ -182,8 +182,11 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
     show_urm_info(cd_urm)
 
     if n_iter < A1_LAYER:
+        assert method in LT_METHOD, f'{method.name} not support quantity attribute.'
+        logging.info(f'n_iter={n_iter}<{A1_LAYER}, {method.name} to {LT_METHOD[method].name}')
         lt_method = LT_METHOD[method]
-        lt_method.name = method.name
+        # lt_method.name = method.name
+        method.name = lt_method.name
         m: BaseCommunityDetection = lt_method(cd_urm, icm, ucm)
     else:
         m: BaseCommunityDetection = method(cd_urm, icm, ucm)
@@ -321,13 +324,13 @@ if __name__ == '__main__':
     method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
     # method_list = [KmeansCommunityDetection]
-    # method_list = [METHOD_DICT[args.method]]
+    method_list = [METHOD_DICT[args.method]]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 6
+    num_iters = 7
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
     clean_results(result_folder_path, data_reader_classes, method_list)
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
@@ -342,4 +345,5 @@ if __name__ == '__main__':
     LTBipartiteProjectedCommunityDetection.set_T(5)
     LTBipartiteCommunityDetection.set_T(1)
     QuantityDivision.set_T(args.T)
+    CascadeCommunityDetection.set_alpha(args.alpha)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)
