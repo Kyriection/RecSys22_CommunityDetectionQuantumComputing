@@ -330,7 +330,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 7
+    num_iters = 6
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
     clean_results(result_folder_path, data_reader_classes, method_list)
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
@@ -338,12 +338,12 @@ if __name__ == '__main__':
     HybridCommunityDetection.set_beta(args.alpha)
     LTBipartiteProjectedCommunityDetection.set_alpha(args.alpha)
     LTBipartiteCommunityDetection.set_alpha(args.alpha)
-    LTBipartiteProjectedCommunityDetection.set_alpha(0.00001)
-    LTBipartiteCommunityDetection.set_alpha(0.005)
+    # LTBipartiteProjectedCommunityDetection.set_alpha(0.00001)
+    # LTBipartiteCommunityDetection.set_alpha(0.005)
     LTBipartiteProjectedCommunityDetection.set_T(args.T)
     LTBipartiteCommunityDetection.set_T(args.T)
-    LTBipartiteProjectedCommunityDetection.set_T(5)
-    LTBipartiteCommunityDetection.set_T(1)
+    # LTBipartiteProjectedCommunityDetection.set_T(5)
+    # LTBipartiteCommunityDetection.set_T(1)
     QuantityDivision.set_T(args.T)
     CascadeCommunityDetection.set_alpha(args.alpha)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)

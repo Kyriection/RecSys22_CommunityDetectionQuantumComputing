@@ -113,13 +113,13 @@ alpha_list=(0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1 0.0)
 
 echo 'HybridCommunityDetection'
 # alpha_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
-alpha_list=(0.0625 0.03125)
-for alpha in ${alpha_list[*]}
-do
-  echo $alpha
-  time python CT_community_detection.py -m HybridCommunityDetection -a $alpha -o results-$alpha > logs/ctcd-$alpha.log 2>&1
-  time python CT_qa_recommendation.py -m HybridCommunityDetection -a $alpha -o results-$alpha > logs/ctqr-$alpha.log 2>&1
-done
+# alpha_list=(0.5 0.25 0.125 0.0625 0.03125 0.015625)
+# for alpha in ${alpha_list[*]}
+# do
+#   echo $alpha
+#   time python CT_community_detection.py -m HybridCommunityDetection -a $alpha -o results-WPM-$alpha > logs/ctcd-WPM-$alpha.log 2>&1
+#   time python CT_qa_recommendation.py -m HybridCommunityDetection -a $alpha -o results-WPM-$alpha > logs/ctqr-WPM-$alpha.log 2>&1
+# done
 # echo 'CascadeCommunityDetection'
 # alpha_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
 # for alpha in ${alpha_list[*]}
@@ -141,8 +141,11 @@ done
 # time python CT_community_detection.py -m LTBipartiteProjectedCommunityDetection > ctcd.log 2>&1
 # time python CT_qa_recommendation.py -m LTBipartiteProjectedCommunityDetection > ctqr.log 2>&1
 # echo 'QuantityDivision'
-# time python CT_community_detection.py -m QuantityDivision -t 5 > ctcd.log 2>&1
-# time python CT_qa_recommendation.py -m QuantityDivision -t 5 > ctqr.log 2>&1
+# time python CT_community_detection.py -m QuantityDivision -t 7 -o results-Quantity-7 > ctcd.log 2>&1
+# time python CT_qa_recommendation.py -m QuantityDivision -t 7 -o results-Quantity-7 > ctqr.log 2>&1
+# echo 'KmeansCommunityDetection'
+# time python CT_community_detection.py -m KmeansCommunityDetection -o results-Kmeans-B-I > ctcd.log 2>&1
+# time python CT_qa_recommendation.py -m KmeansCommunityDetection -o results-Kmeans-B-I > ctqr.log 2>&1
 
 # T_list=(1 3 5 7 9)
 # for T in ${T_list[*]}
@@ -161,3 +164,31 @@ done
 #     break
 #   fi
 # done
+
+T_list=(1 3 5 7)
+alpha_list=(1.0 0.5 0.1 0.05 0.01 0.005 0.001 0.0005 0.0001 0.00005 0.00001 0)
+# method_list=(LTBipartiteCommunityDetection LTBipartiteProjectedCommunityDetection)
+method_list=(LTBipartiteProjectedCommunityDetection)
+for method in ${method_list[*]}
+do
+  for T in ${T_list[*]}
+  do
+    for alpha in ${alpha_list[*]}
+    do
+      tag=$method-$T-$alpha
+      echo $tag
+      echo 'start community detection'
+      time python CT_community_detection.py -m $method -t $T -a $alpha -o results-$tag > logs/ctcd-$tag.log 2>&1
+      if [ $? -ne 0 ]; then
+        echo 'error'
+        break
+      fi
+      echo 'start recommendation'
+      time python CT_qa_recommendation.py -m $method -t $T -a $alpha -o results-$tag > logs/ctqr-$tag.log 2>&1
+      if [ $? -ne 0 ]; then
+        echo 'error'
+        break
+      fi
+    done
+  done
+done
