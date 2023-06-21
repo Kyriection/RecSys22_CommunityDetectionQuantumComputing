@@ -1,55 +1,56 @@
 import logging
 
-from CommunityDetection import QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, \
-    UserCommunityDetection, QUBOCommunityDetection, LTBipartiteProjectedCommunityDetection
+from CommunityDetection.BaseCommunityDetection import BaseCommunityDetection
+from CommunityDetection.UserCommunityDetection import UserCommunityDetection
+from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
 
-logging.basicConfig(level=logging.INFO)
-HYBRID_LIST = [QUBOBipartiteCommunityDetection, UserCommunityDetection]
+def get_cascade_class(method: BaseCommunityDetection):
+    method_list = [method, UserCommunityDetection]
+    class CascadeCommunityDetection(*method_list):
+        name = f'Cascade-{method.name}'
+        n_all_users = -1
+        beta = 0.5
 
-assert len(HYBRID_LIST) >= 2
+        def __init__(self, urm, icm, ucm, *args):
+            super().__init__(urm, icm, ucm, icm, ucm)
+            self.set_n_all_users(urm.shape[0])
+            self.filter_items = True
+            self.filter_users = True
 
-class CascadeCommunityDetection(*HYBRID_LIST):
-    name = 'CascadeCommunityDetection'
-    all_size = -1
-    alpha = 0.5
+        def fit(self, *args, **kwargs):
+            n_users = self.urm.shape[0]
+            method = self.select_method(n_users)
+            self.filter_items = method.filter_items
+            self.filter_users = method.filter_users
+            method.fit(self, *args, **kwargs)
 
-    def __init__(self, urm, icm, ucm):
-        super().__init__(urm, icm, ucm, icm, ucm)
-        self.set_all_size(urm.size)
-        self.filter_items = True
-        self.filter_users = True
-    
-    def fit(self, *args, **kwargs):
-        method = self.select_method(self.urm.size)
-        self.filter_items = method.filter_items
-        self.filter_users = method.filter_users
-        method.fit(self, *args, **kwargs)
+        @staticmethod
+        def check_select_method(n_users: int) -> int:
+            n_all_users = CascadeCommunityDetection.n_all_users
+            beta = CascadeCommunityDetection.beta
+            if n_users > n_all_users * beta:
+                return 0
+            else:
+                return 1
 
-    @staticmethod
-    def check_select_method(urm_size: int) -> int:
-        all_size = CascadeCommunityDetection.all_size
-        alpha = CascadeCommunityDetection.alpha
-        if urm_size > all_size * alpha:
-            return 0
-        else:
-            return 1
+        @staticmethod
+        def select_method(n_users: int) -> QUBOCommunityDetection:
+            return method_list[CascadeCommunityDetection.check_select_method(n_users)]
 
-    @staticmethod
-    def select_method(n_users: int) -> QUBOCommunityDetection:
-        return HYBRID_LIST[CascadeCommunityDetection.check_select_method(n_users)]
+        @staticmethod
+        def get_comm_from_sample(sample, n_users, n_items=0):
+            method = CascadeCommunityDetection.select_method(n_users)
+            logging.info(f'n_users={n_users}, use {method.name}')
+            return method.get_comm_from_sample(sample, n_users, n_items=n_items)
 
-    @staticmethod
-    def get_comm_from_sample(sample, n_users, n_items=0):
-        method = CascadeCommunityDetection.select_method(n_users)
-        logging.info(f'CascadeCommunityDetection select {method.name}')
-        return method.get_comm_from_sample(sample, n_users, n_items=n_items)
-    
-    @staticmethod
-    def set_alpha(alpha: float):
-        CascadeCommunityDetection.alpha = alpha
-    
-    @staticmethod
-    def set_all_size(urm_size: int):
-        if CascadeCommunityDetection.all_size == -1:
-            CascadeCommunityDetection.all_size = urm_size
-            print(f"{CascadeCommunityDetection.name}: set all_size={urm_size}")
+        @staticmethod
+        def set_beta(beta: float):
+            CascadeCommunityDetection.beta = beta
+
+        @staticmethod
+        def set_n_all_users(n_users: int):
+            if CascadeCommunityDetection.n_all_users == -1:
+                CascadeCommunityDetection.n_all_users = n_users
+                logging.info(f"{CascadeCommunityDetection.name}: set n_all_users={n_users}")
+
+    return CascadeCommunityDetection

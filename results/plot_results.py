@@ -21,8 +21,8 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     get_community_folder_path, KmeansCommunityDetection, HierarchicalClustering, \
     QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, UserCommunityDetection, \
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
-    QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
-    Clusters
+    QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, Clusters, \
+    LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection
 
 
 logging.basicConfig(level=logging.INFO)
@@ -278,13 +278,15 @@ def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, 
   data_reader = data_reader_class()
   urm_train, urm_validation, urm_test = load_data(data_reader, [80, 10, 10], False, False)
   urm_train, urm_validation, urm_test = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr()# item is main charactor
+  urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
+  urm_all = merge_sparse_matrices(urm_train_last_test, urm_test)
   dataset = data_reader._get_dataset_name()
   dataset = os.path.abspath(result_folder_path + dataset)
   # special for baseline
   path = os.path.join(dataset, RECOMMENDER)
   file = os.path.join(path, 'baseline.zip')
   result_df = extract_file(file, path)
-  collect_data(urm_train, -1, result_df)
+  collect_data(urm_all, -1, result_df)
   plot(path, show)
   # for method in QUBO:
   # for method in os.listdir(dataset):
@@ -343,7 +345,7 @@ def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, 
            continue
         # logging.info(f'extract_file({file}), resutl_df is None: {result_df is None}')
         TOTAL_DATA['C'][N] = C + 1
-        collect_data(urm_train, N, result_df, result_df_ei)
+        collect_data(urm_all, N, result_df, result_df_ei)
 
       plot(output_path, show)
 
@@ -359,5 +361,5 @@ if __name__ == '__main__':
   # print_result(cut_ratio, Movielens100KReader, [QUBOBipartiteCommunityDetection], show)
   result_folder_path = 'results/'
   output_folder = os.path.join('./results/', 'Movielens100K', 'results')
-  print_result(0, Movielens100KReader, [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection], False, output_folder, '5_1.0_0.0_0', result_folder_path)
-  
+  # print_result(0, Movielens100KReader, [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection], False, output_folder, '5_1.0_0.0_0', result_folder_path)
+  print_result(0, Movielens100KReader, [LTBipartiteProjectedCommunityDetection], False, output_folder, '3_0.005_0.0_0', '/app/results-LTBipartiteProjectedCommunityDetection-3-0.005/')

@@ -21,7 +21,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
     SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
     LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection, QuantityDivision, \
-    METHOD_DICT
+    METHOD_DICT, get_cascade_class
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
@@ -39,144 +39,11 @@ from results.plot_results import print_result
 
 logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
-PLOT_CUT = 30
-MIN_RATING_NUM = 1
-TOTAL_DATA = {}
 EI: bool = False # EI if True else (TC or CT)
 ADAPATIVE_FLAG = False
-ADAPATIVE_METRIC = ['MAE', 'RMSE'][0] 
-ADAPATIVE_DATA = ['validation', 'test'][0]
-MIN_RATINGS_PER_USER = 10
-
-
-def plot(urm, output_folder_path, n_iter, result_df):
-    global MIN_RATING_NUM, PLOT_CUT
-    C_quantity = np.ediff1d(urm.tocsr().indptr) # count of each row
-    data: np.ndarray = result_df.values # [MAE, MSE, num_rating]
-    # delete users whose test rating num < MIN_RATING_NUM
-    ignore_users = data[:, 2] < MIN_RATING_NUM
-    data = data[~ignore_users]
-    C_quantity = C_quantity[~ignore_users]
-    n_users = C_quantity.size
-    # sort by train rating num
-    data = data[np.argsort(C_quantity)]
-    C_quantity = np.sort(C_quantity)
-
-    # plot by item rank
-    x = range(n_users)
-    MAE_data = dict(TC_qa = [mae for mae, mse, num_rating in data])
-    RMSE_data = dict(TC_qa = [np.sqrt(mse) for mae, mse, num_rating in data])
-    plot_scatter(x, MAE_data, output_folder_path, 'item rank', 'MAE')
-    plot_scatter(x, RMSE_data, output_folder_path, 'item rank', 'RMSE')
-    # cluster by C_quantity
-    tot_mae = 0.0
-    tot_rmse = 0.0
-    tot_num_rating = 0
-    cluster_data = {}
-    for i in range(n_users):
-        quantity = C_quantity[i]
-        mae, mse, num_rating = data[i]
-        if num_rating == 0:
-            continue
-        _data = cluster_data.get(quantity, [0.0, 0.0, 0])
-        _data[0] += mae * num_rating
-        _data[1] += mse * num_rating
-        _data[2] += num_rating
-        tot_mae += mae * num_rating
-        tot_rmse += mse * num_rating
-        tot_num_rating += num_rating
-        cluster_data[quantity] = _data
-    # BTY, dict.items() == zip(dict.keys(), dict.values())
-    x = sorted(list(cluster_data.keys()))
-    MAE_data = []
-    RMSE_data = []
-    for key in x:
-        mae, mse, num_rating = cluster_data[key]
-        MAE_data.append(mae / num_rating)
-        RMSE_data.append(np.sqrt(mse / num_rating))
-    MAE_data = dict(TC_qa = MAE_data)
-    RMSE_data = dict(TC_qa = RMSE_data)
-    # plot by #ratings
-    plot_scatter(x, MAE_data, output_folder_path, 'the number of ratings', 'MAE')
-    plot_scatter(x, RMSE_data, output_folder_path, 'the number of ratings', 'RMSE')
-    # print tot
-    tot_mae = round(tot_mae / tot_num_rating, 4)
-    tot_rmse = round(np.sqrt(tot_rmse / tot_num_rating), 4)
-    TOTAL_DATA[n_iter] = dict(MAE=tot_mae, RMSE=tot_rmse)
-    print(f'n_iter:{n_iter}, Total MAE = {tot_mae}, Total RMSE = {tot_rmse}')
-
-    # cluster to PLOT_CUT points
-    '''
-    def get_cut_size(cut_num: int):
-        l = 1
-        r = urm.size
-        while l < r:
-            mid = (l + r + 1) // 2
-            cnt = 0
-            cur = 0
-            for key in cluster_data:
-                cur += cluster_data[key][2]
-                if cur >= mid:
-                    cur = 0
-                    cnt += 1
-            if cur > 0:
-                cnt += 1
-            if cnt >= cut_num:
-                l = mid
-            else:
-                r = mid - 1
-        return l
-
-    cut_size = get_cut_size(PLOT_CUT)
-    x_ = x
-    x = []
-    MAE_data = []
-    RMSE_data = []
-    MAE = 0.0
-    MSE = 0.0
-    num_rating = 0
-    for key in x_:
-        data = cluster_data[key]
-        MAE += _data[0]
-        MSE += _data[1]
-        num_rating += _data[2]
-        if num_rating >= cut_size:
-            x.append(key)
-            MAE_data.append(MAE / num_rating)
-            RMSE_data.append(np.sqrt(MSE / num_rating))
-            MAE = 0.0
-            MSE = 0.0
-            num_rating = 0
-    if num_rating > 0:
-        x.append(x_[-1])
-        MAE_data.append(MAE / num_rating)
-        RMSE_data.append(np.sqrt(MSE / num_rating))
-    logging.info(f'cut_size={cut_size}, len(x)={len(x)}')
-    '''
-    cut_points = np.arange(1, PLOT_CUT + 1) * (n_users // PLOT_CUT)
-    cut_points[-1] = n_users - 1
-    x = C_quantity[cut_points]
-    x = sorted(set(x))
-    MAE_data = []
-    RMSE_data = []
-    cd_key = list(cluster_data.keys())
-    cd_i = 0
-    for cut_quantity in x:
-        MAE = 0.0
-        MSE = 0.0
-        num_rating = 0
-        while cd_i < len(cd_key) and cd_key[cd_i] <= cut_quantity:
-            _data = cluster_data[cd_key[cd_i]]
-            MAE += _data[0]
-            MSE += _data[1]
-            num_rating += _data[2]
-            cd_i += 1
-        MAE_data.append(MAE / num_rating)
-        RMSE_data.append(np.sqrt(MSE / num_rating))
-    MAE_data = dict(TC_qa = MAE_data)
-    RMSE_data = dict(TC_qa = RMSE_data)
-    plot_line(x, MAE_data, output_folder_path, 'the number of ratings (clustered)', 'MAE')
-    plot_line(x, RMSE_data, output_folder_path, 'the number of ratings (clustered)', 'RMSE')
+ADAPATIVE_METRIC = ['MAE', 'MSE', 'W-MAE', 'W-RMSE'][1] 
+ADAPATIVE_DATA = ['validation', 'test'][1]
+MIN_RATINGS_PER_USER = 1
 
 
 def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
@@ -357,7 +224,6 @@ def evaluate_recommender(urm_train_last_test, urm_test, ucm, icm, communities, r
     if output_folder_path is not None:
         dataIO = DataIO(output_folder_path)
         dataIO.save_data(f'cd_{recommender_name}', result_dict)
-        plot(urm_train_last_test, output_folder_path, n_iter, result_df)
 
     return result_dict
 
@@ -423,8 +289,6 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
             recommend_per_method(h_urm_train, h_urm_validation, h_urm_test, h_urm_train_last_test, h_ucm, h_icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
                                  save_model=save_model, each_item=True)
-            # plot(urm_train, method, dataset_name, result_folder_path)
-            # plot(urm_test, method, dataset_name, result_folder_path)
 
 
 def recommend_per_method(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, sampler_list, recommender_list,
@@ -458,7 +322,8 @@ def adaptive_selection(num_iters, urm_train, urm_test, ucm, icm, recommender, ou
             n_comm += 1
         logging.info(f'divide to {n_comm} communities.')
         ignore_users = np.arange(n_users)[np.logical_not(user_mask)]
-        return evaluate_recommender(urm_train, urm_test, ucm, icm, communities, cd_recommenders,
+        # return evaluate_recommender(urm_train, urm_test, ucm, icm, communities, cd_recommenders,
+        return evaluate_recommender(urm_train, urm_train, ucm, icm, communities, cd_recommenders,
                                     ignore_users=ignore_users, min_ratings_per_user=MIN_RATINGS_PER_USER)
     
     result_dict_divide = get_result_dict()
@@ -477,9 +342,11 @@ def adaptive_selection(num_iters, urm_train, urm_test, ucm, icm, recommender, ou
             tot = 0
             for i in range(len(result_df)):
                 metric = result_df.loc[i, ADAPATIVE_METRIC]
-                cnt = result_df.loc[i, 'num_rating']
-                sum += metric * cnt
-                tot += cnt
+                # cnt = result_df.loc[i, 'num_rating']
+                # sum += metric * cnt
+                # tot += cnt
+                sum += metric
+                tot += 1
             return sum / tot if tot > 0 else 0.0
 
         result_df_0 = result_dict_0['result_df']
@@ -593,14 +460,20 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, me
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
-    parser.add_argument('-a', '--alpha', type=float, default=1.0)
-    parser.add_argument('-t', '--T', type=int, default=5)
-    parser.add_argument('-l', '--layer', type=int, default=0)
-    parser.add_argument('-o', '--ouput', type=str, default='results')
-    parser.add_argument('-m', '--method', type=str, default='QUBOBipartiteCommunityDetection')
+    parser.add_argument('method', nargs='+', type=str, help='method',
+                        choices=['QUBOBipartiteCommunityDetection', 'QUBOBipartiteProjectedCommunityDetection',
+                                 'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
+                                 'KmeansCommunityDetection', 'QuantityDivision'])
+    parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
+    parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for cascade')
+    parser.add_argument('-b', '--beta', type=float, default=1.0, help='beta for quantity')
+    parser.add_argument('-t', '--T', type=int, default=5, help='T for quantity')
+    parser.add_argument('-l', '--layer', type=int, default=0, help='number of layer of quantity')
+    parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
+    parser.add_argument('--cascade', action='store_true', help='Use Cascade or not')
     args = parser.parse_args()
     return args
+
 
 def clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list):
     for data_reader_class in data_reader_classes:
@@ -672,11 +545,9 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
-    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    method_list = [METHOD_DICT[args.method]]
-    # method_list = [KmeansCommunityDetection]
-    # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    # method_list = [QUBOLongTailCommunityDetection]
+    method_list = [METHOD_DICT[method_name] for method_name in args.method]
+    if args.cascade:
+        method_list = [get_cascade_class(method) for method in method_list]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
@@ -686,4 +557,4 @@ if __name__ == '__main__':
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
     # save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)
-    save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio, args.layer)
+    save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.beta)

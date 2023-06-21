@@ -40,7 +40,7 @@ CUT_RATIO: float = None
 PLOT_CUT = 30
 MIN_RATING_NUM = 1
 TOTAL_DATA = {}
-EI: bool = True # EI if True else TC or CT
+EI: bool = False # EI if True else TC or CT
 N_CLUSTER = [2, 4, 8, 16, 32, 64, 128, ]
 # N_CLUSTER = [2, 4, 8, 16, 32, 53, 81, ]
 
@@ -169,7 +169,7 @@ def load_communities(urm, ucm, n_users, n_items):
     communities = Clusters(n_users, n_items)
     X = urm
     # X = ucm
-    # X = sp.hstack((urm, ucm))
+    X = sp.hstack((urm, ucm))
     for n_clusters in tqdm.tqdm(N_CLUSTER, desc='load_communities'):
         clusters = [[] for i in range(n_clusters)]
         model = KMeans(n_clusters=n_clusters, random_state=0).fit(X)

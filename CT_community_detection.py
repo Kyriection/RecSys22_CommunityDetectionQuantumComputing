@@ -13,7 +13,8 @@ from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, Q
     UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
     QUBOProjectedCommunityDetection, HybridCommunityDetection, QUBONcutCommunityDetection, SpectralClustering, \
     QUBOBipartiteProjectedItemCommunityDetection, LTBipartiteProjectedCommunityDetection, QuantityDivision, \
-    QUBOBipartiteProjectedCommunityDetection2, LTBipartiteCommunityDetection, METHOD_DICT, CascadeCommunityDetection
+    QUBOBipartiteProjectedCommunityDetection2, LTBipartiteCommunityDetection, METHOD_DICT, CascadeCommunityDetection, \
+    get_cascade_class
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader, \
     MovielensSample2Reader
@@ -292,12 +293,17 @@ def clean_empty_iteration(n_iter: int, folder_path: str, method: Type[BaseCommun
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
-    parser.add_argument('-a', '--alpha', type=float, default=1.0)
-    parser.add_argument('-t', '--T', type=int, default=5)
-    parser.add_argument('-l', '--layer', type=int, default=0)
-    parser.add_argument('-o', '--ouput', type=str, default='results')
-    parser.add_argument('-m', '--method', type=str, default='QUBOBipartiteCommunityDetection')
+    parser.add_argument('method', nargs='+', type=str, help='method',
+                        choices=['QUBOBipartiteCommunityDetection', 'QUBOBipartiteProjectedCommunityDetection',
+                                 'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
+                                 'KmeansCommunityDetection', 'QuantityDivision'])
+    parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
+    parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for quantity')
+    parser.add_argument('-b', '--beta', type=float, default=1.0, help='beta for cascade')
+    parser.add_argument('-t', '--T', type=int, default=5, help='T for quantity')
+    parser.add_argument('-l', '--layer', type=int, default=0, help='number of layer of quantity')
+    parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
+    parser.add_argument('--cascade', action='store_true', help='Use Cascade or not')
     args = parser.parse_args()
     return args
 
@@ -309,8 +315,8 @@ def clean_results(result_folder_path, data_reader_classes, method_list):
         dataset_folder_path = f'{result_folder_path}{dataset_name}/'
         for method in method_list:
             method_folder_path = f'{dataset_folder_path}{method.name}/'
-            logging.debug(f'rm {method_folder_path}')
             if os.path.exists(method_folder_path):
+                logging.debug(f'rm {method_folder_path}')
                 shutil.rmtree(method_folder_path)
 
 if __name__ == '__main__':
@@ -321,10 +327,7 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
-    method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
-    # method_list = [QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection]
-    # method_list = [KmeansCommunityDetection]
-    method_list = [METHOD_DICT[args.method]]
+    method_list = [METHOD_DICT[method_name] for method_name in args.method]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
@@ -332,18 +335,17 @@ if __name__ == '__main__':
                     # tabu.TabuSampler()]
     num_iters = 6
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
-    clean_results(result_folder_path, data_reader_classes, method_list)
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
     HybridCommunityDetection.set_beta(args.alpha)
     LTBipartiteProjectedCommunityDetection.set_alpha(args.alpha)
     LTBipartiteCommunityDetection.set_alpha(args.alpha)
-    # LTBipartiteProjectedCommunityDetection.set_alpha(0.00001)
-    # LTBipartiteCommunityDetection.set_alpha(0.005)
     LTBipartiteProjectedCommunityDetection.set_T(args.T)
     LTBipartiteCommunityDetection.set_T(args.T)
-    # LTBipartiteProjectedCommunityDetection.set_T(5)
-    # LTBipartiteCommunityDetection.set_T(1)
     QuantityDivision.set_T(args.T)
-    CascadeCommunityDetection.set_alpha(args.alpha)
+    if args.cascade:
+        for i, method in enumerate(method_list):
+            method_list[i] = get_cascade_class(method)
+            method_list[i].set_beta(args.beta)
+    clean_results(result_folder_path, data_reader_classes, method_list)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)
