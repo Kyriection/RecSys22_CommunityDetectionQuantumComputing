@@ -470,7 +470,7 @@ def parse_args():
     parser.add_argument('-t', '--T', type=int, default=5, help='T for quantity')
     parser.add_argument('-l', '--layer', type=int, default=0, help='number of layer of quantity')
     parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
-    parser.add_argument('--cascade', action='store_true', help='Use Cascade or not')
+    parser.add_argument('--attribute', action='store_true', help='Use item attribute data (cascade) or not')
     args = parser.parse_args()
     return args
 
@@ -487,11 +487,11 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
         logging.debug(f'clean {hybrid_folder_path}')
         if os.path.exists(hybrid_folder_path):
             shutil.rmtree(hybrid_folder_path)
-        for recommender in recommender_list:
-            recommender_folder_path = os.path.join(dataset_folder_path, recommender.RECOMMENDER_NAME)
-            logging.debug(f'clean {recommender_folder_path}')
-            if os.path.exists(recommender_folder_path):
-                shutil.rmtree(recommender_folder_path)
+        # for recommender in recommender_list:
+        #     recommender_folder_path = os.path.join(dataset_folder_path, recommender.RECOMMENDER_NAME)
+        #     logging.debug(f'clean {recommender_folder_path}')
+        #     if os.path.exists(recommender_folder_path):
+        #         shutil.rmtree(recommender_folder_path)
         for method in method_list:
             method_folder_path = f'{dataset_folder_path}{method.name}/'
             if not os.path.exists(method_folder_path):
@@ -546,7 +546,7 @@ if __name__ == '__main__':
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
     method_list = [METHOD_DICT[method_name] for method_name in args.method]
-    if args.cascade:
+    if args.attribute:
         method_list = [get_cascade_class(method) for method in method_list]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
@@ -554,7 +554,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
-    clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
+    # clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
     # save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)
     save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.beta)

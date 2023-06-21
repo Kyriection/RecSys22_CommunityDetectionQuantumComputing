@@ -43,6 +43,7 @@ TOTAL_DATA = {}
 EI: bool = False # EI if True else TC or CT
 N_CLUSTER = [2, 4, 8, 16, 32, 64, 128, ]
 # N_CLUSTER = [2, 4, 8, 16, 32, 53, 81, ]
+ATTRIBUTE: bool = False
 
 def plot(urm, output_folder_path, n_iter, result_df):
     global MIN_RATING_NUM, PLOT_CUT
@@ -169,7 +170,8 @@ def load_communities(urm, ucm, n_users, n_items):
     communities = Clusters(n_users, n_items)
     X = urm
     # X = ucm
-    X = sp.hstack((urm, ucm))
+    if ATTRIBUTE:
+        X = sp.hstack((urm, ucm))
     for n_clusters in tqdm.tqdm(N_CLUSTER, desc='load_communities'):
         clusters = [[] for i in range(n_clusters)]
         model = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
@@ -461,7 +463,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
     parser.add_argument('-o', '--ouput', type=str, default='results')
-    parser.add_argument('-m', '--method', type=str, default='QUBOBipartiteCommunityDetection')
+    # parser.add_argument('-m', '--method', type=str, default='QUBOBipartiteCommunityDetection')
+    parser.add_argument('--attribute', action='store_true', help='Use item attribute data or not')
+    parser.add_argument('--EI', action='store_true', help='Each Item')
     args = parser.parse_args()
     return args
 
@@ -529,6 +533,8 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
 if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
+    ATTRIBUTE = args.attribute
+    EI = args.EI
     data_reader_classes = [Movielens100KReader]
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
@@ -536,7 +542,7 @@ if __name__ == '__main__':
     recommender_list = [LRRecommender]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     method_list = [UserCommunityDetection]
-    method_list = [METHOD_DICT[args.method]]
+    # method_list = [METHOD_DICT[args.method]]
     sampler_list = [neal.SimulatedAnnealingSampler()]
     # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
     # sampler_list = [LeapHybridSampler()]
@@ -545,4 +551,4 @@ if __name__ == '__main__':
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    save_results(data_reader_classes, result_folder_path, method_list, args.cut_ratio)
+    save_results(data_reader_classes, result_folder_path, method_list, args.attribute, args.EI)

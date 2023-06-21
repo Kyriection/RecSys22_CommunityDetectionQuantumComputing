@@ -12,6 +12,7 @@ class KmeansCommunityDetection(BaseCommunityDetection):
     is_qubo = False
     filter_items = False
     name = 'KmeansCommunityDetection'
+    attribute: bool = False
 
     def __init__(self, urm, icm, ucm, *args, **kwargs):
         super(KmeansCommunityDetection, self).__init__(urm, *args, **kwargs)
@@ -37,25 +38,9 @@ class KmeansCommunityDetection(BaseCommunityDetection):
         if n_users < 2:
             users = np.ones(n_users)
         else:
-            '''
-            X = np.zeros(shape=(n_users, n_genres), dtype=np.float32)
-            urm = self.urm.toarray()
-            icm = self.icm.toarray()
-
-            for i in range(n_users):
-                for j in range(n_genres):
-                    cnt = 0
-                    for k in range(n_items):
-                        if icm[k][j]:
-                            X[i][j] += urm[i][k]
-                            cnt += 1
-                    X[i][j] /= cnt
-            
-            users = kmeans.fit_predict(X)
-            '''
-            # X = self.urm
-            # X = self.ucm
-            X = sp.hstack((self.urm, self.ucm))
+            X = self.urm
+            if KmeansCommunityDetection.attribute:
+                X = sp.hstack((self.urm, self.ucm))
             users = kmeans.fit_predict(X)
 
         run_time = time.time() - start_time
@@ -70,6 +55,9 @@ class KmeansCommunityDetection(BaseCommunityDetection):
 
         self._fit_time = time.time() - start_time
 
+    @staticmethod
+    def set_attribute(attribute: bool):
+        KmeansCommunityDetection.attribute = attribute
 
     """
     def get_Q_adjacency(self):

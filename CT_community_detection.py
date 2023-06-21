@@ -303,7 +303,7 @@ def parse_args():
     parser.add_argument('-t', '--T', type=int, default=5, help='T for quantity')
     parser.add_argument('-l', '--layer', type=int, default=0, help='number of layer of quantity')
     parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
-    parser.add_argument('--cascade', action='store_true', help='Use Cascade or not')
+    parser.add_argument('--attribute', action='store_true', help='Use item attribute data (cascade) or not')
     args = parser.parse_args()
     return args
 
@@ -318,6 +318,7 @@ def clean_results(result_folder_path, data_reader_classes, method_list):
             if os.path.exists(method_folder_path):
                 logging.debug(f'rm {method_folder_path}')
                 shutil.rmtree(method_folder_path)
+
 
 if __name__ == '__main__':
     args = parse_args()
@@ -343,7 +344,8 @@ if __name__ == '__main__':
     LTBipartiteProjectedCommunityDetection.set_T(args.T)
     LTBipartiteCommunityDetection.set_T(args.T)
     QuantityDivision.set_T(args.T)
-    if args.cascade:
+    KmeansCommunityDetection.set_attribute(args.attribute)
+    if args.attribute:
         for i, method in enumerate(method_list):
             method_list[i] = get_cascade_class(method)
             method_list[i].set_beta(args.beta)
