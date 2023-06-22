@@ -41,7 +41,7 @@ PLOT_CUT = 30
 MIN_RATING_NUM = 1
 TOTAL_DATA = {}
 EI: bool = False # EI if True else TC or CT
-N_CLUSTER = [2, 4, 8, 16, 32, 64, 128, ]
+N_CLUSTER = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
 # N_CLUSTER = [2, 4, 8, 16, 32, 53, 81, ]
 ATTRIBUTE: bool = False
 
@@ -535,8 +535,8 @@ if __name__ == '__main__':
     CUT_RATIO = args.cut_ratio
     ATTRIBUTE = args.attribute
     EI = args.EI
-    data_reader_classes = [Movielens100KReader]
-    # data_reader_classes = [Movielens1MReader]
+    # data_reader_classes = [Movielens100KReader]
+    data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
