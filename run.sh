@@ -4,7 +4,7 @@
 # beta_list=(0.25 0.125 0.0625 0.03125 0.015625 0.0078125)
 
 # alpha_list=(0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9)
-alpha_list=(0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1 0.0)
+# alpha_list=(0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1 0.0)
 # alpha_list=(0.25 0.0625 0.015625)
 # alpha_list=(0.000 0.025 0.050 0.075 0.100 0.125 0.150)
 # alpha_list=(1.00 0.75 0.50 0.25 0.00)
@@ -111,15 +111,14 @@ alpha_list=(0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1 0.0)
 #   done
 # done
 
-echo 'HybridCommunityDetection'
+# echo 'HybridCommunityDetection'
 # alpha_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
-alpha_list=(0.125 0.015625)
-for alpha in ${alpha_list[*]}
-do
-  echo $alpha
-  time python CT_community_detection.py QUBOBipartiteProjectedCommunityDetection --cascade -b $alpha -o results-CWPM-$alpha > logs/ctcd-CWPM-$alpha.log 2>&1
-  time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection --cascade -b $alpha -o results-CWPM-$alpha > logs/ctqr-CWPM-$alpha.log 2>&1
-done
+# for alpha in ${alpha_list[*]}
+# do
+#   echo $alpha
+#   time python CT_community_detection.py QUBOBipartiteProjectedCommunityDetection --cascade -b $alpha -o results-CWPM-$alpha > logs/ctcd-CWPM-$alpha.log 2>&1
+#   time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection --cascade -b $alpha -o results-CWPM-$alpha > logs/ctqr-CWPM-$alpha.log 2>&1
+# done
 # echo 'CascadeCommunityDetection'
 # alpha_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
 # for alpha in ${alpha_list[*]}
@@ -198,3 +197,7 @@ done
 #     done
 #   done
 # done
+
+# ------------- Each Item ---------------
+echo Each Item
+time python CT_recommendation.py --EI -o results/EI > logs/ctr-EI.log 2>&1

@@ -13,12 +13,12 @@ mkdir -p logs/
 mkdir -p results/
 
 # ------------- Each Item ---------------
-read -u5
-{
-  echo Each Item
-  time python CT_recommendation.py --EI -o results/EI > logs/ctr-EI.log 2>&1
-  echo ''>&5
-}&
+# read -u5
+# {
+#   echo Each Item
+#   time python CT_recommendation.py --EI -o results/EI > logs/ctr-EI.log 2>&1
+#   echo ''>&5
+# }&
 # ------------- Total Clusetring ----------
 # ------------- Classical ----------
 read -u5
