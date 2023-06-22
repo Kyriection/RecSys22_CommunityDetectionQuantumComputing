@@ -1,10 +1,11 @@
 import logging
 
 from CommunityDetection import QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, \
-    UserCommunityDetection, QUBOCommunityDetection, LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection
+    UserCommunityDetection, QUBOCommunityDetection, UserBipartiteCommunityDetection, \
+    LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection
 
 logging.basicConfig(level=logging.INFO)
-HYBRID_LIST = [LTBipartiteCommunityDetection, QUBOBipartiteCommunityDetection]
+HYBRID_LIST = [QUBOBipartiteCommunityDetection, UserBipartiteCommunityDetection]
 
 assert len(HYBRID_LIST) >= 2
 

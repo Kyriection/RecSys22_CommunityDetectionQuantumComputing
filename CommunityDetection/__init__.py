@@ -18,6 +18,7 @@ from CommunityDetection.LTBipartiteProjectedCommunityDetection import LTBipartit
 from CommunityDetection.LTBipartiteCommunityDetection import LTBipartiteCommunityDetection
 from CommunityDetection.Clusters import Clusters
 from CommunityDetection.QuantityDivision import QuantityDivision
+from CommunityDetection.UserBipartiteCommunityDetection import UserBipartiteCommunityDetection
 from CommunityDetection.HybridRecommender import HybridRecommender, calc_num_iters
 from CommunityDetection.HybridCommunityDetection import HybridCommunityDetection
 from CommunityDetection.MultiHybridCommunityDetection import MultiHybridCommunityDetection
@@ -27,7 +28,7 @@ METHOD_LIST = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityD
                KmeansCommunityDetection, QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, \
                HybridCommunityDetection, MultiHybridCommunityDetection, QUBOBipartiteProjectedItemCommunityDetection, \
                SpectralClustering, LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection, \
-               QuantityDivision]
+               QuantityDivision, UserBipartiteCommunityDetection]
 METHOD_DICT = {method.name : method for method in METHOD_LIST}
 
 class EmptyCommunityError(Exception):

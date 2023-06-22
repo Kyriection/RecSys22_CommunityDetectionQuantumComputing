@@ -21,7 +21,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
     SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
     LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection, QuantityDivision, \
-    METHOD_DICT, get_cascade_class
+    METHOD_DICT, get_cascade_class, UserBipartiteCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
@@ -463,7 +463,7 @@ def parse_args():
     parser.add_argument('method', nargs='+', type=str, help='method',
                         choices=['QUBOBipartiteCommunityDetection', 'QUBOBipartiteProjectedCommunityDetection',
                                  'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
-                                 'KmeansCommunityDetection', 'QuantityDivision'])
+                                 'KmeansCommunityDetection', 'QuantityDivision', 'HybridCommunityDetection', 'UserBipartiteCommunityDetection'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for cascade')
     parser.add_argument('-b', '--beta', type=float, default=1.0, help='beta for quantity')
@@ -540,8 +540,8 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
 if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
-    # data_reader_classes = [Movielens100KReader]
-    data_reader_classes = [Movielens1MReader]
+    data_reader_classes = [Movielens100KReader]
+    # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]

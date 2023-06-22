@@ -199,5 +199,18 @@
 # done
 
 # ------------- Each Item ---------------
-echo Each Item
-time python CT_recommendation.py --EI -o results/EI > logs/ctr-EI.log 2>&1
+# echo Each Item
+# time python CT_recommendation.py --EI -o results/EI > logs/ctr-EI.log 2>&1
+
+# echo 'HybridCommunityDetection'
+# # beta_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
+# beta_list=(0.0625 0.03125)
+# for beta in ${beta_list[*]}
+# do
+#   echo $beta
+#   time python CT_community_detection.py HybridCommunityDetection -b $beta -o results-CBMB-$beta > logs/ctcd-CBMB-$beta.log 2>&1
+#   time python CT_qa_recommendation.py HybridCommunityDetection -b $beta -o results-CBMB-$beta > logs/ctqr-CBMB-$beta.log 2>&1
+# done
+# echo 'UserBipartiteCommunityDetection'
+# time python CT_community_detection.py UserBipartiteCommunityDetection > ctcd.log 2>&1
+# time python CT_qa_recommendation.py UserBipartiteCommunityDetection > ctqr.log 2>&1
