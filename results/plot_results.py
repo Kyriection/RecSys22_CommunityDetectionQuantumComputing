@@ -255,6 +255,8 @@ def collect_data(urm, n_iter, result_df, result_df_ei = None):
             MSE += _data[1]
             num_rating += _data[2]
             cd_i += 1
+        if num_rating == 0:
+           num_rating = 1
         MAE_data.append(MAE / num_rating)
         RMSE_data.append(np.sqrt(MSE / num_rating))
     DATA['cluster']['x'] = x

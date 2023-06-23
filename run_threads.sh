@@ -93,7 +93,7 @@ do
     do
     read -u5
     {
-      tag=Quantity-$method-$T-$beta
+      tag=Quantity-$method-$T-$alpha
       echo $tag
       time python CT_community_detection.py $method -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
       time python CT_qa_recommendation.py $method -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
