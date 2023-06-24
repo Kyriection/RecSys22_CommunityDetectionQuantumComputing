@@ -30,7 +30,8 @@ def read_results(folder_path):
     wmae = min(pd_reader['W-MAE'])
     wrmse = min(pd_reader['W-RMSE'])
     hypers = [float(hyper) for hyper in hyper_name.split('_')]
-    T, alpha, cut_ratio, layer = hypers
+    # T, alpha, cut_ratio, layer = hypers
+    T, alpha, beta = hypers
     MAE[T] = MAE.get(T, {})
     RMSE[T] = RMSE.get(T, {})
     WMAE[T] = WMAE.get(T, {})

@@ -210,7 +210,8 @@ def evaluate_recommender(urm_train_last_test, urm_test, ucm, icm, communities, r
 
     recommender = CommunityDetectionRecommender(urm_train_last_test, communities=communities, recommenders=recommenders,
                                                 n_iter=n_iter)
-
+    # urm_all = merge_sparse_matrices(urm_train_last_test, urm_test)
+    # evaluator_test = EvaluatorSeparate(urm_all, min_ratings_per_user=min_ratings_per_user, ignore_users=ignore_users)
     evaluator_test = EvaluatorSeparate(urm_test, min_ratings_per_user=min_ratings_per_user, ignore_users=ignore_users)
     time_on_test = time.time()
     result_df, result_string = evaluator_test.evaluateRecommender(recommender)
@@ -463,7 +464,8 @@ def parse_args():
     parser.add_argument('method', nargs='+', type=str, help='method',
                         choices=['QUBOBipartiteCommunityDetection', 'QUBOBipartiteProjectedCommunityDetection',
                                  'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
-                                 'KmeansCommunityDetection', 'QuantityDivision', 'HybridCommunityDetection', 'UserBipartiteCommunityDetection'])
+                                 'KmeansCommunityDetection', 'QuantityDivision', 'HybridCommunityDetection',
+                                 'TestCommunityDetection'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for cascade')
     parser.add_argument('-b', '--beta', type=float, default=1.0, help='beta for quantity')

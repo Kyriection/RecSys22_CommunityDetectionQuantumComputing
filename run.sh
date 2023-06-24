@@ -204,13 +204,78 @@
 
 # echo 'HybridCommunityDetection'
 # # beta_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
-# beta_list=(0.0625 0.03125)
+# beta_list=(0.125)
 # for beta in ${beta_list[*]}
 # do
 #   echo $beta
-#   time python CT_community_detection.py HybridCommunityDetection -b $beta -o results-CBMB-$beta > logs/ctcd-CBMB-$beta.log 2>&1
-#   time python CT_qa_recommendation.py HybridCommunityDetection -b $beta -o results-CBMB-$beta > logs/ctqr-CBMB-$beta.log 2>&1
+#   time python CT_community_detection.py QUBOBipartiteCommunityDetection --attribute -b $beta -o results-CBM-$beta > logs/ctcd-CBM-$beta.log 2>&1
+#   time python CT_qa_recommendation.py QUBOBipartiteCommunityDetection --attribute -b $beta -o results-CBM-$beta > logs/ctqr-CBM-$beta.log 2>&1
 # done
 # echo 'UserBipartiteCommunityDetection'
 # time python CT_community_detection.py UserBipartiteCommunityDetection > ctcd.log 2>&1
 # time python CT_qa_recommendation.py UserBipartiteCommunityDetection > ctqr.log 2>&1
+
+# method=LTBipartiteCommunityDetection
+# T=3
+# alpha=0.005
+# beta=0.125
+# tag=Q-C-$method-$T-$alpha-$beta
+# echo $tag
+# time python CT_community_detection.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+# time python CT_qa_recommendation.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
+
+# method=LTBipartiteProjectedCommunityDetection
+# T=3
+# alpha=0.005
+# beta=0.125
+# tag=Q-C-$method-$T-$alpha-$beta
+# echo $tag
+# time python CT_community_detection.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+# time python CT_qa_recommendation.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
+
+# beta_list=(0.125 0.03125)
+# for beta in ${beta_list[*]}
+# do
+#   echo $beta
+#   time python CT_community_detection.py HybridCommunityDetection -b $beta -o results-CBM-$beta > logs/ctcd-CBM-$beta.log 2>&1
+#   time python CT_qa_recommendation.py HybridCommunityDetection -b $beta -o results-CBM-$beta > logs/ctqr-CBM-$beta.log 2>&1
+# done
+
+# method=WPM
+# T=3
+# alpha=0.005
+# beta=0.125
+# tag=Q-C-$method-$T-$alpha-$beta
+# echo $tag
+# time python CT_community_detection.py HybridCommunityDetection -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+# time python CT_qa_recommendation.py HybridCommunityDetection -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
+
+# method_list=(LTBipartiteProjectedCommunityDetection LTBipartiteCommunityDetection)
+# T_list=(3 5)
+# alpha_list=(0.005 0.001 0.0005 0.0001)
+# beta_list=(0.125 0.0625 0.03125)
+# for method in ${method_list[*]}
+# do
+#   for T in ${T_list[*]}
+#   do
+#     for alpha in ${alpha_list[*]}
+#     do
+#       for beta in ${beta_list[*]}
+#       do
+#         tag=Q-C-$method-$T-$alpha-$beta
+#         echo $tag
+#         time python CT_community_detection.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+#         time python CT_qa_recommendation.py   $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
+#       done
+#     done
+#   done
+# done
+
+beta_list=(0.65)
+for beta in ${beta_list[*]}
+do
+  tag=test-$beta
+  echo $tag
+  time python CT_community_detection.py TestCommunityDetection -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
+  time python CT_qa_recommendation.py   TestCommunityDetection -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
+done

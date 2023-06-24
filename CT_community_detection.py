@@ -14,7 +14,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, Q
     QUBOProjectedCommunityDetection, HybridCommunityDetection, QUBONcutCommunityDetection, SpectralClustering, \
     QUBOBipartiteProjectedItemCommunityDetection, LTBipartiteProjectedCommunityDetection, QuantityDivision, \
     QUBOBipartiteProjectedCommunityDetection2, LTBipartiteCommunityDetection, METHOD_DICT, CascadeCommunityDetection, \
-    get_cascade_class, UserBipartiteCommunityDetection
+    get_cascade_class, UserBipartiteCommunityDetection, TestCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader, \
     MovielensSample2Reader
@@ -296,7 +296,8 @@ def parse_args():
     parser.add_argument('method', nargs='+', type=str, help='method',
                         choices=['QUBOBipartiteCommunityDetection', 'QUBOBipartiteProjectedCommunityDetection',
                                  'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
-                                 'KmeansCommunityDetection', 'QuantityDivision', 'HybridCommunityDetection', 'UserBipartiteCommunityDetection'])
+                                 'KmeansCommunityDetection', 'QuantityDivision', 'HybridCommunityDetection',
+                                 'TestCommunityDetection'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for quantity')
     parser.add_argument('-b', '--beta', type=float, default=1.0, help='beta for cascade')
@@ -345,6 +346,7 @@ if __name__ == '__main__':
     LTBipartiteCommunityDetection.set_T(args.T)
     QuantityDivision.set_T(args.T)
     KmeansCommunityDetection.set_attribute(args.attribute)
+    TestCommunityDetection.set_beta(args.beta)
     if args.attribute:
         for i, method in enumerate(method_list):
             method_list[i] = get_cascade_class(method)
