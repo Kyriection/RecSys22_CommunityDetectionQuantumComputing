@@ -27,7 +27,7 @@ from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrus
 # from recsys.Evaluation.Evaluator import EvaluatorHoldout
 from recsys.Evaluation.EvaluatorSeparate import EvaluatorSeparate
 from recsys.Recommenders.BaseRecommender import BaseRecommender
-from recsys.Recommenders.LRRecommender import LRRecommender
+from recsys.Recommenders import SVRRecommender, LRRecommender, DTRecommender
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices

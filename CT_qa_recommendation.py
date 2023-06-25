@@ -543,12 +543,12 @@ def save_results(data_reader_classes, result_folder_path, method_list, recommend
 if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
-    data_reader_classes = [Movielens100KReader]
-    # data_reader_classes = [Movielens1MReader]
+    # data_reader_classes = [Movielens100KReader]
+    data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
-    # recommender_list = [LRRecommender]
-    recommender_list = [SVRRecommender]
+    recommender_list = [LRRecommender]
+    # recommender_list = [SVRRecommender]
     method_list = [METHOD_DICT[method_name] for method_name in args.method]
     if args.attribute:
         method_list = [get_cascade_class(method) for method in method_list]
