@@ -28,7 +28,7 @@ from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrus
 # from recsys.Evaluation.Evaluator import EvaluatorHoldout
 from recsys.Evaluation.EvaluatorSeparate import EvaluatorSeparate
 from recsys.Recommenders.BaseRecommender import BaseRecommender
-from recsys.Recommenders.LRRecommender import LRRecommender
+from recsys.Recommenders import SVRRecommender, LRRecommender, DTRecommender
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
@@ -524,7 +524,7 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
                                 shutil.rmtree(c_folder_path)
 
 
-def save_results(data_reader_classes, result_folder_path, method_list, *args):
+def save_results(data_reader_classes, result_folder_path, method_list, recommender_list, *args):
     global CUT_RATIO
     tag = []
     for arg in args:
@@ -536,7 +536,8 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
     for data_reader in data_reader_classes:
         dataset_name = data_reader.DATASET_SUBFOLDER
         output_folder = os.path.join('./results/', dataset_name, 'results')
-        print_result(CUT_RATIO, data_reader, method_list, False, output_folder, tag, result_folder_path)
+        for recommender in recommender_list:
+            print_result(CUT_RATIO, data_reader, method_list, recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
 
 
 if __name__ == '__main__':
@@ -546,7 +547,8 @@ if __name__ == '__main__':
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
-    recommender_list = [LRRecommender]
+    # recommender_list = [LRRecommender]
+    recommender_list = [SVRRecommender]
     method_list = [METHOD_DICT[method_name] for method_name in args.method]
     if args.attribute:
         method_list = [get_cascade_class(method) for method in method_list]
@@ -559,4 +561,4 @@ if __name__ == '__main__':
     # clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
     # save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)
-    save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.beta)
+    save_results(data_reader_classes, result_folder_path, method_list, recommender_list, args.T, args.alpha, args.beta)

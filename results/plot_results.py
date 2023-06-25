@@ -29,8 +29,6 @@ logging.basicConfig(level=logging.INFO)
 QUBO = ["Hybrid", "QUBOBipartiteCommunityDetection", "QUBOBipartiteProjectedCommunityDetection", "KmeansCommunityDetection", "HierarchicalClustering", "UserCommunityDetection"]
 # METHOD = ["LeapHybridSampler", "SimulatedAnnealingSampler", "SteepestDescentSolver", "TabuSampler", ""]
 METHOD = ["SimulatedAnnealingSampler", ""]
-CDR = "cd_LRRecommender.zip"
-RECOMMENDER = 'LRRecommender'
 RESULT = ".result_df.csv"
 TOTAL_DATA = {'C': {}, 'MAE': {}, 'RMSE': {}, 'W-MAE': {}, 'W-RMSE': {}}
 TAIL_DATA = {}
@@ -274,8 +272,8 @@ def extract_file(file, cur):
     print(e)
     return None
 
-def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, output_folder: str = None, output_tag: str = None, result_folder_path: str = './results/'):
-  global CT, RECOMMENDER
+def print_result(cut_ratio, data_reader_class, method_list, recommender: str = 'LRRecommender',show: bool = False, output_folder: str = None, output_tag: str = None, result_folder_path: str = './results/'):
+  global CT
   CT = cut_ratio
   data_reader = data_reader_class()
   urm_train, urm_validation, urm_test = load_data(data_reader, [80, 10, 10], False, False)
@@ -285,7 +283,7 @@ def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, 
   dataset = data_reader._get_dataset_name()
   dataset = os.path.abspath(result_folder_path + dataset)
   # special for baseline
-  path = os.path.join(dataset, RECOMMENDER)
+  path = os.path.join(dataset, recommender)
   file = os.path.join(path, 'baseline.zip')
   result_df = extract_file(file, path)
   collect_data(urm_all, -1, result_df)
@@ -319,7 +317,7 @@ def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, 
         d = os.path.join(path, name)
         cur = os.path.join(path, d)
         tmp = os.path.join(cur, m)
-        file = os.path.join(tmp, CDR)
+        file = os.path.join(tmp, f'cd_{recommender}.zip')
         result_df_ei = extract_file(file, cur)
       for name in dir_file:
         d = os.path.join(path, name)
@@ -341,7 +339,7 @@ def print_result(cut_ratio, data_reader_class, method_list, show: bool = False, 
               C = max(C, int(c[1:]))
             except:
               continue
-        file = os.path.join(tmp, CDR)
+        file = os.path.join(tmp, f'cd_{recommender}.zip')
         result_df = extract_file(file, cur)
         if result_df is None:
            continue
