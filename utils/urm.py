@@ -1,7 +1,9 @@
+import logging
+
 import numpy as np
 import scipy.sparse as sps
 
-from CommunityDetection import Community
+from CommunityDetection import Community, Communities
 from recsys.Data_manager.DataSplitter_Holdout import DataSplitter_Holdout
 from recsys.Recommenders.Recommender_utils import reshapeSparse
 
@@ -144,3 +146,28 @@ def show_urm_info(urm):
     print('item info')
     show_quantity_info(I_quantity)
     print('----------------------------------------------')
+
+
+def head_tail_cut(cut_ratio, urm_train, urm_validation, urm_test, icm, ucm):
+    '''
+    return (head)urm_train, urm_validation, urm_test, icm, ucm,\
+           (tail)urm_train, urm_validation, urm_test, icm, ucm
+    '''
+    urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
+    urm_all = merge_sparse_matrices(urm_train_last_test, urm_test)
+    n_users, n_items = urm_all.shape
+    C_quantity = np.ediff1d(urm_all.tocsr().indptr) # count of each row
+    cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * cut_ratio)]
+    head_user_mask = C_quantity > cut_quantity
+    # tail_user_mask = C_quantity <= cut_quantity
+    communities = Communities(head_user_mask, np.ones(n_items).astype(bool))
+    tail_community, head_community = communities.c0, communities.c1
+    logging.info(f'head tail cut at {cut_quantity}, head size: {len(head_community.users)}, tail size: {len(tail_community.users)}')
+    t_urm_train, _, _, t_icm, t_ucm = get_community_urm(urm_train, community=tail_community, filter_items=False, remove=True, icm=icm, ucm=ucm)
+    t_urm_validation, _, _ = get_community_urm(urm_validation, community=tail_community, filter_items=False, remove=True)
+    t_urm_test, _, _ = get_community_urm(urm_test, community=tail_community, filter_items=False, remove=True)
+    h_urm_train, _, _, h_icm, h_ucm = get_community_urm(urm_train, community=head_community, filter_items=False, remove=True, icm=icm, ucm=ucm)
+    h_urm_validation, _, _ = get_community_urm(urm_validation, community=head_community, filter_items=False, remove=True)
+    h_urm_test, _, _ = get_community_urm(urm_test, community=head_community, filter_items=False, remove=True)
+    return h_urm_train, h_urm_validation, h_urm_test, h_icm, h_ucm, \
+           t_urm_train, t_urm_validation, t_urm_test, t_icm, t_ucm

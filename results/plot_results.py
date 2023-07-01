@@ -98,6 +98,7 @@ def collect_data(urm, n_iter, result_df, result_df_ei = None):
       cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CT)]
       head_user_mask = C_quantity > cut_quantity
       tail_user_mask = ~head_user_mask
+      logging.info(f'collect_data: cut at {cut_quantity}, head size: {np.sum(head_user_mask)}, tail size: {np.sum(tail_user_mask)}')
       data = np.zeros((C_quantity.size, 3)) # [MAE, MSE, num_rating]
       # print(result_df_ei.values.shape, result_df.values.shape)
       if result_df_ei is not None:
@@ -272,7 +273,7 @@ def extract_file(file, cur):
     print(e)
     return None
 
-def print_result(cut_ratio, data_reader_class, method_list, recommender: str = 'LRRecommender',show: bool = False, output_folder: str = None, output_tag: str = None, result_folder_path: str = './results/'):
+def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recommender: str = 'LRRecommender',show: bool = False, output_folder: str = None, output_tag: str = None, result_folder_path: str = './results/'):
   global CT
   CT = cut_ratio
   data_reader = data_reader_class()
@@ -282,6 +283,7 @@ def print_result(cut_ratio, data_reader_class, method_list, recommender: str = '
   urm_all = merge_sparse_matrices(urm_train_last_test, urm_test)
   dataset = data_reader._get_dataset_name()
   dataset = os.path.abspath(result_folder_path + dataset)
+  sampler_list = [sampler.__class__.__name__ for sampler in sampler_list] + ['']
   # special for baseline
   path = os.path.join(dataset, recommender)
   file = os.path.join(path, 'baseline.zip')
@@ -307,7 +309,8 @@ def print_result(cut_ratio, data_reader_class, method_list, recommender: str = '
 
     dir_file = os.listdir(path)
     dir_file.sort()
-    for m in METHOD:
+    # for m in METHOD:
+    for m in sampler_list:
       # if show:
         # print(m)
       init_global_data()

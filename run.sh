@@ -233,21 +233,21 @@
 # time python CT_community_detection.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
 # time python CT_qa_recommendation.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
 
-method=LTBipartiteCommunityDetection
-T=3
-alpha=0.001
-tag=-$T-$alpha
-echo $tag
-time python CT_community_detection.py $method -a $alpha -t $T -o results-$tag > logs/ctcd-$tag.log 2>&1
-time python CT_qa_recommendation.py $method -a $alpha -t $T -o results-$tag > logs/ctqr-$tag.log 2>&1
-
-method=LTBipartiteProjectedCommunityDetection
-T=5
-alpha=0.0001
-tag=$method-$T-$alpha
-echo $tag
+# method=LTBipartiteCommunityDetection
+# T=3
+# alpha=0.001
+# tag=-$T-$alpha
+# echo $tag
 # time python CT_community_detection.py $method -a $alpha -t $T -o results-$tag > logs/ctcd-$tag.log 2>&1
-time python CT_qa_recommendation.py $method -a $alpha -t $T -o results-$tag > logs/ctqr-$tag.log 2>&1
+# time python CT_qa_recommendation.py $method -a $alpha -t $T -o results-$tag > logs/ctqr-$tag.log 2>&1
+
+# method=LTBipartiteProjectedCommunityDetection
+# T=5
+# alpha=0.0001
+# tag=$method-$T-$alpha
+# echo $tag
+# time python CT_community_detection.py $method -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+# time python CT_qa_recommendation.py $method -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
 
 
 # beta_list=(0.125 0.03125)
@@ -303,3 +303,40 @@ time python CT_qa_recommendation.py $method -a $alpha -t $T -o results-$tag > lo
 # beta=0.03125
 # tag=CWPM-$beta
 # time python CT_qa_recommendation.py $method --attribute -b $beta -o results-$tag > logs/ctqr-$tag.log 2>&1
+
+# echo QUBOBipartiteProjectedCommunityDetection
+# time python CT_community_detection.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctcd-WPM.log 2>&1
+# time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
+
+
+# ------------- Cascade -------------
+# beta_list=(0.0625)
+# method_list=(QUBOBipartiteProjectedCommunityDetection)
+# for method in ${method_list[*]}
+# do
+#   for beta in ${beta_list[*]}
+#   do
+#     tag=Cascade-$method-$beta
+#     echo $tag
+#     time python CT_community_detection.py $method --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
+#     time python CT_qa_recommendation.py $method --attribute -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
+#   done
+# done
+
+# ------------- Clustered Tail -------------
+beta_list=(0.125)
+method_list=(QUBOBipartiteProjectedCommunityDetection)
+cut_list=(0.01 0.02 0.025 0.03 0.04 0.05 0.075 0.100)
+for method in ${method_list[*]}
+do
+  for beta in ${beta_list[*]}
+  do
+    for cut in ${cut_list[*]}
+    do
+      tag=Cascade-$method-$beta-$cut
+      echo $tag
+      time python CT_community_detection.py $method --attribute -b $beta -c $cut -o results/$tag > logs/ctcd-$tag.log 2>&1
+      time python CT_qa_recommendation.py $method --attribute -b $beta -c $cut -o results/$tag > logs/ctqr-$tag.log 2>&1
+    done
+  done
+done

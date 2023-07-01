@@ -232,10 +232,14 @@ def plot_line(x, Y: dict, output: str, xlabel: str = 'x', ylabel: str = 'y', lim
   ax.set_ylabel(ylabel)
   ax.set_xlim(0, x[-1])
   if lim:
-    if ylabel in ['MAE', 'W-MAE']:
+    if ylabel in ['MAE']:
       ax.set_ylim(0.75, 1.15)
-    elif ylabel in ['RMSE', 'W-RMSE']:
+    if ylabel in ['W-MAE']:
+      ax.set_ylim(0.77, 1.17)
+    elif ylabel in ['RMSE']:
       ax.set_ylim(0.95, 1.35)
+    elif ylabel in ['W-RMSE']:
+      ax.set_ylim(0.98, 1.38)
   # plt.title("Figure") #标题
   # plt.savefig(f'{output}/{xlabel}_{ylabel}.png')
   fig.savefig(f'{output}/{ylabel}_{xlabel}.png')

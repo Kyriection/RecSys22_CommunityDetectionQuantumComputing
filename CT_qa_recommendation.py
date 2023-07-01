@@ -31,7 +31,7 @@ from recsys.Recommenders.BaseRecommender import BaseRecommender
 from recsys.Recommenders import SVRRecommender, LRRecommender, DTRecommender
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
-from utils.urm import get_community_urm, load_data, merge_sparse_matrices
+from utils.urm import get_community_urm, load_data, merge_sparse_matrices, head_tail_cut
 from utils.plot import plot_line, plot_scatter, plot_divide, plot_metric
 from utils.derived_variables import create_related_variables
 # from results.read_results import print_result
@@ -44,29 +44,6 @@ ADAPATIVE_FLAG = False
 ADAPATIVE_METRIC = ['MAE', 'MSE', 'W-MAE', 'W-RMSE'][1] 
 ADAPATIVE_DATA = ['validation', 'test'][1]
 MIN_RATINGS_PER_USER = 1
-
-
-def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
-    '''
-    return (head)urm_train, urm_validation, urm_test, icm, ucm,\
-           (tail)urm_train, urm_validation, urm_test, icm, ucm
-    '''
-    n_users, n_items = urm_train.shape
-    C_quantity = np.ediff1d(urm_train.tocsr().indptr) # count of each row
-    cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CUT_RATIO)]
-    head_user_mask = C_quantity > cut_quantity
-    # tail_user_mask = C_quantity <= cut_quantity
-    communities = Communities(head_user_mask, np.ones(n_items).astype(bool))
-    tail_community, head_community = communities.c0, communities.c1
-    logging.info(f'head tail cut at {cut_quantity}, head size: {len(head_community.users)}, tail size: {len(tail_community.users)}')
-    t_urm_train, _, _, t_icm, t_ucm = get_community_urm(urm_train, community=tail_community, filter_items=False, remove=True, icm=icm, ucm=ucm)
-    t_urm_validation, _, _ = get_community_urm(urm_validation, community=tail_community, filter_items=False, remove=True)
-    t_urm_test, _, _ = get_community_urm(urm_test, community=tail_community, filter_items=False, remove=True)
-    h_urm_train, _, _, h_icm, h_ucm = get_community_urm(urm_train, community=head_community, filter_items=False, remove=True, icm=icm, ucm=ucm)
-    h_urm_validation, _, _ = get_community_urm(urm_validation, community=head_community, filter_items=False, remove=True)
-    h_urm_test, _, _ = get_community_urm(urm_test, community=head_community, filter_items=False, remove=True)
-    return h_urm_train, h_urm_validation, h_urm_test, h_icm, h_ucm, \
-           t_urm_train, t_urm_validation, t_urm_test, t_icm, t_ucm
 
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
@@ -232,7 +209,7 @@ def evaluate_recommender(urm_train_last_test, urm_test, ucm, icm, communities, r
 def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]],
          sampler_list: Iterable[dimod.Sampler], recommender_list: Iterable[Type[BaseRecommender]],
          result_folder_path: str):
-    global EI
+    global EI, CUT_RATIO
     split_quota = [80, 10, 10]
     user_wise = False
     make_implicit = False
@@ -263,7 +240,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
 
         h_urm_train, h_urm_validation, h_urm_test, h_icm, h_ucm,\
         t_urm_train, t_urm_validation, t_urm_test, t_icm, t_ucm = \
-            head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm)
+            head_tail_cut(CUT_RATIO, urm_train, urm_validation, urm_test, icm, ucm)
         head_flag = h_urm_train.shape[0] > 0
         logging.info(f'head shape: {h_urm_train.shape}, tail shape: {t_urm_train.shape}')
 
@@ -468,7 +445,7 @@ def parse_args():
                                  'TestCommunityDetection'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for cascade')
-    parser.add_argument('-b', '--beta', type=float, default=1.0, help='beta for quantity')
+    parser.add_argument('-b', '--beta', type=float, default=0.0, help='beta for quantity')
     parser.add_argument('-t', '--T', type=int, default=5, help='T for quantity')
     parser.add_argument('-l', '--layer', type=int, default=0, help='number of layer of quantity')
     parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
@@ -524,7 +501,7 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
                                 shutil.rmtree(c_folder_path)
 
 
-def save_results(data_reader_classes, result_folder_path, method_list, recommender_list, *args):
+def save_results(data_reader_classes, result_folder_path, method_list, sampler_list, recommender_list, *args):
     global CUT_RATIO
     tag = []
     for arg in args:
@@ -537,14 +514,14 @@ def save_results(data_reader_classes, result_folder_path, method_list, recommend
         dataset_name = data_reader.DATASET_SUBFOLDER
         output_folder = os.path.join('./results/', dataset_name, 'results')
         for recommender in recommender_list:
-            print_result(CUT_RATIO, data_reader, method_list, recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
+            print_result(CUT_RATIO, data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
 
 
 if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
-    # data_reader_classes = [Movielens100KReader]
-    data_reader_classes = [Movielens1MReader]
+    data_reader_classes = [Movielens100KReader]
+    # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     recommender_list = [LRRecommender]
@@ -561,4 +538,4 @@ if __name__ == '__main__':
     # clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
     # save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)
-    save_results(data_reader_classes, result_folder_path, method_list, recommender_list, args.T, args.alpha, args.beta)
+    save_results(data_reader_classes, result_folder_path, method_list, sampler_list, recommender_list, args.T, args.alpha, args.beta, args.cut_ratio)

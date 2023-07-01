@@ -515,7 +515,7 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
                                 shutil.rmtree(c_folder_path)
 
 
-def save_results(data_reader_classes, result_folder_path, method_list, *args):
+def save_results(data_reader_classes, result_folder_path, method_list, sampler_list, recommender_list, *args):
     global CUT_RATIO
     tag = []
     for arg in args:
@@ -527,7 +527,8 @@ def save_results(data_reader_classes, result_folder_path, method_list, *args):
     for data_reader in data_reader_classes:
         dataset_name = data_reader.DATASET_SUBFOLDER
         output_folder = os.path.join('./results/', dataset_name, 'results')
-        print_result(CUT_RATIO, data_reader, method_list, False, output_folder, tag, result_folder_path)
+        for recommender in recommender_list:
+            print_result(CUT_RATIO, data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
 
 
 if __name__ == '__main__':
@@ -551,4 +552,4 @@ if __name__ == '__main__':
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
     clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    save_results(data_reader_classes, result_folder_path, method_list, args.attribute, args.EI)
+    save_results(data_reader_classes, result_folder_path, method_list, sampler_list, recommender_list, args.attribute, args.EI)

@@ -21,7 +21,7 @@ from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrus
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.plot import plot_cut, plot_density
-from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_urm_info
+from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_urm_info, head_tail_cut
 
 logging.basicConfig(level=logging.INFO)
 MIN_COMMUNITIE_SIZE = 1
@@ -31,28 +31,6 @@ LT_METHOD = {
     QUBOBipartiteCommunityDetection: LTBipartiteCommunityDetection
 }
 A1_LAYER = 0
-
-def head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm):
-    '''
-    return (head)urm_train, urm_validation, urm_test, icm, ucm,\
-           (tail)urm_train, urm_validation, urm_test, icm, ucm
-    '''
-    n_users, n_items = urm_train.shape
-    C_quantity = np.ediff1d(urm_train.tocsr().indptr) # count of each row
-    cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CUT_RATIO)]
-    head_user_mask = C_quantity > cut_quantity
-    # tail_user_mask = C_quantity < cut_quantity
-    communities = Communities(head_user_mask, np.ones(n_items).astype(bool))
-    tail_community, head_community = communities.c0, communities.c1
-    logging.info(f'head tail cut at {cut_quantity}, head size: {len(head_community.users)}, tail size: {len(tail_community.users)}')
-    t_urm_train, _, _, t_icm, t_ucm = get_community_urm(urm_train, community=tail_community, filter_items=False, remove=True, icm=icm, ucm=ucm)
-    t_urm_validation, _, _ = get_community_urm(urm_validation, community=tail_community, filter_items=False, remove=True)
-    t_urm_test, _, _ = get_community_urm(urm_test, community=tail_community, filter_items=False, remove=True)
-    h_urm_train, _, _, h_icm, h_ucm = get_community_urm(urm_train, community=head_community, filter_items=False, remove=True, icm=icm, ucm=ucm)
-    h_urm_validation, _, _ = get_community_urm(urm_validation, community=head_community, filter_items=False, remove=True)
-    h_urm_test, _, _ = get_community_urm(urm_test, community=head_community, filter_items=False, remove=True)
-    return h_urm_train, h_urm_validation, h_urm_test, h_icm, h_ucm, \
-           t_urm_train, t_urm_validation, t_urm_test, t_icm, t_ucm
 
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
@@ -71,6 +49,7 @@ def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
 
 def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]],
          sampler_list: Iterable[dimod.Sampler], result_folder_path: str, num_iters: int = 3):
+    global CUT_RATIO
     split_quota = [80, 10, 10]
     user_wise = False
     make_implicit = True
@@ -93,10 +72,11 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         # dataset_folder_path = os.path.join(result_folder_path, dataset_name)
         urm_train, urm_validation, urm_test, icm, ucm = load_data(data_reader, split_quota=split_quota, user_wise=user_wise,
                                                         make_implicit=make_implicit, threshold=threshold, icm_ucm=True)
-
         # item is main charactor, and remove year from item comtext
         urm_train, urm_validation, urm_test, icm, ucm = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr(), ucm, icm[:, :-1]
-        _, _, _, _, _, urm_train, urm_validation, urm_test, icm, ucm = head_tail_cut(urm_train, urm_validation, urm_test, icm, ucm)
+        urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
+        urm_all = merge_sparse_matrices(urm_train_last_test, urm_test)
+        _, _, _, _, _, urm_train, urm_validation, urm_test, icm, ucm = head_tail_cut(CUT_RATIO, urm_all, urm_validation, urm_test, icm, ucm)
 
         urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
 
@@ -138,6 +118,7 @@ def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sa
 def cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = None, communities: Communities = None,
                 n_iter: int = 0, **kwargs):
     print(f'Running community detection iteration {n_iter} with {method.name}...')
+    logging.info(f'Running community detection iteration {n_iter} with {method.name}...')
     if communities is None:
         assert n_iter == 0, 'If no communities are given this must be the first iteration.'
 
@@ -300,7 +281,7 @@ def parse_args():
                                  'TestCommunityDetection'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for quantity')
-    parser.add_argument('-b', '--beta', type=float, default=1.0, help='beta for cascade')
+    parser.add_argument('-b', '--beta', type=float, default=0.0, help='beta for cascade')
     parser.add_argument('-t', '--T', type=int, default=5, help='T for quantity')
     parser.add_argument('-l', '--layer', type=int, default=0, help='number of layer of quantity')
     parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
@@ -325,8 +306,8 @@ if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
     A1_LAYER = args.layer
-    # data_reader_classes = [Movielens100KReader]
-    data_reader_classes = [Movielens1MReader]
+    data_reader_classes = [Movielens100KReader]
+    # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     method_list = [METHOD_DICT[method_name] for method_name in args.method]
@@ -335,7 +316,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 10
+    num_iters = 5
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
@@ -351,5 +332,5 @@ if __name__ == '__main__':
         for i, method in enumerate(method_list):
             method_list[i] = get_cascade_class(method)
             method_list[i].set_beta(args.beta)
-    clean_results(result_folder_path, data_reader_classes, method_list)
+    # clean_results(result_folder_path, data_reader_classes, method_list)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)
