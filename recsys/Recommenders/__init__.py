@@ -9,3 +9,6 @@ from recsys.Recommenders.SklearnRecommender import get_recommender_class
 LRRecommender = get_recommender_class(LinearRegression, 'LRRecommender')
 SVRRecommender = get_recommender_class(SVR, 'SVRRecommender')
 DTRecommender = get_recommender_class(DecisionTreeRegressor, 'DTRecommender')
+
+RECOMMENDER_LIST = [LRRecommender, SVRRecommender, DTRecommender]
+RECOMMENDER_DICT = {recommender.RECOMMENDER_NAME : recommender for recommender in RECOMMENDER_LIST}

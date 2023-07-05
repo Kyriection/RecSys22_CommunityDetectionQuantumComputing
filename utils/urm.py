@@ -27,15 +27,9 @@ def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True,
         urm_validation = explicit_to_implicit_urm(urm_validation, threshold=threshold)
         urm_test = explicit_to_implicit_urm(urm_test, threshold=threshold)
 
-    ICM_dict = data_splitter.get_loaded_ICM_dict()
-    icm_genres = ICM_dict['ICM_genres']
-    icm_year = ICM_dict['ICM_year']
-    icm = sps.hstack((icm_genres, icm_year)).tocsr()
-
-    UCM_dict = data_splitter.get_loaded_UCM_dict()
-    ucm = UCM_dict['UCM_all']
-
     if icm_ucm:
+        icm = data_splitter.get_loaded_ICM_dict()['ICM_all']
+        ucm = data_splitter.get_loaded_UCM_dict()['UCM_all']
         return urm_train, urm_validation, urm_test, icm, ucm
     else:
         return urm_train, urm_validation, urm_test  # , var_mapping

@@ -19,7 +19,7 @@ class LastFMHetrec2011Reader(DataReader):
     DATASET_URL = "http://files.grouplens.org/datasets/hetrec2011/hetrec2011-lastfm-2k.zip"
     DATASET_SUBFOLDER = "LastFMHetrec2011/"
     AVAILABLE_URM = ["URM_all", "URM_occurrence"]
-    AVAILABLE_ICM = ["ICM_tags", "ICM_tags_count"]
+    AVAILABLE_ICM = ["ICM_tags", "ICM_tags_count", "ICM_all"]
 
 
 
@@ -84,6 +84,7 @@ class LastFMHetrec2011Reader(DataReader):
         dataset_manager.add_URM(URM_occurrence_dataframe, "URM_occurrence")
         dataset_manager.add_ICM(ICM_tags_dataframe, "ICM_tags")
         dataset_manager.add_ICM(ICM_tags_count_dataframe, "ICM_tags_count")
+        dataset_manager.add_ICM(ICM_tags_count_dataframe, "ICM_all")
 
         loaded_dataset = dataset_manager.generate_Dataset(dataset_name=self._get_dataset_name(),
                                                           is_implicit=self.IS_IMPLICIT)

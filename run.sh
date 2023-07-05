@@ -323,20 +323,37 @@
 #   done
 # done
 
+echo Kmeans Bipartite w/o attribute
+# time python CT_community_detection.py KmeansCommunityDetection -o results/Kmeans-B > logs/ctcd-Kmeans-B.log 2>&1
+time python CT_qa_recommendation.py KmeansCommunityDetection -r SVRRecommender -o results/Kmeans-B > logs/ctqr-Kmeans-B.log 2>&1
+
+echo Kmeans Bipartite w/ attribute
+# time python CT_community_detection.py KmeansCommunityDetection --attribute -o results/Kmeans-B-A > logs/ctcd-Kmeans-B-A.log 2>&1
+time python CT_qa_recommendation.py KmeansCommunityDetection -r SVRRecommender --attribute -o results/Kmeans-B-A > logs/ctqr-Kmeans-B-A.log 2>&1
+
+echo Kmeans Total w/o attribute
+time python CT_recommendation.py -r SVRRecommender -o results/Kmeans-T > logs/ctr-Kmeans-T.log 2>&1
+
+echo Kmeans Total w/ attribute
+time python CT_recommendation.py -r SVRRecommender --attribute -o results/Kmeans-T-A > logs/ctr-Kmeans-T-A.log 2>&1
+
+echo Each Item
+time python CT_recommendation.py -r SVRRecommender --EI -o results/EI > logs/ctr-EI.log 2>&1
+
 # ------------- Clustered Tail -------------
-beta_list=(0.125)
-method_list=(QUBOBipartiteProjectedCommunityDetection)
-cut_list=(0.01 0.02 0.025 0.03 0.04 0.05 0.075 0.100)
-for method in ${method_list[*]}
-do
-  for beta in ${beta_list[*]}
-  do
-    for cut in ${cut_list[*]}
-    do
-      tag=Cascade-$method-$beta-$cut
-      echo $tag
-      time python CT_community_detection.py $method --attribute -b $beta -c $cut -o results/$tag > logs/ctcd-$tag.log 2>&1
-      time python CT_qa_recommendation.py $method --attribute -b $beta -c $cut -o results/$tag > logs/ctqr-$tag.log 2>&1
-    done
-  done
-done
+# beta_list=(0.03125)
+# method_list=(QUBOBipartiteProjectedCommunityDetection)
+# cut_list=(0.01 0.02 0.025 0.03 0.04 0.05 0.100)
+# for method in ${method_list[*]}
+# do
+#   for beta in ${beta_list[*]}
+#   do
+#     for cut in ${cut_list[*]}
+#     do
+#       tag=Cascade-$method-$beta-$cut
+#       echo $tag
+#       # time python CT_community_detection.py $method --attribute -b $beta -c $cut -o results/$tag > logs/ctcd-$tag.log 2>&1
+#       time python CT_qa_recommendation.py $method -r LRRecommender --attribute -b $beta -c $cut -o results/$tag > logs/ctqr-$tag.log 2>&1
+#     done
+#   done
+# done

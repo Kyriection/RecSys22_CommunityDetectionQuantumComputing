@@ -27,7 +27,7 @@ from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrus
 # from recsys.Evaluation.Evaluator import EvaluatorHoldout
 from recsys.Evaluation.EvaluatorSeparate import EvaluatorSeparate
 from recsys.Recommenders.BaseRecommender import BaseRecommender
-from recsys.Recommenders import SVRRecommender, LRRecommender, DTRecommender
+from recsys.Recommenders import SVRRecommender, LRRecommender, DTRecommender, RECOMMENDER_DICT
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices
@@ -44,6 +44,7 @@ EI: bool = False # EI if True else TC or CT
 N_CLUSTER = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
 # N_CLUSTER = [2, 4, 8, 16, 32, 53, 81, ]
 ATTRIBUTE: bool = False
+EVALUATE_FLAG = True
 
 def plot(urm, output_folder_path, n_iter, result_df):
     global MIN_RATING_NUM, PLOT_CUT
@@ -208,6 +209,9 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     rec.fit()
     time_on_train = time.time() - time_on_train
 
+    if not EVALUATE_FLAG:
+        return
+
     time_on_test = time.time()
     result_df, result_string = evaluator_test.evaluateRecommender(rec)
     time_on_test = time.time() - time_on_test
@@ -254,59 +258,61 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
     evaluator_validation = EvaluatorSeparate(c_urm_validation, ignore_users=ignore_users)
     evaluator_test = EvaluatorSeparate(c_urm_test, ignore_users=ignore_users)
 
-    time_on_train = time.time()
-    validation_recommender = recommender(c_urm_train, c_ucm, c_icm, community.users)
-    validation_recommender.fit()
-    time_on_train = time.time() - time_on_train
+    if EVALUATE_FLAG:
+        time_on_train = time.time()
+        validation_recommender = recommender(c_urm_train, c_ucm, c_icm, community.users)
+        validation_recommender.fit()
+        time_on_train = time.time() - time_on_train
 
-    time_on_validation = time.time()
-    result_df, result_string = evaluator_validation.evaluateRecommender(validation_recommender)
-    time_on_validation = time.time() - time_on_validation
+        time_on_validation = time.time()
+        result_df, result_string = evaluator_validation.evaluateRecommender(validation_recommender)
+        time_on_validation = time.time() - time_on_validation
 
-    data_dict_to_save = {
-        'result_df': result_df,
-        'time_on_train': time_on_train,
-        'time_on_validation': time_on_validation,
-    }
+        data_dict_to_save = {
+            'result_df': result_df,
+            'time_on_train': time_on_train,
+            'time_on_validation': time_on_validation,
+        }
 
-    output_dataIO = DataIO(output_folder_path)
-    output_dataIO.save_data('validation', data_dict_to_save)
-    community.result_dict_validation = copy.deepcopy(data_dict_to_save)
+        output_dataIO = DataIO(output_folder_path)
+        output_dataIO.save_data('validation', data_dict_to_save)
+        community.result_dict_validation = copy.deepcopy(data_dict_to_save)
 
     time_on_train = time.time()
     comm_recommender = recommender(c_urm_train_last_test, c_ucm, c_icm, community.users)
     comm_recommender.fit()
     time_on_train = time.time() - time_on_train
 
-    time_on_test = time.time()
-    result_df, result_string = evaluator_test.evaluateRecommender(comm_recommender)
-    time_on_test = time.time() - time_on_test
+    if EVALUATE_FLAG:
+        time_on_test = time.time()
+        result_df, result_string = evaluator_test.evaluateRecommender(comm_recommender)
+        time_on_test = time.time() - time_on_test
 
-    data_dict_to_save = {
-        'result_df': result_df,
-        'time_on_train': time_on_train,
-        'time_on_test': time_on_test,
-    }
+        data_dict_to_save = {
+            'result_df': result_df,
+            'time_on_train': time_on_train,
+            'time_on_test': time_on_test,
+        }
 
-    output_dataIO = DataIO(output_folder_path)
-    output_dataIO.save_data('test', data_dict_to_save)
-    community.result_dict_test = copy.deepcopy(data_dict_to_save)
+        output_dataIO = DataIO(output_folder_path)
+        output_dataIO.save_data('test', data_dict_to_save)
+        community.result_dict_test = copy.deepcopy(data_dict_to_save)
 
-    print(f'Evaluating base model on community {n_comm if n_comm is not None else ""} of iteration {n_iter}...')
-    base_recommender = recommender(c_urm_train_last_test, c_ucm, c_icm)
-    recommender_file_name = f'{recommender_name}_best_model_last'
-    base_recommender.load_model(base_recommender_path, recommender_file_name)
-    base_evaluator_test = EvaluatorSeparate(c_urm_test, ignore_users=ignore_users)
+        print(f'Evaluating base model on community {n_comm if n_comm is not None else ""} of iteration {n_iter}...')
+        base_recommender = recommender(c_urm_train_last_test, c_ucm, c_icm)
+        recommender_file_name = f'{recommender_name}_best_model_last'
+        base_recommender.load_model(base_recommender_path, recommender_file_name)
+        base_evaluator_test = EvaluatorSeparate(c_urm_test, ignore_users=ignore_users)
 
-    time_on_test = time.time()
-    result_df, result_string = base_evaluator_test.evaluateRecommender(base_recommender)
-    time_on_test = time.time() - time_on_test
+        time_on_test = time.time()
+        result_df, result_string = base_evaluator_test.evaluateRecommender(base_recommender)
+        time_on_test = time.time() - time_on_test
 
-    baseline_dict = {
-        'result_df': result_df,
-        'time_on_test': time_on_test,
-    }
-    output_dataIO.save_data('baseline', baseline_dict)
+        baseline_dict = {
+            'result_df': result_df,
+            'time_on_test': time_on_test,
+        }
+        output_dataIO.save_data('baseline', baseline_dict)
 
     return comm_recommender
 
@@ -461,6 +467,8 @@ def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, me
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-r', '--recommender', nargs='+', type=str, default='LRRecommender', help='recommender',
+                        choices=['LRRecommender', 'SVRRecommender', 'DTRecommender'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
     parser.add_argument('-o', '--ouput', type=str, default='results')
     # parser.add_argument('-m', '--method', type=str, default='QUBOBipartiteCommunityDetection')
@@ -536,11 +544,12 @@ if __name__ == '__main__':
     CUT_RATIO = args.cut_ratio
     ATTRIBUTE = args.attribute
     EI = args.EI
-    # data_reader_classes = [Movielens100KReader]
-    data_reader_classes = [Movielens1MReader]
+    data_reader_classes = [Movielens100KReader]
+    # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
-    recommender_list = [LRRecommender]
+    # recommender_list = [LRRecommender]
+    recommender_list = [RECOMMENDER_DICT[recommender_name] for recommender_name in args.recommender]
     # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     method_list = [UserCommunityDetection]
     # method_list = [METHOD_DICT[args.method]]

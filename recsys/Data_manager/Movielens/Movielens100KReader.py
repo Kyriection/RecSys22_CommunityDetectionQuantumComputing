@@ -51,7 +51,7 @@ class Movielens100KReader(DataReader):
     DATASET_URL = "http://files.grouplens.org/datasets/movielens/ml-100k.zip"
     DATASET_SUBFOLDER = "Movielens100K/"
     AVAILABLE_URM = ["URM_all", "URM_timestamp"]
-    AVAILABLE_ICM = ["ICM_genres", "ICM_year"]
+    AVAILABLE_ICM = ["ICM_genres", "ICM_year", "ICM_all"]
     AVAILABLE_UCM = ["UCM_all"]
 
     IS_IMPLICIT = False
@@ -87,6 +87,7 @@ class Movielens100KReader(DataReader):
 
         self._print("Loading Item Features genres")
         ICM_genres_dataframe, ICM_years_dataframe = _loadICM_genres_years(ICM_genre_path, header=None, separator='|', genresSeparator="|")
+        ICM_all_dataframe = pd.concat([ICM_genres_dataframe, ICM_years_dataframe])
 
         self._print("Loading User Features")
         UCM_dataframe = pd.read_csv(filepath_or_buffer=UCM_path, sep="|", header=None, dtype={0:str, 1:str, 2:str, 3:str, 4:str}, engine='python')
@@ -109,6 +110,7 @@ class Movielens100KReader(DataReader):
         dataset_manager.add_URM(URM_timestamp_dataframe, "URM_timestamp")
         dataset_manager.add_ICM(ICM_genres_dataframe, "ICM_genres")
         dataset_manager.add_ICM(ICM_years_dataframe, "ICM_year")
+        dataset_manager.add_ICM(ICM_all_dataframe, "ICM_all")
         dataset_manager.add_UCM(UCM_dataframe, "UCM_all")
 
         loaded_dataset = dataset_manager.generate_Dataset(dataset_name=self._get_dataset_name(),

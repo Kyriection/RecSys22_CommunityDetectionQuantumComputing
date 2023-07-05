@@ -288,8 +288,9 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
   path = os.path.join(dataset, recommender)
   file = os.path.join(path, 'baseline.zip')
   result_df = extract_file(file, path)
-  collect_data(urm_all, -1, result_df)
-  plot(path, show)
+  if result_df is not None:
+    collect_data(urm_all, -1, result_df)
+    plot(path, show)
   # for method in QUBO:
   # for method in os.listdir(dataset):
   for method in method_list:
