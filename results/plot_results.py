@@ -46,12 +46,16 @@ def init_global_data():
 
 
 def process_total_data():
+  if len(TOTAL_DATA['C']) == 0 or\
+    (len(TOTAL_DATA['C']) == 1 and list(TOTAL_DATA['C'].keys())[0] == 0):
+    return None, None
   for key in ['MAE', 'RMSE', 'W-MAE', 'W-RMSE']:
     values = TOTAL_DATA[key].values()
-    if values:
-      TOTAL_DATA[key][-2] = min(values)
-    else:
-       return None, None
+    TOTAL_DATA[key][-2] = min(values)
+    # if values:
+    #   TOTAL_DATA[key][-2] = min(values)
+    # else:
+    #    return None, None
   df_total = pd.DataFrame(TOTAL_DATA)
   df_tail = pd.DataFrame(TAIL_DATA)
   df_tail.sort_index(inplace=True)
@@ -64,7 +68,7 @@ def plot(output_folder_path, show: bool = False):
        print('data empty.')
        return
     df_total.to_csv(os.path.join(output_folder_path, f'total_MAE_RMSE.csv'))
-    df_tail.to_csv(os.path.join(output_folder_path, f'tail_MAE_RMSE.csv'))
+    # df_tail.to_csv(os.path.join(output_folder_path, f'tail_MAE_RMSE.csv'))
     logging.info(f'save results in {output_folder_path}')
     if show:
       print(df_total)
@@ -78,8 +82,9 @@ def plot(output_folder_path, show: bool = False):
         WMAE_data = data['W-MAE']
         WRMSE_data = data['W-RMSE']
         if key in ['rank', 'rating']:
-          plot_scatter(x, MAE_data, output_folder_path, key, 'MAE')
-          plot_scatter(x, RMSE_data, output_folder_path, key, 'RMSE')
+          # plot_scatter(x, MAE_data, output_folder_path, key, 'MAE')
+          # plot_scatter(x, RMSE_data, output_folder_path, key, 'RMSE')
+          pass
         elif key in ['cluster']:
           plot_line_xticks(x, MAE_data, output_folder_path, key, 'MAE')
           plot_line_xticks(x, RMSE_data, output_folder_path, key, 'RMSE')
@@ -287,9 +292,9 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
   # special for baseline
   path = os.path.join(dataset, recommender)
   file = os.path.join(path, 'baseline.zip')
-  result_df = extract_file(file, path)
-  if result_df is not None:
-    collect_data(urm_all, -1, result_df)
+  result_df_total = extract_file(file, path)
+  if result_df_total is not None:
+    collect_data(urm_all, -1, result_df_total)
     plot(path, show)
   # for method in QUBO:
   # for method in os.listdir(dataset):
@@ -315,6 +320,8 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
       # if show:
         # print(m)
       init_global_data()
+      TOTAL_DATA['C'][0] = 1
+      collect_data(urm_all, 0, result_df_total)
       result_df_ei = None
       if CT > 0.0:
         name = 'iter-1'
