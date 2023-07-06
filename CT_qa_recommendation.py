@@ -24,7 +24,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     METHOD_DICT, get_cascade_class, UserBipartiteCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
-    MovielensSampleReader, MovielensSample2Reader
+    MovielensSampleReader, MovielensSample2Reader, MovielensSample3Reader
 # from recsys.Evaluation.Evaluator import EvaluatorHoldout
 from recsys.Evaluation.EvaluatorSeparate import EvaluatorSeparate
 from recsys.Recommenders.BaseRecommender import BaseRecommender
@@ -449,7 +449,7 @@ def parse_args():
                                  'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
                                  'KmeansCommunityDetection', 'QuantityDivision', 'HybridCommunityDetection',
                                  'TestCommunityDetection'])
-    parser.add_argument('-r', '--recommender', nargs='+', type=str, default='LRRecommender', help='recommender',
+    parser.add_argument('-r', '--recommender', nargs='+', type=str, default=['LRRecommender'], help='recommender',
                         choices=['LRRecommender', 'SVRRecommender', 'DTRecommender'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for cascade')
@@ -529,6 +529,7 @@ if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
     data_reader_classes = [Movielens100KReader]
+    data_reader_classes = [MovielensSample3Reader]
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]

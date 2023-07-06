@@ -304,9 +304,9 @@
 # tag=CWPM-$beta
 # time python CT_qa_recommendation.py $method --attribute -b $beta -o results-$tag > logs/ctqr-$tag.log 2>&1
 
-# echo QUBOBipartiteProjectedCommunityDetection
-# time python CT_community_detection.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctcd-WPM.log 2>&1
-# time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
+echo QUBOBipartiteProjectedCommunityDetection
+time python CT_community_detection.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctcd-WPM.log 2>&1
+time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
 
 
 # ------------- Cascade -------------
@@ -323,22 +323,22 @@
 #   done
 # done
 
-echo Kmeans Bipartite w/o attribute
+# echo Kmeans Bipartite w/o attribute
 # time python CT_community_detection.py KmeansCommunityDetection -o results/Kmeans-B > logs/ctcd-Kmeans-B.log 2>&1
-time python CT_qa_recommendation.py KmeansCommunityDetection -r SVRRecommender -o results/Kmeans-B > logs/ctqr-Kmeans-B.log 2>&1
+# time python CT_qa_recommendation.py KmeansCommunityDetection -r SVRRecommender -o results/Kmeans-B > logs/ctqr-Kmeans-B.log 2>&1
 
-echo Kmeans Bipartite w/ attribute
+# echo Kmeans Bipartite w/ attribute
 # time python CT_community_detection.py KmeansCommunityDetection --attribute -o results/Kmeans-B-A > logs/ctcd-Kmeans-B-A.log 2>&1
-time python CT_qa_recommendation.py KmeansCommunityDetection -r SVRRecommender --attribute -o results/Kmeans-B-A > logs/ctqr-Kmeans-B-A.log 2>&1
+# time python CT_qa_recommendation.py KmeansCommunityDetection -r SVRRecommender --attribute -o results/Kmeans-B-A > logs/ctqr-Kmeans-B-A.log 2>&1
 
-echo Kmeans Total w/o attribute
-time python CT_recommendation.py -r SVRRecommender -o results/Kmeans-T > logs/ctr-Kmeans-T.log 2>&1
+# echo Kmeans Total w/o attribute
+# time python CT_recommendation.py -r SVRRecommender -o results/Kmeans-T > logs/ctr-Kmeans-T.log 2>&1
 
-echo Kmeans Total w/ attribute
-time python CT_recommendation.py -r SVRRecommender --attribute -o results/Kmeans-T-A > logs/ctr-Kmeans-T-A.log 2>&1
+# echo Kmeans Total w/ attribute
+# time python CT_recommendation.py -r SVRRecommender --attribute -o results/Kmeans-T-A > logs/ctr-Kmeans-T-A.log 2>&1
 
-echo Each Item
-time python CT_recommendation.py -r SVRRecommender --EI -o results/EI > logs/ctr-EI.log 2>&1
+# echo Each Item
+# time python CT_recommendation.py -r SVRRecommender --EI -o results/EI > logs/ctr-EI.log 2>&1
 
 # ------------- Clustered Tail -------------
 # beta_list=(0.03125)

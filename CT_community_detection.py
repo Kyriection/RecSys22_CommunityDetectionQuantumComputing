@@ -17,7 +17,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, Q
     get_cascade_class, UserBipartiteCommunityDetection, TestCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader, \
-    MovielensSample2Reader
+    MovielensSample2Reader, MovielensSample3Reader
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.plot import plot_cut, plot_density
@@ -307,6 +307,7 @@ if __name__ == '__main__':
     CUT_RATIO = args.cut_ratio
     A1_LAYER = args.layer
     data_reader_classes = [Movielens100KReader]
+    data_reader_classes = [MovielensSample3Reader]
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
