@@ -65,8 +65,7 @@ read -u5
 
 # ------------- Our method ----------
 # ------------- Cascade -------------
-# beta_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
-beta_list=(1.0 0.5 0.25 0.125)
+beta_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
 # method_list=(QUBOBipartiteCommunityDetection QUBOBipartiteProjectedCommunityDetection)
 method_list=(QUBOBipartiteProjectedCommunityDetection)
 for method in ${method_list[*]}

@@ -46,6 +46,7 @@ def init_global_data():
 
 
 def process_total_data():
+  print(TOTAL_DATA)
   if len(TOTAL_DATA['C']) == 0 or\
     (len(TOTAL_DATA['C']) == 1 and list(TOTAL_DATA['C'].keys())[0] == 0):
     return None, None

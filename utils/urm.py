@@ -28,8 +28,17 @@ def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True,
         urm_test = explicit_to_implicit_urm(urm_test, threshold=threshold)
 
     if icm_ucm:
-        icm = data_splitter.get_loaded_ICM_dict()['ICM_all']
-        ucm = data_splitter.get_loaded_UCM_dict()['UCM_all']
+        n_users, n_items = urm_train.shape
+        try:
+            icm = data_splitter.get_loaded_ICM_dict()['ICM_all']
+        except Exception:
+            logging.warning('Load ICM_all Faild.')
+            icm = sps.csr_matrix(([], ([], [])), shape=(n_items, 1))
+        try:
+            ucm = data_splitter.get_loaded_UCM_dict()['UCM_all']
+        except Exception:
+            logging.warning('Load UCM_all Faild.')
+            ucm = sps.csr_matrix(([], ([], [])), shape=(n_users, 1))
         return urm_train, urm_validation, urm_test, icm, ucm
     else:
         return urm_train, urm_validation, urm_test  # , var_mapping
