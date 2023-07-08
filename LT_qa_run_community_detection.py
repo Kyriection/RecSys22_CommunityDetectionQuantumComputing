@@ -15,13 +15,18 @@ from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, Q
     QUBOBipartiteProjectedItemCommunityDetection, LTBipartiteProjectedCommunityDetection, QuantityDivision, \
     QUBOBipartiteProjectedCommunityDetection2, LTBipartiteCommunityDetection, METHOD_DICT, CascadeCommunityDetection, \
     get_cascade_class, UserBipartiteCommunityDetection, TestCommunityDetection
-from run_community_detection import check_communities
+from LT_community_detection import check_communities
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader, \
     MovielensSample2Reader, MovielensSample3Reader, DATA_DICT
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
-from utils.urm import load_data, merge_sparse_matrices, get_community_urm, show_urm_info, head_tail_cut
+from utils.plot import plot_cut, plot_density
+from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_urm_info, head_tail_cut
+
+
+logging.basicConfig(level=logging.INFO)
+MIN_COMMUNITIE_SIZE = 1
 
 
 def load_communities(folder_path, method, sampler: Type[dimod.Sampler] = None, n_iter=0, n_comm=None):
@@ -94,21 +99,24 @@ def qa_community_detection(cd_urm, icm, ucm, method, folder_path, base_sampler: 
     for n_iter in range(num_iters):
         if check_communities_size(communities, n_iter, method.filter_users, method.filter_items):
             starting_iter = n_iter
-            if method is QUBOBipartiteProjectedCommunityDetection:
-                starting_iter += 1
+            # if method is QUBOBipartiteProjectedCommunityDetection:
+                # starting_iter += 1
             break
-
+    logging.info(f'starting_iter={starting_iter}')
     if starting_iter is None:
         print(f'Could not find a suitable iteration in range of {num_iters} iterations.')
         return
 
     original_iters = communities.num_iters
-    communities.reset_from_iter(starting_iter)
+    if starting_iter == 0:
+        communities = None
+    else:
+        communities.reset_from_iter(starting_iter)
 
     for n_iter in range(starting_iter, num_iters):
         try:
-            communities = qa_cd_per_iter(cd_urm, icm, ucm, method, folder_path, base_sampler=base_sampler, sampler=sampler,
-                                         communities=communities, n_iter=n_iter, **kwargs)
+            communities = qa_cd_per_iter(cd_urm, icm, ucm, method, folder_path, base_sampler=base_sampler,
+                                         sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
         except EmptyCommunityError as e:
             print(e)
             print(f'Stopping at iteration {n_iter}.')
@@ -121,42 +129,58 @@ def qa_community_detection(cd_urm, icm, ucm, method, folder_path, base_sampler: 
             if n_iter > original_iters:
                 break
             continue
+    print("---------community_detection end ---------")
+    if communities is None:
+        return
+    print(f"communities.num_iters={communities.num_iters}")
+
+    method_folder_path = f'{folder_path}{method.name}/'
+    plot_density(communities, method_folder_path)
 
 
-def qa_cd_per_iter(cd_urm, icm, ucm, method, folder_path, base_sampler: Type[dimod.Sampler] = None, sampler: dimod.Sampler = None,
-                   communities: Communities = None,
-                   n_iter: int = 0, **kwargs):
+def qa_cd_per_iter(cd_urm, icm, ucm, method, folder_path, base_sampler: Type[dimod.Sampler] = None,
+                   sampler: dimod.Sampler = None, communities: Communities = None, n_iter: int = 0, **kwargs):
     print(f'Running community detection iteration {n_iter} with {method.name}...')
     logging.info(f'Running community detection iteration {n_iter} with {method.name}...')
     if communities is None:
         assert n_iter == 0, 'If no communities are given this must be the first iteration.'
 
-        communities = qa_run_cd(cd_urm, icm, ucm, method, folder_path, base_sampler=base_sampler, sampler=sampler, n_iter=n_iter,
-                                n_comm=None, **kwargs)
+        communities = qa_run_cd(cd_urm, icm, ucm, method, folder_path, base_sampler=base_sampler, sampler=sampler,
+                                n_iter=n_iter, n_comm=None, **kwargs)
     else:
         assert n_iter != 0, 'Cannot be the first iteration if previously computed communities are given.'
 
+        empty_communities_flag = True
         new_communities = []
         n_comm = 0
         for community in communities.iter(n_iter):
-            cd = qa_run_cd(cd_urm, method, folder_path, base_sampler=base_sampler, sampler=sampler, community=community,
-                           n_iter=n_iter, n_comm=n_comm, **kwargs)
+            cd = qa_run_cd(cd_urm, icm, ucm, method, folder_path, base_sampler=base_sampler, sampler=sampler,
+                           community=community, n_iter=n_iter, n_comm=n_comm, **kwargs)
+            if cd is not None:
+                empty_communities_flag = False
             new_communities.append(cd)
             n_comm += 1
-        communities.add_iteration(new_communities)
+        if empty_communities_flag:
+            raise EmptyCommunityError('Empty communities found.')
+        used = communities.add_iteration(new_communities)
+        assert used == len(new_communities), "commuities.add_iteration error, used items not equal to input."
 
     print('Saving community detection results...')
     method_folder_path = f'{folder_path}{method.name}/'
     folder_suffix = get_folder_suffix(base_sampler, sampler)
 
-    communities.save_from_iter(n_iter, method_folder_path, 'communities', folder_suffix=folder_suffix)
+    try:
+        communities.save_from_iter(n_iter, method_folder_path, 'communities', folder_suffix=folder_suffix)
+    except Exception as e:
+        logging.warning(e)
+        communities.save(method_folder_path, 'communities', folder_suffix=folder_suffix)
 
     return communities
 
 
-def qa_run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: str, base_sampler: Type[dimod.Sampler] = None,
-              sampler: dimod.Sampler = None, community: Community = None, n_iter: int = 0, n_comm: int = None,
-              **kwargs) -> Communities:
+def qa_run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: str,
+              base_sampler: Type[dimod.Sampler] = None, sampler: dimod.Sampler = None, community: Community = None,
+              n_iter: int = 0, n_comm: int = None, **kwargs) -> Communities:
     n_users, n_items = cd_urm.shape
     user_index = np.arange(n_users)
     item_index = np.arange(n_items)
@@ -167,7 +191,7 @@ def qa_run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_pat
     n_users, n_items = cd_urm.shape
     show_urm_info(cd_urm)
 
-    m: BaseCommunityDetection = method(cd_urm)
+    m: BaseCommunityDetection = method(cd_urm, icm, ucm)
 
     method_folder_path = f'{folder_path}{m.name}/'
     folder_suffix = get_folder_suffix(base_sampler, sampler)
@@ -200,7 +224,8 @@ def qa_run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_pat
         else:
             users = run_dict['users']
             items = run_dict['items']
-        print(f'Loaded previous CD run {n_comm:02d}.')
+        # print(f'Loaded previous CD run {n_comm:02d}.')
+        print(f'Loaded previous CD run {n_comm}.')
 
     except FileNotFoundError:
         print('Running CD...')
@@ -243,7 +268,10 @@ def qa_run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_pat
         dataIO.save_data(run_file_name, data_dict_to_save)
 
     communities = Communities(users, items, user_index, item_index)
-    check_communities(communities, m.filter_users, m.filter_items)
+    communities = check_communities(communities, m.filter_users, m.filter_items)
+    if communities is not None:
+        logging.debug(f'{cd_urm.size} / {communities.n_users}')
+        communities.density = cd_urm.size / communities.n_users
     return communities
 
 

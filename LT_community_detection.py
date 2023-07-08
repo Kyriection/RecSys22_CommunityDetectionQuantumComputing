@@ -23,6 +23,7 @@ from utils.types import Iterable, Type
 from utils.plot import plot_cut, plot_density
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_urm_info, head_tail_cut
 
+
 logging.basicConfig(level=logging.INFO)
 MIN_COMMUNITIE_SIZE = 1
 CUT_RATIO: float = None
@@ -233,9 +234,6 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
         dataIO.save_data(run_file_name, data_dict_to_save)
 
     communities = Communities(users, items, user_index, item_index)
-    # check_communities(communities, m.filter_users, m.filter_items)
-    # return communities
-    # return check_communities(communities, m.filter_users, m.filter_items)
     communities = check_communities(communities, m.filter_users, m.filter_items)
     if communities is not None:
         logging.debug(f'{cd_urm.size} / {communities.n_users}')
