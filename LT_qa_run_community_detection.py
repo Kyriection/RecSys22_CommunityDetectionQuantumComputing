@@ -1,12 +1,12 @@
-import shutil, os, argparse, logging
+import shutil, time, os, argparse, logging
 
 import dimod
-import greedy
-import neal
+import minorminer
 import numpy as np
-import tabu
-import pandas as pd
-from dwave.system import LeapHybridSampler
+from dwave.system import DWaveSampler, LeapHybridSampler, FixedEmbeddingComposite
+from greedy import SteepestDescentSampler
+from neal import SimulatedAnnealingSampler
+from tabu import TabuSampler
 
 from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
@@ -15,43 +15,34 @@ from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, Q
     QUBOBipartiteProjectedItemCommunityDetection, LTBipartiteProjectedCommunityDetection, QuantityDivision, \
     QUBOBipartiteProjectedCommunityDetection2, LTBipartiteCommunityDetection, METHOD_DICT, CascadeCommunityDetection, \
     get_cascade_class, UserBipartiteCommunityDetection, TestCommunityDetection
+from run_community_detection import check_communities
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader, \
     MovielensSample2Reader, MovielensSample3Reader, DATA_DICT
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
-from utils.plot import plot_cut, plot_density
-from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_urm_info, head_tail_cut
-
-logging.basicConfig(level=logging.INFO)
-MIN_COMMUNITIE_SIZE = 1
-CUT_RATIO: float = None
-LT_METHOD = {
-    QUBOBipartiteProjectedCommunityDetection: LTBipartiteProjectedCommunityDetection,
-    QUBOBipartiteCommunityDetection: LTBipartiteCommunityDetection
-}
-A1_LAYER = 0
+from utils.urm import load_data, merge_sparse_matrices, get_community_urm, show_urm_info, head_tail_cut
 
 
-def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
+def load_communities(folder_path, method, sampler: Type[dimod.Sampler] = None, n_iter=0, n_comm=None):
     method_folder_path = f'{folder_path}{method.name}/'
-    folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
+    folder_suffix = '' if sampler is None else f'{sampler.__name__}/'
 
     try:
         communities = Communities.load(method_folder_path, 'communities', n_iter=n_iter, n_comm=n_comm,
                                        folder_suffix=folder_suffix)
         print(f'Loaded previously computed communities for {communities.num_iters + 1} iterations.')
     except FileNotFoundError:
-        print('No communities found to load. Computing new communities...')
+        print('No communities found to load.')
         communities = None
     return communities
 
 
 def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]],
-         sampler_list: Iterable[dimod.Sampler], result_folder_path: str, num_iters: int = 3):
-    global CUT_RATIO
+         base_sampler_list: Iterable[Type[dimod.Sampler]], sampler_list: Iterable[dimod.Sampler],
+         result_folder_path: str, num_iters: int = 3):
     split_quota = [80, 10, 10]
-    user_wise = False
+    user_wise = True
     make_implicit = True
     threshold = None
 
@@ -69,90 +60,103 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
         dataset_folder_path = f'{result_folder_path}{dataset_name}/'
-        # dataset_folder_path = os.path.join(result_folder_path, dataset_name)
+
         urm_train, urm_validation, urm_test, icm, ucm = load_data(data_reader, split_quota=split_quota, user_wise=user_wise,
                                                         make_implicit=make_implicit, threshold=threshold, icm_ucm=True)
         # item is main charactor, and remove year from item comtext
         urm_train, urm_validation, urm_test, icm, ucm = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr(), ucm, icm[:, :-1]
         urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
-        urm_all = merge_sparse_matrices(urm_train_last_test, urm_test)
-        _, _, _, _, _, urm_train, urm_validation, urm_test, icm, ucm = head_tail_cut(CUT_RATIO, urm_all, urm_validation, urm_test, icm, ucm)
-
-        urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
 
         for method in method_list:
-            cd_per_method(urm_train_last_test, icm, ucm, method, sampler_list, dataset_folder_path, num_iters=num_iters,
-                          fit_args=fit_args, sampler_args=sampler_args, save_model=save_model)
+            qa_cd_per_method(urm_train_last_test, icm, ucm, method, base_sampler_list, sampler_list, dataset_folder_path,
+                             num_iters=num_iters, fit_args=fit_args, sampler_args=sampler_args, save_model=save_model)
 
 
-def cd_per_method(cd_urm, icm, ucm, method, sampler_list, folder_path, num_iters=1, **kwargs):
+def qa_cd_per_method(cd_urm, icm, ucm, method, base_sampler_list, sampler_list, folder_path, num_iters=1, **kwargs):
     if method.is_qubo:
-        for sampler in sampler_list:
-            community_detection(cd_urm, icm, ucm, method, folder_path, sampler=sampler, num_iters=num_iters,
-                                **kwargs)
+        for base_sampler in base_sampler_list:
+            for sampler in sampler_list:
+                qa_community_detection(cd_urm, icm, ucm, method, folder_path, base_sampler=base_sampler, sampler=sampler,
+                                       num_iters=num_iters, **kwargs)
     else:
-        community_detection(cd_urm, icm, ucm, method, folder_path, num_iters=num_iters, **kwargs)
+        for sampler in sampler_list:
+            qa_community_detection(cd_urm, icm, ucm, method, folder_path, sampler=sampler, num_iters=num_iters, **kwargs)
 
 
-def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = None, num_iters: int = 1, **kwargs):
-    communities = load_communities(folder_path, method, sampler)
-    starting_iter = 0 if communities is None else communities.num_iters + 1
+def qa_community_detection(cd_urm, icm, ucm, method, folder_path, base_sampler: Type[dimod.Sampler] = None,
+                           sampler: dimod.Sampler = None, num_iters: int = 1, **kwargs):
+    communities: Communities = load_communities(folder_path, method, base_sampler)
+    if communities is None:
+        print(f'Could not load a community for {folder_path}, {method.name}, {base_sampler.__name__}')
+        return
+
+    starting_iter = None
+    for n_iter in range(num_iters):
+        if check_communities_size(communities, n_iter, method.filter_users, method.filter_items):
+            starting_iter = n_iter
+            if method is QUBOBipartiteProjectedCommunityDetection:
+                starting_iter += 1
+            break
+
+    if starting_iter is None:
+        print(f'Could not find a suitable iteration in range of {num_iters} iterations.')
+        return
+
+    original_iters = communities.num_iters
+    communities.reset_from_iter(starting_iter)
+
     for n_iter in range(starting_iter, num_iters):
         try:
-            communities = cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler=sampler, communities=communities,
-                                      n_iter=n_iter, **kwargs)
+            communities = qa_cd_per_iter(cd_urm, icm, ucm, method, folder_path, base_sampler=base_sampler, sampler=sampler,
+                                         communities=communities, n_iter=n_iter, **kwargs)
         except EmptyCommunityError as e:
             print(e)
             print(f'Stopping at iteration {n_iter}.')
-            clean_empty_iteration(n_iter, folder_path, method, sampler=sampler)
+            clean_empty_iteration(n_iter, folder_path, method, base_sampler=base_sampler, sampler=sampler)
             break
-    print("---------community_detection end ---------")
-    if communities is None:
-        return
-    print(f"communities.num_iters={communities.num_iters}")
+        except ValueError as e:
+            print(e)
+            print(f'Could not find an embedding at iteration {n_iter}.')
+            clean_empty_iteration(n_iter, folder_path, method, base_sampler=base_sampler, sampler=sampler)
+            if n_iter > original_iters:
+                break
+            continue
 
-    method_folder_path = f'{folder_path}{method.name}/'
-    plot_density(communities, method_folder_path)
 
-
-def cd_per_iter(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = None, communities: Communities = None,
-                n_iter: int = 0, **kwargs):
+def qa_cd_per_iter(cd_urm, icm, ucm, method, folder_path, base_sampler: Type[dimod.Sampler] = None, sampler: dimod.Sampler = None,
+                   communities: Communities = None,
+                   n_iter: int = 0, **kwargs):
     print(f'Running community detection iteration {n_iter} with {method.name}...')
     logging.info(f'Running community detection iteration {n_iter} with {method.name}...')
     if communities is None:
         assert n_iter == 0, 'If no communities are given this must be the first iteration.'
 
-        communities = run_cd(cd_urm, icm, ucm, method, folder_path, sampler=sampler, n_iter=n_iter, n_comm=None, **kwargs)
-        if communities is None:
-            raise EmptyCommunityError('Empty community found.')
+        communities = qa_run_cd(cd_urm, icm, ucm, method, folder_path, base_sampler=base_sampler, sampler=sampler, n_iter=n_iter,
+                                n_comm=None, **kwargs)
     else:
         assert n_iter != 0, 'Cannot be the first iteration if previously computed communities are given.'
 
-        empty_communities_flag = True
         new_communities = []
         n_comm = 0
         for community in communities.iter(n_iter):
-            cd = run_cd(cd_urm, icm, ucm, method, folder_path, sampler=sampler, community=community, n_iter=n_iter, n_comm=n_comm,
-                        **kwargs)
-            if cd is not None:
-                empty_communities_flag = False
+            cd = qa_run_cd(cd_urm, method, folder_path, base_sampler=base_sampler, sampler=sampler, community=community,
+                           n_iter=n_iter, n_comm=n_comm, **kwargs)
             new_communities.append(cd)
             n_comm += 1
-        if empty_communities_flag:
-            raise EmptyCommunityError('Empty communities found.')
-        used = communities.add_iteration(new_communities)
-        assert used == len(new_communities), "commuities.add_iteration error, used items not equal to input."
+        communities.add_iteration(new_communities)
 
     print('Saving community detection results...')
     method_folder_path = f'{folder_path}{method.name}/'
-    folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
-    communities.save(method_folder_path, 'communities', folder_suffix=folder_suffix)
+    folder_suffix = get_folder_suffix(base_sampler, sampler)
+
+    communities.save_from_iter(n_iter, method_folder_path, 'communities', folder_suffix=folder_suffix)
 
     return communities
 
 
-def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: str, sampler: dimod.Sampler = None,
-           community: Community = None, n_iter: int = 0, n_comm: int = None, **kwargs) -> Communities:
+def qa_run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: str, base_sampler: Type[dimod.Sampler] = None,
+              sampler: dimod.Sampler = None, community: Community = None, n_iter: int = 0, n_comm: int = None,
+              **kwargs) -> Communities:
     n_users, n_items = cd_urm.shape
     user_index = np.arange(n_users)
     item_index = np.arange(n_items)
@@ -163,18 +167,10 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
     n_users, n_items = cd_urm.shape
     show_urm_info(cd_urm)
 
-    if n_iter < A1_LAYER:
-        assert method in LT_METHOD, f'{method.name} not support quantity attribute.'
-        logging.info(f'n_iter={n_iter}<{A1_LAYER}, {method.name} to {LT_METHOD[method].name}')
-        lt_method = LT_METHOD[method]
-        # lt_method.name = method.name
-        method.name = lt_method.name
-        m: BaseCommunityDetection = lt_method(cd_urm, icm, ucm)
-    else:
-        m: BaseCommunityDetection = method(cd_urm, icm, ucm)
+    m: BaseCommunityDetection = method(cd_urm)
 
     method_folder_path = f'{folder_path}{m.name}/'
-    folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
+    folder_suffix = get_folder_suffix(base_sampler, sampler)
     method_folder_path = get_community_folder_path(method_folder_path, n_iter=n_iter, folder_suffix=folder_suffix)
 
     comm_file_suffix = f'{n_comm:02d}' if n_comm is not None else ''
@@ -212,6 +208,15 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
             assert method.is_qubo, 'Cannot use a QUBO sampler on a non-QUBO method.'
             m: QUBOCommunityDetection
 
+            embedding = {}
+            embedding_time = 0
+            if isinstance(sampler, DWaveSampler):
+                embedding_time = time.time()
+                embedding = minorminer.find_embedding(m.get_Q_adjacency(), sampler.edgelist)
+                embedding_time = time.time() - embedding_time
+
+                sampler = FixedEmbeddingComposite(sampler, embedding)
+
             sampler_args = kwargs.get('sampler_args', {})
             sampleset, sampler_info, run_time = m.run(sampler, sampler_args)
 
@@ -220,6 +225,11 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
                 'sampler_info': sampler_info,
                 'run_time': run_time,
             }
+
+            if isinstance(sampler, FixedEmbeddingComposite):
+                data_dict_to_save['embedding'] = embedding
+                data_dict_to_save['embedding_time'] = embedding_time
+
             users, items = m.get_comm_from_sample(sampleset.first.sample, n_users, n_items=n_items)
         else:
             users, items, run_time = m.run()
@@ -231,42 +241,51 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
             }
 
         dataIO.save_data(run_file_name, data_dict_to_save)
-    
+
     communities = Communities(users, items, user_index, item_index)
-    # check_communities(communities, m.filter_users, m.filter_items)
-    # return communities
-    # return check_communities(communities, m.filter_users, m.filter_items)
-    communities = check_communities(communities, m.filter_users, m.filter_items)
-    if communities is not None:
-        logging.debug(f'{cd_urm.size} / {communities.n_users}')
-        communities.density = cd_urm.size / communities.n_users
+    check_communities(communities, m.filter_users, m.filter_items)
     return communities
 
 
-def check_communities(communities: Communities, check_users, check_items):
-    global MIN_COMMUNITIE_SIZE
-    for community in communities.iter():
-        if (check_users and community.users.size == 0) or (check_items and community.items.size == 0):
-            # raise EmptyCommunityError('Empty community found.')
-            print('Empty community found.')
-            return None
-        if (check_users and community.users.size < MIN_COMMUNITIE_SIZE) or (check_items and community.items.size < MIN_COMMUNITIE_SIZE):
-            print(f'Community size too small: user: {community.users.size}, item: {community.items.size}.')
-            return None
-    return communities
+def get_folder_suffix(base_sampler, sampler):
+    folder_suffix = f'{sampler.__class__.__name__}/'
+    if base_sampler is not None:
+        folder_suffix = f'{base_sampler.__name__}_{folder_suffix}'
+    return folder_suffix
+
+
+def check_communities_size(communities: Communities, n_iter: int, check_users, check_items):
+    if communities is None:
+        print('Non-existing communities. Please use non-null ones.')
+        return False
+
+    if communities.num_iters < n_iter:
+        return False
+
+    for community in communities.iter(n_iter):
+        n_nodes = len(community.users) if check_users else 0
+        n_nodes += len(community.items) if check_items else 0
+        if n_nodes > 170:
+            print(f'Communities size exceeded maximum size for the Quantum Annealer at iteration {n_iter}.')
+            return False
+    return True
 
 
 def clean_empty_iteration(n_iter: int, folder_path: str, method: Type[BaseCommunityDetection],
-                          sampler: dimod.Sampler = None):
-    folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
+                          base_sampler: Type[dimod.Sampler], sampler: dimod.Sampler = None, start_iter: int = 0):
+    folder_suffix = get_folder_suffix(base_sampler, sampler)
     folder_path = f'{folder_path}{method.name}/'
     rm_folder_path = get_community_folder_path(folder_path, n_iter=n_iter, folder_suffix=folder_suffix)
     shutil.rmtree(rm_folder_path)
 
+    base_folder_suffix = '' if base_sampler is None else f'{base_sampler.__class__.__name__}/'
     try:
-        communities = Communities.load(folder_path, 'communities', n_iter=0, folder_suffix=folder_suffix)
+        communities = Communities.load(folder_path, 'communities', n_iter=0, folder_suffix=base_folder_suffix)
+
+        communities.load_from_iter(start_iter, folder_path, 'communities', folder_suffix=folder_suffix)
         print(f'Reloaded previously computed communities for {communities.num_iters + 1} iterations.')
-        communities.save(folder_path, 'communities', n_iter=0, folder_suffix=folder_suffix)
+
+        communities.save_from_iter(start_iter, folder_path, 'communities', folder_suffix=folder_suffix)
         print('Saved the cleaned communities.')
     except FileNotFoundError:
         print('Cannot load communities, cleaning not complete.')
@@ -282,43 +301,27 @@ def parse_args():
     parser.add_argument('-d', '--dataset', nargs='+', type=str, default=['Movielens100K'], help='dataset',
                         choices=['Movielens100K', 'Movielens1M', 'MovielensHetrec2011', 'MovielensSample',
                                  'MovielensSample2', 'MovielensSample3'])
-    parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for quantity')
     parser.add_argument('-b', '--beta', type=float, default=0.0, help='beta for cascade')
     parser.add_argument('-t', '--T', type=int, default=5, help='T for quantity')
-    parser.add_argument('-l', '--layer', type=int, default=0, help='number of layer of quantity')
     parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
     parser.add_argument('--attribute', action='store_true', help='Use item attribute data (cascade) or not')
     args = parser.parse_args()
     return args
 
 
-def clean_results(result_folder_path, data_reader_classes, method_list):
-    for data_reader_class in data_reader_classes:
-        data_reader = data_reader_class()
-        dataset_name = data_reader._get_dataset_name()
-        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
-        for method in method_list:
-            method_folder_path = f'{dataset_folder_path}{method.name}/'
-            if os.path.exists(method_folder_path):
-                logging.debug(f'rm {method_folder_path}')
-                shutil.rmtree(method_folder_path)
-
-
 if __name__ == '__main__':
     args = parse_args()
-    CUT_RATIO = args.cut_ratio
-    A1_LAYER = args.layer
-    data_reader_classes = [DATA_DICT[data_name] for data_name in args.dataset]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
+    data_reader_classes = [DATA_DICT[data_name] for data_name in args.dataset]
+    # method_list = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection]
     method_list = [METHOD_DICT[method_name] for method_name in args.method]
-    sampler_list = [neal.SimulatedAnnealingSampler()]
-    # sampler_list = [greedy.SteepestDescentSampler(), tabu.TabuSampler()]
-    # sampler_list = [LeapHybridSampler()]
-    # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
-                    # tabu.TabuSampler()]
-    num_iters = 9
+    # base_sampler_list = [LeapHybridSampler, SimulatedAnnealingSampler, SteepestDescentSampler, TabuSampler]
+    base_sampler_list = [SimulatedAnnealingSampler]
+    sampler_list = [DWaveSampler(solver={'topology__type': 'pegasus'})]
+    num_iters = 3
+    # result_folder_path = './results/'
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
@@ -329,10 +332,8 @@ if __name__ == '__main__':
     LTBipartiteCommunityDetection.set_T(args.T)
     QuantityDivision.set_T(args.T)
     KmeansCommunityDetection.set_attribute(args.attribute)
-    TestCommunityDetection.set_beta(args.beta)
     if args.attribute:
         for i, method in enumerate(method_list):
             method_list[i] = get_cascade_class(method)
             method_list[i].set_beta(args.beta)
-    # clean_results(result_folder_path, data_reader_classes, method_list)
-    main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)
+    main(data_reader_classes, method_list, base_sampler_list, sampler_list, result_folder_path, num_iters=num_iters)

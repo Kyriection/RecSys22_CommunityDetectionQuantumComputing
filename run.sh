@@ -17,13 +17,13 @@
 #   echo alpha=$alpha
 #   echo 'start community detection'
 #   # time python run_community_detection_mod.py -a $alpha > cd.log 2>&1
-#   time python CT_community_detection.py -a $alpha > ctcd.log 2>&1
+#   time python LT_community_detection.py -a $alpha > ctcd.log 2>&1
 #   if [ $? -ne 0 ]; then
 #     echo 'error'
 #     break
 #   fi
 #   echo 'start recommendation'
-#   time python CT_qa_recommendation.py -a $alpha > ctqr.log 2>&1
+#   time python LT_qa_recommendation.py -a $alpha > ctqr.log 2>&1
 #   # time python cd_recommendation.py -a $alpha > cdr.log 2>&1
 #   if [ $? -ne 0 ]; then
 #     echo 'error'
@@ -56,13 +56,13 @@
 # do
 #   echo cut_ratio=$cut%
 #   echo 'start community detection'
-#   time python CT_community_detection.py -c $cut > ctcd.log 2>&1
+#   time python LT_community_detection.py -c $cut > ctcd.log 2>&1
 #   if [ $? -ne 0 ]; then
 #     echo 'error'
 #     break
 #   fi
 #   echo 'start recommendation'
-#   time python CT_qa_recommendation.py -c $cut > ctqr.log 2>&1
+#   time python LT_qa_recommendation.py -c $cut > ctqr.log 2>&1
 #   if [ $? -ne 0 ]; then
 #     echo 'error'
 #     break
@@ -75,13 +75,13 @@
 # do
 #   echo layer=$layer
 #   echo 'start community detection'
-#   time python CT_community_detection.py -l $layer > ctcd.log 2>&1
+#   time python LT_community_detection.py -l $layer > ctcd.log 2>&1
 #   if [ $? -ne 0 ]; then
 #     echo 'error'
 #     break
 #   fi
 #   echo 'start recommendation'
-#   time python CT_qa_recommendation.py -l $layer > ctqr.log 2>&1
+#   time python LT_qa_recommendation.py -l $layer > ctqr.log 2>&1
 #   if [ $? -ne 0 ]; then
 #     echo 'error'
 #     break
@@ -97,13 +97,13 @@
 #   do
 #     echo T=$T, alpha=$alpha
 #     echo 'start community detection'
-#     time python CT_community_detection.py -t $T -a $alpha > ctcd.log 2>&1
+#     time python LT_community_detection.py -t $T -a $alpha > ctcd.log 2>&1
 #     if [ $? -ne 0 ]; then
 #       echo 'error'
 #       break
 #     fi
 #     echo 'start recommendation'
-#     time python CT_qa_recommendation.py -t $T -a $alpha > ctqr.log 2>&1
+#     time python LT_qa_recommendation.py -t $T -a $alpha > ctqr.log 2>&1
 #     if [ $? -ne 0 ]; then
 #       echo 'error'
 #       break
@@ -116,55 +116,55 @@
 # for alpha in ${alpha_list[*]}
 # do
 #   echo $alpha
-#   time python CT_community_detection.py QUBOBipartiteProjectedCommunityDetection --cascade -b $alpha -o results-CWPM-$alpha > logs/ctcd-CWPM-$alpha.log 2>&1
-#   time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection --cascade -b $alpha -o results-CWPM-$alpha > logs/ctqr-CWPM-$alpha.log 2>&1
+#   time python LT_community_detection.py QUBOBipartiteProjectedCommunityDetection --cascade -b $alpha -o results-CWPM-$alpha > logs/ctcd-CWPM-$alpha.log 2>&1
+#   time python LT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection --cascade -b $alpha -o results-CWPM-$alpha > logs/ctqr-CWPM-$alpha.log 2>&1
 # done
 # echo 'CascadeCommunityDetection'
 # alpha_list=(1.0 0.5 0.25 0.125 0.0625 0.03125 0.015625 0.0078125 0.00390625)
 # for alpha in ${alpha_list[*]}
 # do
 #   echo $alpha
-#   time python CT_community_detection.py -m CascadeCommunityDetection -a $alpha -o results-$alpha > logs/ctcd-$alpha.log 2>&1
-#   time python CT_qa_recommendation.py -m CascadeCommunityDetection -a $alpha -o results-$alpha > logs/ctqr-$alpha.log 2>&1
+#   time python LT_community_detection.py -m CascadeCommunityDetection -a $alpha -o results-$alpha > logs/ctcd-$alpha.log 2>&1
+#   time python LT_qa_recommendation.py -m CascadeCommunityDetection -a $alpha -o results-$alpha > logs/ctqr-$alpha.log 2>&1
 # done
 # echo 'QUBOBipartiteCommunityDetection'
-# time python CT_community_detection.py -m QUBOBipartiteCommunityDetection > ctcd.log 2>&1
-# time python CT_qa_recommendation.py -m QUBOBipartiteCommunityDetection > ctqr.log 2>&1
+# time python LT_community_detection.py -m QUBOBipartiteCommunityDetection > ctcd.log 2>&1
+# time python LT_qa_recommendation.py -m QUBOBipartiteCommunityDetection > ctqr.log 2>&1
 # echo 'QUBOBipartiteProjectedCommunityDetection'
-# time python CT_community_detection.py -m QUBOBipartiteProjectedCommunityDetection > ctcd.log 2>&1
-# time python CT_qa_recommendation.py -m QUBOBipartiteProjectedCommunityDetection > ctqr.log 2>&1
+# time python LT_community_detection.py -m QUBOBipartiteProjectedCommunityDetection > ctcd.log 2>&1
+# time python LT_qa_recommendation.py -m QUBOBipartiteProjectedCommunityDetection > ctqr.log 2>&1
 # echo 'LTBipartiteCommunityDetection'
-# time python CT_community_detection.py -m LTBipartiteCommunityDetection > ctcd.log 2>&1
-# time python CT_qa_recommendation.py -m LTBipartiteCommunityDetection > ctqr.log 2>&1
+# time python LT_community_detection.py -m LTBipartiteCommunityDetection > ctcd.log 2>&1
+# time python LT_qa_recommendation.py -m LTBipartiteCommunityDetection > ctqr.log 2>&1
 # echo 'LTBipartiteProjectedCommunityDetection'
-# time python CT_community_detection.py -m LTBipartiteProjectedCommunityDetection > ctcd.log 2>&1
-# time python CT_qa_recommendation.py -m LTBipartiteProjectedCommunityDetection > ctqr.log 2>&1
+# time python LT_community_detection.py -m LTBipartiteProjectedCommunityDetection > ctcd.log 2>&1
+# time python LT_qa_recommendation.py -m LTBipartiteProjectedCommunityDetection > ctqr.log 2>&1
 # echo 'QuantityDivision'
-# time python CT_community_detection.py -m QuantityDivision -t 7 -o results-Quantity-7 > ctcd.log 2>&1
-# time python CT_qa_recommendation.py -m QuantityDivision -t 7 -o results-Quantity-7 > ctqr.log 2>&1
+# time python LT_community_detection.py -m QuantityDivision -t 7 -o results-Quantity-7 > ctcd.log 2>&1
+# time python LT_qa_recommendation.py -m QuantityDivision -t 7 -o results-Quantity-7 > ctqr.log 2>&1
 # echo 'KmeansCommunityDetection'
-# time python CT_community_detection.py -m KmeansCommunityDetection -o results-Kmeans-B-I > ctcd.log 2>&1
-# time python CT_qa_recommendation.py -m KmeansCommunityDetection -o results-Kmeans-B-I > ctqr.log 2>&1
+# time python LT_community_detection.py -m KmeansCommunityDetection -o results-Kmeans-B-I > ctcd.log 2>&1
+# time python LT_qa_recommendation.py -m KmeansCommunityDetection -o results-Kmeans-B-I > ctqr.log 2>&1
 
 # echo 'adaptive selection'
-# time python CT_qa_recommendation.py -m QUBOBipartiteCommunityDetection > logs/ctqr-BM.log 2>&1
-# time python CT_qa_recommendation.py -m QUBOBipartiteProjectedCommunityDetection > logs/ctqr-WPM.log 2>&1
-# time python CT_qa_recommendation.py -m KmeansCommunityDetection -o results-Kmeans-B-I > logs/ctqr-kmeans-B-I.log 2>&1
-# time python CT_qa_recommendation.py -m HybridCommunityDetection -a 0.125 -o results-WPM-0.125 > logs/ctqr-WPM-0.125.log 2>&1
-# time python CT_qa_recommendation.py -m LTBipartiteCommunityDetection -t 3 -a 0.001 -o results--3-0.001 > logs/ctqr-BM-3-0.001.log 2>&1
+# time python LT_qa_recommendation.py -m QUBOBipartiteCommunityDetection > logs/ctqr-BM.log 2>&1
+# time python LT_qa_recommendation.py -m QUBOBipartiteProjectedCommunityDetection > logs/ctqr-WPM.log 2>&1
+# time python LT_qa_recommendation.py -m KmeansCommunityDetection -o results-Kmeans-B-I > logs/ctqr-kmeans-B-I.log 2>&1
+# time python LT_qa_recommendation.py -m HybridCommunityDetection -a 0.125 -o results-WPM-0.125 > logs/ctqr-WPM-0.125.log 2>&1
+# time python LT_qa_recommendation.py -m LTBipartiteCommunityDetection -t 3 -a 0.001 -o results--3-0.001 > logs/ctqr-BM-3-0.001.log 2>&1
 
 # T_list=(1 3 5 7 9)
 # for T in ${T_list[*]}
 # do
 #   echo T=$T
 #   echo 'start community detection'
-#   time python CT_community_detection.py -t $T -m QuantityDivision > ctcd.log 2>&1
+#   time python LT_community_detection.py -t $T -m QuantityDivision > ctcd.log 2>&1
 #   if [ $? -ne 0 ]; then
 #     echo 'error'
 #     break
 #   fi
 #   echo 'start recommendation'
-#   time python CT_qa_recommendation.py -t $T -m QuantityDivision > ctqr.log 2>&1
+#   time python LT_qa_recommendation.py -t $T -m QuantityDivision > ctqr.log 2>&1
 #   if [ $? -ne 0 ]; then
 #     echo 'error'
 #     break
@@ -183,13 +183,13 @@
 #       tag=$method-$T-$alpha
 #       echo $tag
 #       echo 'start community detection'
-#       time python CT_community_detection.py -m $method -t $T -a $alpha -o results-$tag > logs/ctcd-$tag.log 2>&1
+#       time python LT_community_detection.py -m $method -t $T -a $alpha -o results-$tag > logs/ctcd-$tag.log 2>&1
 #       if [ $? -ne 0 ]; then
 #         echo 'error'
 #         break
 #       fi
 #       echo 'start recommendation'
-#       time python CT_qa_recommendation.py -m $method -t $T -a $alpha -o results-$tag > logs/ctqr-$tag.log 2>&1
+#       time python LT_qa_recommendation.py -m $method -t $T -a $alpha -o results-$tag > logs/ctqr-$tag.log 2>&1
 #       if [ $? -ne 0 ]; then
 #         echo 'error'
 #         break
@@ -208,12 +208,12 @@
 # for beta in ${beta_list[*]}
 # do
 #   echo $beta
-#   time python CT_community_detection.py QUBOBipartiteCommunityDetection --attribute -b $beta -o results-CBM-$beta > logs/ctcd-CBM-$beta.log 2>&1
-#   time python CT_qa_recommendation.py QUBOBipartiteCommunityDetection --attribute -b $beta -o results-CBM-$beta > logs/ctqr-CBM-$beta.log 2>&1
+#   time python LT_community_detection.py QUBOBipartiteCommunityDetection --attribute -b $beta -o results-CBM-$beta > logs/ctcd-CBM-$beta.log 2>&1
+#   time python LT_qa_recommendation.py QUBOBipartiteCommunityDetection --attribute -b $beta -o results-CBM-$beta > logs/ctqr-CBM-$beta.log 2>&1
 # done
 # echo 'UserBipartiteCommunityDetection'
-# time python CT_community_detection.py UserBipartiteCommunityDetection > ctcd.log 2>&1
-# time python CT_qa_recommendation.py UserBipartiteCommunityDetection > ctqr.log 2>&1
+# time python LT_community_detection.py UserBipartiteCommunityDetection > ctcd.log 2>&1
+# time python LT_qa_recommendation.py UserBipartiteCommunityDetection > ctqr.log 2>&1
 
 # method=LTBipartiteCommunityDetection
 # T=3
@@ -221,8 +221,8 @@
 # beta=0.03125
 # tag=Q-C-$method-$T-$alpha-$beta
 # echo $tag
-# time python CT_community_detection.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
-# time python CT_qa_recommendation.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
+# time python LT_community_detection.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+# time python LT_qa_recommendation.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
 
 # method=LTBipartiteProjectedCommunityDetection
 # T=5
@@ -230,32 +230,32 @@
 # beta=0.03125
 # tag=Q-C-$method-$T-$alpha-$beta
 # echo $tag
-# time python CT_community_detection.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
-# time python CT_qa_recommendation.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
+# time python LT_community_detection.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+# time python LT_qa_recommendation.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
 
 # method=LTBipartiteCommunityDetection
 # T=3
 # alpha=0.001
 # tag=-$T-$alpha
 # echo $tag
-# time python CT_community_detection.py $method -a $alpha -t $T -o results-$tag > logs/ctcd-$tag.log 2>&1
-# time python CT_qa_recommendation.py $method -a $alpha -t $T -o results-$tag > logs/ctqr-$tag.log 2>&1
+# time python LT_community_detection.py $method -a $alpha -t $T -o results-$tag > logs/ctcd-$tag.log 2>&1
+# time python LT_qa_recommendation.py $method -a $alpha -t $T -o results-$tag > logs/ctqr-$tag.log 2>&1
 
 # method=LTBipartiteProjectedCommunityDetection
 # T=5
 # alpha=0.0001
 # tag=$method-$T-$alpha
 # echo $tag
-# time python CT_community_detection.py $method -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
-# time python CT_qa_recommendation.py $method -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
+# time python LT_community_detection.py $method -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+# time python LT_qa_recommendation.py $method -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
 
 
 # beta_list=(0.125 0.03125)
 # for beta in ${beta_list[*]}
 # do
 #   echo $beta
-#   time python CT_community_detection.py HybridCommunityDetection -b $beta -o results-CBM-$beta > logs/ctcd-CBM-$beta.log 2>&1
-#   time python CT_qa_recommendation.py HybridCommunityDetection -b $beta -o results-CBM-$beta > logs/ctqr-CBM-$beta.log 2>&1
+#   time python LT_community_detection.py HybridCommunityDetection -b $beta -o results-CBM-$beta > logs/ctcd-CBM-$beta.log 2>&1
+#   time python LT_qa_recommendation.py HybridCommunityDetection -b $beta -o results-CBM-$beta > logs/ctqr-CBM-$beta.log 2>&1
 # done
 
 # method=WPM
@@ -264,8 +264,8 @@
 # beta=0.125
 # tag=Q-C-$method-$T-$alpha-$beta
 # echo $tag
-# time python CT_community_detection.py HybridCommunityDetection -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
-# time python CT_qa_recommendation.py HybridCommunityDetection -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
+# time python LT_community_detection.py HybridCommunityDetection -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+# time python LT_qa_recommendation.py HybridCommunityDetection -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
 
 # method_list=(LTBipartiteProjectedCommunityDetection LTBipartiteCommunityDetection)
 # T_list=(3 5)
@@ -281,8 +281,8 @@
 #       do
 #         tag=Q-C-$method-$T-$alpha-$beta
 #         echo $tag
-#         time python CT_community_detection.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
-#         time python CT_qa_recommendation.py   $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
+#         time python LT_community_detection.py $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+#         time python LT_qa_recommendation.py   $method --attribute -b $beta -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
 #       done
 #     done
 #   done
@@ -293,20 +293,20 @@
 # do
 #   tag=test-$beta
 #   echo $tag
-#   time python CT_community_detection.py TestCommunityDetection -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
-#   time python CT_qa_recommendation.py   TestCommunityDetection -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
+#   time python LT_community_detection.py TestCommunityDetection -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
+#   time python LT_qa_recommendation.py   TestCommunityDetection -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
 # done
 
-# time python CT_qa_recommendation.py QUBOBipartiteCommunityDetection -o results/BM > logs/ctqr-BM.log 2>&1
-# time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
+# time python LT_qa_recommendation.py QUBOBipartiteCommunityDetection -o results/BM > logs/ctqr-BM.log 2>&1
+# time python LT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
 # method=QUBOBipartiteProjectedCommunityDetection
 # beta=0.03125
 # tag=CWPM-$beta
-# time python CT_qa_recommendation.py $method --attribute -b $beta -o results-$tag > logs/ctqr-$tag.log 2>&1
+# time python LT_qa_recommendation.py $method --attribute -b $beta -o results-$tag > logs/ctqr-$tag.log 2>&1
 
 echo QUBOBipartiteProjectedCommunityDetection
-time python CT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ctcd-WPM.log 2>&1
-time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ctqr-WPM.log 2>&1
+time python LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ctcd-WPM.log 2>&1
+time python LT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ctqr-WPM.log 2>&1
 
 
 # ------------- Cascade -------------
@@ -318,18 +318,18 @@ time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection -d 
 #   do
 #     tag=Cascade-$method-$beta
 #     echo $tag
-#     time python CT_community_detection.py $method --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
-#     time python CT_qa_recommendation.py $method --attribute -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
+#     time python LT_community_detection.py $method --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
+#     time python LT_qa_recommendation.py $method --attribute -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
 #   done
 # done
 
 # echo Kmeans Bipartite w/o attribute
-# time python CT_community_detection.py KmeansCommunityDetection -o results/Kmeans-B > logs/ctcd-Kmeans-B.log 2>&1
-# time python CT_qa_recommendation.py KmeansCommunityDetection -r SVRRecommender -o results/Kmeans-B > logs/ctqr-Kmeans-B.log 2>&1
+# time python LT_community_detection.py KmeansCommunityDetection -o results/Kmeans-B > logs/ctcd-Kmeans-B.log 2>&1
+# time python LT_qa_recommendation.py KmeansCommunityDetection -r SVRRecommender -o results/Kmeans-B > logs/ctqr-Kmeans-B.log 2>&1
 
 # echo Kmeans Bipartite w/ attribute
-# time python CT_community_detection.py KmeansCommunityDetection --attribute -o results/Kmeans-B-A > logs/ctcd-Kmeans-B-A.log 2>&1
-# time python CT_qa_recommendation.py KmeansCommunityDetection -r SVRRecommender --attribute -o results/Kmeans-B-A > logs/ctqr-Kmeans-B-A.log 2>&1
+# time python LT_community_detection.py KmeansCommunityDetection --attribute -o results/Kmeans-B-A > logs/ctcd-Kmeans-B-A.log 2>&1
+# time python LT_qa_recommendation.py KmeansCommunityDetection -r SVRRecommender --attribute -o results/Kmeans-B-A > logs/ctqr-Kmeans-B-A.log 2>&1
 
 # echo Kmeans Total w/o attribute
 # time python CT_recommendation.py -r SVRRecommender -o results/Kmeans-T > logs/ctr-Kmeans-T.log 2>&1
@@ -352,8 +352,8 @@ time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection -d 
 #     do
 #       tag=Cascade-$method-$beta-$cut
 #       echo $tag
-#       # time python CT_community_detection.py $method --attribute -b $beta -c $cut -o results/$tag > logs/ctcd-$tag.log 2>&1
-#       time python CT_qa_recommendation.py $method -r LRRecommender --attribute -b $beta -c $cut -o results/$tag > logs/ctqr-$tag.log 2>&1
+#       # time python LT_community_detection.py $method --attribute -b $beta -c $cut -o results/$tag > logs/ctcd-$tag.log 2>&1
+#       time python LT_qa_recommendation.py $method -r LRRecommender --attribute -b $beta -c $cut -o results/$tag > logs/ctqr-$tag.log 2>&1
 #     done
 #   done
 # done
