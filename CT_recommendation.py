@@ -23,7 +23,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, Clusters, METHOD_DICT
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
-    MovielensSampleReader, MovielensSample2Reader, MovielensSample3Reader
+    MovielensSampleReader, MovielensSample2Reader, MovielensSample3Reader, DATA_DICT
 # from recsys.Evaluation.Evaluator import EvaluatorHoldout
 from recsys.Evaluation.EvaluatorSeparate import EvaluatorSeparate
 from recsys.Recommenders.BaseRecommender import BaseRecommender
@@ -470,6 +470,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--recommender', nargs='+', type=str, default=['LRRecommender'], help='recommender',
                         choices=['LRRecommender', 'SVRRecommender', 'DTRecommender'])
+    parser.add_argument('-d', '--dataset', nargs='+', type=str, default=['Movielens100K'], help='dataset',
+                        choices=['Movielens100K', 'Movielens1M', 'MovielensHetrec2011', 'MovielensSample',
+                                 'MovielensSample2', 'MovielensSample3'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0)
     parser.add_argument('-o', '--ouput', type=str, default='results')
     # parser.add_argument('-m', '--method', type=str, default='QUBOBipartiteCommunityDetection')
@@ -545,9 +548,7 @@ if __name__ == '__main__':
     CUT_RATIO = args.cut_ratio
     ATTRIBUTE = args.attribute
     EI = args.EI
-    data_reader_classes = [Movielens100KReader]
-    data_reader_classes = [MovielensSample3Reader]
-    data_reader_classes = [MovielensHetrec2011Reader]
+    data_reader_classes = [DATA_DICT[data_name] for data_name in args.dataset]
     # data_reader_classes = [Movielens1MReader]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
     #                        LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-thread=$1
+dataset=$1
+thread=$2
 [ -e /tmp/fd1 ]|| mkfifo /tmp/fd1
 exec 5<>/tmp/fd1
 rm -rf /tmp/fd1 
@@ -16,7 +17,7 @@ mkdir -p results/
 read -u5
 {
   echo Each Item
-  time python CT_recommendation.py --EI -o results/EI > logs/ctr-EI.log 2>&1
+  time python CT_recommendation.py -d $dataset --EI -o results/EI > logs/ctr-EI.log 2>&1
   echo ''>&5
 }&
 # ------------- Total Clusetring ----------
@@ -24,27 +25,27 @@ read -u5
 read -u5
 {
   echo Kmeans Total w/o attribute
-  time python CT_recommendation.py -o results/Kmeans-T > logs/ctr-Kmeans-T.log 2>&1
+  time python CT_recommendation.py -d $dataset -o results/Kmeans-T > logs/ctr-Kmeans-T.log 2>&1
   echo ''>&5
 }&
 read -u5
 {
   echo Kmeans Total w/ attribute
-  time python CT_recommendation.py --attribute -o results/Kmeans-T-A > logs/ctr-Kmeans-T-A.log 2>&1
+  time python CT_recommendation.py -d $dataset --attribute -o results/Kmeans-T-A > logs/ctr-Kmeans-T-A.log 2>&1
   echo ''>&5
 }&
 read -u5
 {
   echo Kmeans Bipartite w/o attribute
-  time python CT_community_detection.py KmeansCommunityDetection -o results/Kmeans-B > logs/ctcd-Kmeans-B.log 2>&1
-  time python CT_qa_recommendation.py KmeansCommunityDetection -o results/Kmeans-B > logs/ctqr-Kmeans-B.log 2>&1
+  time python CT_community_detection.py KmeansCommunityDetection -d $dataset -o results/Kmeans-B > logs/ctcd-Kmeans-B.log 2>&1
+  time python CT_qa_recommendation.py   KmeansCommunityDetection -d $dataset -o results/Kmeans-B > logs/ctqr-Kmeans-B.log 2>&1
   echo ''>&5
 }&
 read -u5
 {
   echo Kmeans Bipartite w/ attribute
-  time python CT_community_detection.py KmeansCommunityDetection --attribute -o results/Kmeans-B-A > logs/ctcd-Kmeans-B-A.log 2>&1
-  time python CT_qa_recommendation.py KmeansCommunityDetection --attribute -o results/Kmeans-B-A > logs/ctqr-Kmeans-B-A.log 2>&1
+  time python CT_community_detection.py KmeansCommunityDetection -d $dataset --attribute -o results/Kmeans-B-A > logs/ctcd-Kmeans-B-A.log 2>&1
+  time python CT_qa_recommendation.py   KmeansCommunityDetection -d $dataset --attribute -o results/Kmeans-B-A > logs/ctqr-Kmeans-B-A.log 2>&1
   echo ''>&5
 }&
 # ------------- Quantum -----------------
@@ -58,8 +59,8 @@ read -u5
 read -u5
 {
   echo QUBOBipartiteProjectedCommunityDetection
-  time python CT_community_detection.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctcd-WPM.log 2>&1
-  time python CT_qa_recommendation.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
+  time python CT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d $dataset -o results/WPM > logs/ctcd-WPM.log 2>&1
+  time python CT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -d $dataset -o results/WPM > logs/ctqr-WPM.log 2>&1
   echo ''>&5
 }&
 
@@ -76,8 +77,8 @@ do
   {
     tag=Cascade-$method-$beta
     echo $tag
-    time python CT_community_detection.py $method --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
-    time python CT_qa_recommendation.py $method --attribute -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
+    time python CT_community_detection.py $method -d $dataset --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
+    time python CT_qa_recommendation.py   $method -d $dataset --attribute -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
     echo ''>&5
   }&
   done
@@ -97,8 +98,8 @@ do
     {
       tag=Quantity-$method-$T-$alpha
       echo $tag
-      time python CT_community_detection.py $method -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
-      time python CT_qa_recommendation.py $method -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
+      time python CT_community_detection.py $method -d $dataset -a $alpha -t $T -o results/$tag > logs/ctcd-$tag.log 2>&1
+      time python CT_qa_recommendation.py   $method -d $dataset -a $alpha -t $T -o results/$tag > logs/ctqr-$tag.log 2>&1
       echo ''>&5
     }&
     done

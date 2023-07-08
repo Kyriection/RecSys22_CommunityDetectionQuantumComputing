@@ -24,7 +24,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     METHOD_DICT, get_cascade_class, UserBipartiteCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
-    MovielensSampleReader, MovielensSample2Reader, MovielensSample3Reader
+    MovielensSampleReader, MovielensSample2Reader, MovielensSample3Reader, DATA_DICT
 # from recsys.Evaluation.Evaluator import EvaluatorHoldout
 from recsys.Evaluation.EvaluatorSeparate import EvaluatorSeparate
 from recsys.Recommenders.BaseRecommender import BaseRecommender
@@ -451,6 +451,9 @@ def parse_args():
                                  'TestCommunityDetection'])
     parser.add_argument('-r', '--recommender', nargs='+', type=str, default=['LRRecommender'], help='recommender',
                         choices=['LRRecommender', 'SVRRecommender', 'DTRecommender'])
+    parser.add_argument('-d', '--dataset', nargs='+', type=str, default=['Movielens100K'], help='dataset',
+                        choices=['Movielens100K', 'Movielens1M', 'MovielensHetrec2011', 'MovielensSample',
+                                 'MovielensSample2', 'MovielensSample3'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for cascade')
     parser.add_argument('-b', '--beta', type=float, default=0.0, help='beta for quantity')
@@ -528,10 +531,7 @@ def save_results(data_reader_classes, result_folder_path, method_list, sampler_l
 if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
-    data_reader_classes = [Movielens100KReader]
-    data_reader_classes = [MovielensSample3Reader]
-    data_reader_classes = [MovielensHetrec2011Reader]
-    # data_reader_classes = [Movielens1MReader]
+    data_reader_classes = [DATA_DICT[data_name] for data_name in args.dataset]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     # recommender_list = [LRRecommender]

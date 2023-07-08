@@ -17,7 +17,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, Q
     get_cascade_class, UserBipartiteCommunityDetection, TestCommunityDetection
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, MovielensSampleReader, \
-    MovielensSample2Reader, MovielensSample3Reader
+    MovielensSample2Reader, MovielensSample3Reader, DATA_DICT
 from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.plot import plot_cut, plot_density
@@ -279,6 +279,9 @@ def parse_args():
                                  'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
                                  'KmeansCommunityDetection', 'QuantityDivision', 'HybridCommunityDetection',
                                  'TestCommunityDetection'])
+    parser.add_argument('-d', '--dataset', nargs='+', type=str, default=['Movielens100K'], help='dataset',
+                        choices=['Movielens100K', 'Movielens1M', 'MovielensHetrec2011', 'MovielensSample',
+                                 'MovielensSample2', 'MovielensSample3'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for quantity')
     parser.add_argument('-b', '--beta', type=float, default=0.0, help='beta for cascade')
@@ -306,10 +309,7 @@ if __name__ == '__main__':
     args = parse_args()
     CUT_RATIO = args.cut_ratio
     A1_LAYER = args.layer
-    data_reader_classes = [Movielens100KReader]
-    data_reader_classes = [MovielensSample3Reader]
-    data_reader_classes = [MovielensHetrec2011Reader]
-    # data_reader_classes = [Movielens1MReader]
+    data_reader_classes = [DATA_DICT[data_name] for data_name in args.dataset]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
                         #    LastFMHetrec2011Reader, FrappeReader, CiteULike_aReader, CiteULike_tReader]
     method_list = [METHOD_DICT[method_name] for method_name in args.method]
@@ -318,7 +318,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 6
+    num_iters = 9
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
