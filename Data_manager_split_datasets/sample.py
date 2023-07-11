@@ -32,7 +32,7 @@ DATA_FILE = {
 SOURCE_PATH = os.path.join(FILE_PATH, SOURCE)
 
 output = input("Output: ")
-output = output or "MovielensSample3"
+output = output or "MovielensSample4"
 output_folder = os.path.join(FILE_PATH, output)
 output_path = os.path.join(output_folder, 'ml-sample')
 
@@ -42,19 +42,21 @@ if not os.path.exists(output_path):
   # os.system(f'mkdir -r {OUTPUT_PATH}')
 
 num_user = input("number of user: ")
-num_item = input("number of item: ")
-num_user = int(num_user) if num_user else 240
-num_item = int(num_item) if num_item else 470
+# num_item = input("number of item: ")
+num_user = int(num_user) if num_user else 60
+# num_item = int(num_item) if num_item else 470
+num_item = NUM_ITEM
 users = random.sample(range(1, NUM_USER + 1), num_user)
-items = random.sample(range(1, NUM_ITEM + 1), num_item)
+# items = random.sample(range(1, NUM_ITEM + 1), num_item)
+items = range(1, num_item + 1)
 user_ratings = {}
 item_ratings = {}
 user_dict = {}
 item_dict = {}
 for i, id in enumerate(users):
-  user_dict[str(id)] = str(i)
+  user_dict[str(id)] = str(i + 1)
 for i, id in enumerate(items):
-  item_dict[str(id)] = str(i)
+  item_dict[str(id)] = str(i + 1)
 
 print("---unzip---")
 decompressed_path = os.path.join(SOURCE_PATH, 'decompressed')

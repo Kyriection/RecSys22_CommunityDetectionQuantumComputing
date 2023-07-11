@@ -222,6 +222,7 @@ def run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_path: 
                 'run_time': run_time,
             }
             users, items = m.get_comm_from_sample(sampleset.first.sample, n_users, n_items=n_items)
+            logging.info(f'({len(users)}, {len(items)}) run_time: {run_time}')
         else:
             users, items, run_time = m.run()
 
@@ -316,7 +317,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 9
+    num_iters = 3
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)

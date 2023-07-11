@@ -25,7 +25,6 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader, MovielensSample3Reader, DATA_DICT
-# from recsys.Evaluation.Evaluator import EvaluatorHoldout
 from recsys.Evaluation.EvaluatorSeparate import EvaluatorSeparate
 from recsys.Recommenders.BaseRecommender import BaseRecommender
 from recsys.Recommenders import SVRRecommender, LRRecommender, DTRecommender, RECOMMENDER_DICT
@@ -34,7 +33,6 @@ from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices, head_tail_cut
 from utils.plot import plot_line, plot_scatter, plot_divide, plot_metric
 from utils.derived_variables import create_related_variables
-# from results.read_results import print_result
 from results.plot_results import print_result
 
 logging.basicConfig(level=logging.INFO)
@@ -49,7 +47,6 @@ EVALUATE_FLAG = True
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
     method_folder_path = f'{folder_path}{method.name}/'
-    # method_folder_path = os.path.join(folder_path, method.name)
     folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
 
     try:
@@ -60,13 +57,12 @@ def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
         print('No communities found to load. Computing new communities...')
         communities = None
     return communities
-  
+
 
 def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_last_test, urm_test, ucm, icm, dataset_name: str,
                                results_folder_path: str):
     recommender_name = recommender.RECOMMENDER_NAME
     output_folder_path = f'{results_folder_path}{dataset_name}/{recommender_name}/'
-    # output_folder_path = os.path.join(results_folder_path, dataset_name, recommender_name)
 
     evaluator_test = EvaluatorSeparate(urm_test)
 
@@ -114,10 +110,8 @@ def train_recommender_on_community(recommender, community, urm_train, urm_valida
     output_folder_path = get_community_folder_path(method_folder_path, n_iter=n_iter, n_comm=n_comm,
                                                    folder_suffix=folder_suffix)
     output_folder_path = f'{output_folder_path}{recommender_name}/'
-    # output_folder_path = os.path.join(output_folder_path, recommender_name)
 
     base_recommender_path = f'{results_folder_path}{dataset_name}/{recommender_name}/'
-    # base_recommender_path = os.path.join(results_folder_path, dataset_name, recommender_name)
 
     c_urm_train, _, _, c_icm, c_ucm = get_community_urm(urm_train, community=community, filter_items=False, icm=icm, ucm=ucm)
     c_urm_validation, _, _ = get_community_urm(urm_validation, community=community, filter_items=False)
@@ -257,12 +251,12 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         for recommender in recommender_list:
             recommender_name = recommender.RECOMMENDER_NAME
             output_folder_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
-            # output_folder_path = os.path.join(result_folder_path, dataset_name, recommender_name)
             if not os.path.exists(f'{output_folder_path}baseline.zip') or not os.path.exists(
                     f'{output_folder_path}{recommender_name}_best_model_last.zip'):
                 train_all_data_recommender(recommender, t_urm_train_last_test, t_urm_test, t_ucm, t_icm, dataset_name, result_folder_path)
             else:
                 print(f'{recommender_name} already trained and evaluated on {dataset_name}.')
+
         for method in method_list:
             logging.info(f'------------start {method.name}----------')
             recommend_per_method(t_urm_train, t_urm_validation, t_urm_test, t_urm_train_last_test, t_ucm, t_icm, method, sampler_list,
@@ -416,7 +410,6 @@ def cd_recommendation(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, met
 def recommend_per_iter(urm_train, urm_validation, urm_test, cd_urm, ucm, icm, method, recommender_list, dataset_name, folder_path,
                        sampler: dimod.Sampler = None, communities: Communities = None, n_iter: int = 0, **kwargs):
     method_folder_path = f'{folder_path}{dataset_name}/{method.name}/'
-    # method_folder_path = os.path.join(folder_path, dataset_name, method.name)
     folder_suffix = '' if sampler is None else f'{sampler.__class__.__name__}/'
 
     print(f'///Training recommenders for iteration {n_iter} on {dataset_name} with {method.name} and {folder_suffix}//')

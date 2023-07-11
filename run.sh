@@ -305,10 +305,10 @@
 # time python LT_qa_recommendation.py $method --attribute -b $beta -o results-$tag > logs/ctqr-$tag.log 2>&1
 
 echo QUBOBipartiteProjectedCommunityDetection
-# time python LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ctcd-WPM.log 2>&1
+time python LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ctcd-WPM.log 2>&1
 # time python LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ctqr-WPM.log 2>&1
-time python LT_qa_run_community_detection.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ltqcd-WPM.log 2>&1
-# time python LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ctqr-WPM.log 2>&1
+# time python LT_qa_run_community_detection.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ltqcd-WPM.log 2>&1
+# time python LT_qa_cd_recommendation.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ltqr-WPM.log 2>&1
 
 
 # ------------- Cascade -------------

@@ -289,7 +289,8 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
   urm_all = merge_sparse_matrices(urm_train_last_test, urm_test)
   dataset = data_reader._get_dataset_name()
   dataset = os.path.abspath(result_folder_path + dataset)
-  sampler_list = [sampler.__class__.__name__ for sampler in sampler_list] + ['']
+  sampler_list = [sampler.__class__.__name__ for sampler in sampler_list] + ['']\
+               + [f'{sampler.__class__.__name__}_DWaveSampler' for sampler in sampler_list]
   # special for baseline
   path = os.path.join(dataset, recommender)
   file = os.path.join(path, 'baseline.zip')
