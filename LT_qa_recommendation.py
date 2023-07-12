@@ -34,6 +34,7 @@ from utils.urm import get_community_urm, load_data, merge_sparse_matrices, head_
 from utils.plot import plot_line, plot_scatter, plot_divide, plot_metric
 from utils.derived_variables import create_related_variables
 from results.plot_results import print_result
+import utils.seed
 
 logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
@@ -470,11 +471,11 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
         logging.debug(f'clean {hybrid_folder_path}')
         if os.path.exists(hybrid_folder_path):
             shutil.rmtree(hybrid_folder_path)
-        # for recommender in recommender_list:
-        #     recommender_folder_path = os.path.join(dataset_folder_path, recommender.RECOMMENDER_NAME)
-        #     logging.debug(f'clean {recommender_folder_path}')
-        #     if os.path.exists(recommender_folder_path):
-        #         shutil.rmtree(recommender_folder_path)
+        for recommender in recommender_list:
+            recommender_folder_path = os.path.join(dataset_folder_path, recommender.RECOMMENDER_NAME)
+            logging.debug(f'clean {recommender_folder_path}')
+            if os.path.exists(recommender_folder_path):
+                shutil.rmtree(recommender_folder_path)
         for method in method_list:
             method_folder_path = f'{dataset_folder_path}{method.name}/'
             if not os.path.exists(method_folder_path):
@@ -539,7 +540,6 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
-    # clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
+    clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    # save_results(data_reader_classes, result_folder_path, method_list, args.T, args.alpha, args.cut_ratio)
     save_results(data_reader_classes, result_folder_path, method_list, sampler_list, recommender_list, args.T, args.alpha, args.beta, args.cut_ratio)

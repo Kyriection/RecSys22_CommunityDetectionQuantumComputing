@@ -23,6 +23,7 @@ from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.plot import plot_cut, plot_density
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_urm_info, head_tail_cut
+import utils.seed
 
 
 logging.basicConfig(level=logging.INFO)

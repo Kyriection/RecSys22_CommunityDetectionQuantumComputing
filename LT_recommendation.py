@@ -34,6 +34,7 @@ from utils.urm import get_community_urm, load_data, merge_sparse_matrices
 from utils.plot import plot_line, plot_scatter
 from utils.derived_variables import create_related_variables
 from results.plot_results import print_result
+import utils.seed
 
 logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None

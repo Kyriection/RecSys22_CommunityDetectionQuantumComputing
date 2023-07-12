@@ -37,6 +37,7 @@ from utils.derived_variables import create_related_variables
 from results.plot_results import print_result
 from LT_qa_recommendation import load_communities, train_all_data_recommender, evaluate_recommender, \
     train_recommender_on_community, recommend_per_method
+import utils.seed
 
 
 logging.basicConfig(level=logging.INFO)

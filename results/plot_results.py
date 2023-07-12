@@ -70,7 +70,8 @@ def plot(output_folder_path, show: bool = False):
        return
     df_total.to_csv(os.path.join(output_folder_path, f'total_MAE_RMSE.csv'))
     # df_tail.to_csv(os.path.join(output_folder_path, f'tail_MAE_RMSE.csv'))
-    logging.info(f'save results in {output_folder_path}')
+    # logging.info(f'save results in {output_folder_path}')
+    print(f'save results in {output_folder_path}')
     if show:
       print(df_total)
     for key in DATA:
@@ -104,7 +105,8 @@ def collect_data(urm, n_iter, result_df, result_df_ei = None):
       cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CT)]
       head_user_mask = C_quantity > cut_quantity
       tail_user_mask = ~head_user_mask
-      logging.info(f'collect_data: cut at {cut_quantity}, head size: {np.sum(head_user_mask)}, tail size: {np.sum(tail_user_mask)}')
+      # logging.info(f'collect_data: cut at {cut_quantity}, head size: {np.sum(head_user_mask)}, tail size: {np.sum(tail_user_mask)}')
+      print(f'collect_data: cut at {cut_quantity}, head size: {np.sum(head_user_mask)}, tail size: {np.sum(tail_user_mask)}')
       data = np.zeros((C_quantity.size, 3)) # [MAE, MSE, num_rating]
       # print(result_df_ei.values.shape, result_df.values.shape)
       if result_df_ei is not None:
@@ -172,6 +174,7 @@ def collect_data(urm, n_iter, result_df, result_df_ei = None):
         WMAE_data.append(round(tot_wmae / (i + 1), 4))
         WRMSE_data.append(round(np.sqrt(tot_wmse / (i + 1)), 4))
     # accumulate error rate from tail to head
+    # print(f'n_iter={n_iter}, len(x)={len(x)}, len(MAE_data)={len(MAE_data)}')
     DATA['Number of tail items']['x'] = x
     DATA['Number of tail items']['MAE'][n_iter] = MAE_data
     DATA['Number of tail items']['RMSE'][n_iter] = RMSE_data
@@ -319,6 +322,7 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
     dir_file.sort()
     # for m in METHOD:
     for m in sampler_list:
+      print(f'collecting: {path}/iter/{m}')
       # if show:
         # print(m)
       init_global_data()

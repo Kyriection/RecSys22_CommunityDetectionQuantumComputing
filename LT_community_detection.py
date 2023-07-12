@@ -22,6 +22,7 @@ from utils.DataIO import DataIO
 from utils.types import Iterable, Type
 from utils.plot import plot_cut, plot_density
 from utils.urm import get_community_urm, load_data, merge_sparse_matrices, show_urm_info, head_tail_cut
+import utils.seed
 
 
 logging.basicConfig(level=logging.INFO)
@@ -292,16 +293,24 @@ def parse_args():
     return args
 
 
-def clean_results(result_folder_path, data_reader_classes, method_list):
+def clean_results(result_folder_path, data_reader_classes, method_list, sampler_list):
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
         dataset_folder_path = f'{result_folder_path}{dataset_name}/'
         for method in method_list:
             method_folder_path = f'{dataset_folder_path}{method.name}/'
-            if os.path.exists(method_folder_path):
-                logging.debug(f'rm {method_folder_path}')
-                shutil.rmtree(method_folder_path)
+            if not os.path.exists(method_folder_path):
+                continue
+            for iter_folder in os.listdir(method_folder_path):
+                iter_path = os.path.join(method_folder_path, iter_folder)
+                if not os.path.isdir(iter_path):
+                    continue
+                for sampler in sampler_list:
+                    sampler_path = os.path.join(iter_path, sampler.__class__.__name__)
+                    if os.path.exists(sampler_path):
+                        logging.debug(f'rm {sampler_path}')
+                        shutil.rmtree(sampler_path)
 
 
 if __name__ == '__main__':
@@ -317,7 +326,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 3
+    num_iters = 7
     result_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
@@ -333,5 +342,5 @@ if __name__ == '__main__':
         for i, method in enumerate(method_list):
             method_list[i] = get_cascade_class(method)
             method_list[i].set_beta(args.beta)
-    # clean_results(result_folder_path, data_reader_classes, method_list)
+    clean_results(result_folder_path, data_reader_classes, method_list, sampler_list)
     main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)
