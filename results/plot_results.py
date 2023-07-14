@@ -272,10 +272,10 @@ def collect_data(urm, n_iter, result_df, result_df_ei = None):
     DATA['cluster']['RMSE'][n_iter] = RMSE_data
 
 
-def extract_file(file, cur):
+def extract_file(file, tmp):
   try:
     z = zipfile.ZipFile(file, 'r') 
-    file_path = z.extract(RESULT, path=cur + "/decompressed")
+    file_path = z.extract(RESULT, path=tmp)
     result_df = pd.read_csv(file_path, index_col="user")
     return result_df
   except FileNotFoundError as e:
@@ -311,12 +311,7 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
       print(method.name)
       # print("N", COL)
     # print(path)
-    if output_folder is None:
-      output_path = os.path.join(path, output_tag)
-    else:
-      output_path = os.path.join(output_folder, method.name, output_tag)
-    if not os.path.exists(output_path):
-      os.system(f'mkdir -p {output_path}')
+    
 
     dir_file = os.listdir(path)
     dir_file.sort()
@@ -357,13 +352,19 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
             except:
               continue
         file = os.path.join(tmp, f'cd_{recommender}.zip')
-        result_df = extract_file(file, cur)
+        result_df = extract_file(file, tmp)
         if result_df is None:
            continue
         # logging.info(f'extract_file({file}), resutl_df is None: {result_df is None}')
         TOTAL_DATA['C'][N] = C + 1
         collect_data(urm_all, N, result_df, result_df_ei)
 
+      if output_folder is None:
+        output_path = os.path.join(path, m, output_tag)
+      else:
+        output_path = os.path.join(output_folder, method.name, m, output_tag)
+      if not os.path.exists(output_path):
+        os.system(f'mkdir -p {output_path}')
       plot(output_path, show)
 
 
