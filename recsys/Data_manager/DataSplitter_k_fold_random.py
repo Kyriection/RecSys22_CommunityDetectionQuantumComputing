@@ -131,6 +131,9 @@ class DataSplitter_k_fold_random(_DataSplitter):
         # print("\n")
         #
 
+    def get_statistics_UCM(self):
+        pass
+
     #
     # def get_fold_split(self):
     #     self._assert_is_initialized()

@@ -120,7 +120,7 @@ class DataIO(object):
 
             for attrib_name, attrib_data in data_dict_to_save.items():
 
-                current_file_path = current_temp_folder + attrib_name
+                current_file_path = current_temp_folder + str(attrib_name)
 
                 if isinstance(attrib_data, DataFrame):
                     # attrib_data.to_hdf(current_file_path + ".h5", key="DataFrame", mode='w', append = False, format="table")
