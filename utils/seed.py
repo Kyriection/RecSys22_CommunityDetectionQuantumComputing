@@ -1,3 +1,3 @@
 import numpy as np
 
-np.random.seed(7)
+np.random.seed(0)

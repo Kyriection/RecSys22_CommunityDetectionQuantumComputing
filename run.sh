@@ -310,25 +310,25 @@
 # time python LT_qa_run_community_detection.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ltqcd-WPM.log 2>&1
 # time python LT_qa_cd_recommendation.py QUBOBipartiteProjectedCommunityDetection -d MovielensSample3 -o results/WPM > logs/ltqr-WPM.log 2>&1
 
-echo QUBOBipartiteProjectedCommunityDetection
-time python LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctcd-WPM.log 2>&1
-time python LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
+# echo QUBOBipartiteProjectedCommunityDetection
+# time python LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctcd-WPM.log 2>&1
+# time python LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
  
 # ------------- Cascade -------------
 # beta_list=(0.03125)
 # beta_list=(0.5 0.25 0.125 0.0625 0.03125 0.015625)
-beta_list=(0.0625 0.03125 0.015625)
-method_list=(QUBOBipartiteProjectedCommunityDetection)
-for method in ${method_list[*]}
-do
-  for beta in ${beta_list[*]}
-  do
-    tag=Cascade-$method-$beta
-    echo $tag
-    time python LT_community_detection.py $method --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
-    time python LT_qa_recommendation.py   $method --attribute -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
-  done
-done
+# beta_list=(0.0625 0.03125 0.015625)
+# method_list=(QUBOBipartiteProjectedCommunityDetection)
+# for method in ${method_list[*]}
+# do
+#   for beta in ${beta_list[*]}
+#   do
+#     tag=Cascade-$method-$beta
+#     echo $tag
+#     time python LT_community_detection.py $method --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
+#     time python LT_qa_recommendation.py   $method --attribute -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
+#   done
+# done
 
 # echo Kmeans Bipartite w/o attribute
 # time python LT_community_detection.py KmeansCommunityDetection -o results/Kmeans-B > logs/ctcd-Kmeans-B.log 2>&1
@@ -362,5 +362,24 @@ done
 #       # time python LT_community_detection.py $method --attribute -b $beta -c $cut -o results/$tag > logs/ctcd-$tag.log 2>&1
 #       time python LT_qa_recommendation.py $method -r LRRecommender --attribute -b $beta -c $cut -o results/$tag > logs/ctqr-$tag.log 2>&1
 #     done
+#   done
+# done
+
+
+echo QUBOBipartiteProjectedCommunityDetection
+time python kfold_LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctcd-WPM.log 2>&1
+time python kfold_LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
+ 
+# ------------- Cascade -------------
+# beta_list=(0.125 0.0625 0.03125 0.015625)
+# method_list=(QUBOBipartiteProjectedCommunityDetection)
+# for method in ${method_list[*]}
+# do
+#   for beta in ${beta_list[*]}
+#   do
+#     tag=Cascade-$method-$beta
+#     echo $tag
+#     time python kfold_LT_community_detection.py $method --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
+#     time python kfold_LT_qa_recommendation.py   $method --attribute -b $beta -o results/$tag > logs/ctqr-$tag.log 2>&1
 #   done
 # done
