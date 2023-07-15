@@ -366,9 +366,14 @@
 # done
 
 
+# echo QUBOBipartiteProjectedCommunityDetection
+# time python kfold_LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctcd-WPM.log 2>&1
+# time python kfold_LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
 echo QUBOBipartiteProjectedCommunityDetection
-time python kfold_LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctcd-WPM.log 2>&1
-time python kfold_LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -o results/WPM > logs/ctqr-WPM.log 2>&1
+n_folds=5
+dataset=MovielensSample3
+time python kfold_LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM > logs/ctcd-WPM.log 2>&1
+time python kfold_LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM > logs/ctqr-WPM.log 2>&1
  
 # ------------- Cascade -------------
 # beta_list=(0.125 0.0625 0.03125 0.015625)

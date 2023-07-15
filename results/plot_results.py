@@ -12,7 +12,7 @@ p = os.path.abspath('.')
 sys.path.insert(1, p)
 
 from utils.plot import plot_line, plot_scatter, plot_line_xticks
-from utils.urm import get_community_urm, load_data, merge_sparse_matrices
+from utils.urm import get_community_urm, load_data, merge_sparse_matrices, load_data_k_fold
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader
@@ -97,9 +97,8 @@ def plot(output_folder_path, show: bool = False):
           plot_line(x, WRMSE_data, output_folder_path, key, 'W-RMSE')
 
 
-def collect_data(urm, n_iter, result_df, result_df_ei = None):
+def collect_data(C_quantity, n_iter, result_df, result_df_ei = None):
     global MIN_RATING_NUM, PLOT_CUT, CT, STEP
-    C_quantity = np.ediff1d(urm.tocsr().indptr) # count of each row
     # if result_df_ei is not None:
     if CT > 0.0:
       cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CT)]
@@ -282,24 +281,24 @@ def extract_file(file, tmp):
     print(e)
     return None
 
-def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recommender: str = 'LRRecommender',show: bool = False, output_folder: str = None, output_tag: str = None, result_folder_path: str = './results/'):
+def print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler_list,
+                  recommender: str = 'LRRecommender', show: bool = False, output_folder: str = None,
+                  output_tag: str = None, result_folder_path: str = './results/'):
   global CT
   CT = cut_ratio
-  data_reader = data_reader_class()
-  urm_train, urm_validation, urm_test = load_data(data_reader, [80, 10, 10], False, False)
-  urm_train, urm_validation, urm_test = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr()# item is main charactor
-  urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
-  urm_all = merge_sparse_matrices(urm_train_last_test, urm_test)
-  dataset = data_reader._get_dataset_name()
+  dataset = data_reader_class.DATASET_SUBFOLDER
   dataset = os.path.abspath(result_folder_path + dataset)
-  sampler_list = [sampler.__class__.__name__ for sampler in sampler_list] + ['']\
-               + [f'{sampler.__class__.__name__}_DWaveSampler' for sampler in sampler_list]
+  if sampler_list:
+    sampler_list = [sampler.__class__.__name__ for sampler in sampler_list]\
+                 + [f'{sampler.__class__.__name__}_DWaveSampler' for sampler in sampler_list]
+  else:
+    sampler_list = ['']
   # special for baseline
   path = os.path.join(dataset, recommender)
   file = os.path.join(path, 'baseline.zip')
   result_df_total = extract_file(file, path)
   if result_df_total is not None:
-    collect_data(urm_all, -1, result_df_total)
+    collect_data(C_quantity, -1, result_df_total)
     plot(path, show)
   # for method in QUBO:
   # for method in os.listdir(dataset):
@@ -322,7 +321,7 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
         # print(m)
       init_global_data()
       TOTAL_DATA['C'][0] = 1
-      collect_data(urm_all, 0, result_df_total)
+      collect_data(C_quantity, 0, result_df_total)
       result_df_ei = None
       if CT > 0.0:
         name = 'iter-1'
@@ -357,7 +356,7 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
            continue
         # logging.info(f'extract_file({file}), resutl_df is None: {result_df is None}')
         TOTAL_DATA['C'][N] = C + 1
-        collect_data(urm_all, N, result_df, result_df_ei)
+        collect_data(C_quantity, N, result_df, result_df_ei)
 
       if output_folder is None:
         output_path = os.path.join(path, m, output_tag)
@@ -366,6 +365,82 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
       if not os.path.exists(output_path):
         os.system(f'mkdir -p {output_path}')
       plot(output_path, show)
+
+
+def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recommender: str = 'LRRecommender',
+                 show: bool = False, output_folder: str = None, output_tag: str = None, 
+                 result_folder_path: str = './results/'):
+  '''
+  TODO: load_data() arguments: user_wise, make_implicit, threshold
+  '''
+  global CT
+  CT = cut_ratio
+  data_reader = data_reader_class()
+  urm_train, urm_validation, urm_test = load_data(data_reader, [80, 10, 10], False, False)
+  urm_train, urm_validation, urm_test = urm_train.T.tocsr(), urm_validation.T.tocsr(), urm_test.T.tocsr()
+  urm_train_last_test = merge_sparse_matrices(urm_train, urm_validation)
+  urm_all = merge_sparse_matrices(urm_train_last_test, urm_test)
+  C_quantity = np.ediff1d(urm_all.tocsr().indptr) # count of each row
+  print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler_list, recommender,
+                show, output_folder, output_tag, result_folder_path)
+
+
+def print_result_k_fold(data_reader_class, method_list, sampler_list, recommender: str = 'LRRecommender',
+                        output_folder: str = None, output_tag: str = None, results_folder_path: str = './results/',
+                        n_folds: int = 5):
+  dataset = data_reader_class.DATASET_SUBFOLDER
+  if sampler_list:
+    sampler_list = [sampler.__class__.__name__ for sampler in sampler_list]\
+                 + [f'{sampler.__class__.__name__}_DWaveSampler' for sampler in sampler_list]
+  else:
+    sampler_list = ['']
+  for method in method_list:
+    for m in sampler_list:
+      df_list = [None] * n_folds
+      df_flag = True
+      for k in range(n_folds):
+        result_folder_path = f'{results_folder_path}fold-{k:02d}/'
+        dataset_path = os.path.abspath(result_folder_path + dataset)
+        path = os.path.join(dataset_path, method.name)
+        if output_folder is None:
+          output_path = os.path.join(path, m, output_tag)
+        else:
+          output_path = os.path.join(output_folder, method.name, m, output_tag)
+        try:
+          df_list[k] = pd.read_csv(os.path.join(output_path, f'total_MAE_RMSE.csv'))
+        except Exception as e:
+          df_flag = False
+          print(e)
+          break
+      if not df_flag:
+        print(f'{dataset}/{method}/{m}: fail to read n_folds results.')
+        continue
+
+      df_sum = df_list[0]
+      df_min = df_list[0]
+      df_max = df_list[0]
+      for i in range(1, n_folds):
+        df_sum = df_sum + df_list[i]
+        for index in df_sum.index:
+          for column in df_sum.columns:
+            df_min.loc[index, column] = min(df_min.loc[index, column], df_list[i].loc[index, column])
+            df_max.loc[index, column] = max(df_max.loc[index, column], df_list[i].loc[index, column])
+      df_mean = df_sum / n_folds
+      for index in df_mean.index:
+        for column in df_mean.columns:
+          val_min = df_min.loc[index, column]
+          val_max = df_max.loc[index, column]
+          val_mean = df_mean.loc[index, column]
+          val_error = max(val_mean - val_min, val_max - val_mean)
+          df_mean.loc[index, column] = f'{val_mean:.4f}±{val_error:.4f}'
+      
+      result_folder_path = './results/'
+      dataset_path = os.path.abspath(result_folder_path + dataset)
+      path = os.path.join(dataset_path, method.name)
+      output_path = os.path.join(path, m, output_tag)
+      os.makedirs(output_path, exist_ok=True)
+      print(f'save df_mean at {output_path}')
+      df_mean.to_csv(os.path.join(output_path, f'{n_folds}-fold-results.csv'))
 
 
 if __name__ == '__main__':

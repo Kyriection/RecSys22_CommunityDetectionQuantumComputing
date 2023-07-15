@@ -50,7 +50,7 @@ def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
 
 
 def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]],
-         sampler_list: Iterable[dimod.Sampler], result_folder_path: str, num_iters: int = 3):
+         sampler_list: Iterable[dimod.Sampler], results_folder_path: str, num_iters: int, n_folds: int):
     global CUT_RATIO
     user_wise = False
     make_implicit = True
@@ -69,18 +69,23 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
-        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+        for k in range(n_folds):
+            result_folder_path = f'{results_folder_path}fold-{k:02d}/'
+            dataset_folder_path = f'{result_folder_path}{dataset_name}/'
 
-        urm_train, urm_test, icm, ucm = load_data_k_fold(data_reader, user_wise=user_wise,
-                                                        make_implicit=make_implicit, threshold=threshold, icm_ucm=True)
-        # item is main charactor, and remove year from item comtext
-        urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm[:, :-1]
-        urm_all = merge_sparse_matrices(urm_train, urm_test)
-        _, _, _, _, urm_train, urm_test, icm, ucm = head_tail_cut_k_fold(CUT_RATIO, urm_all, urm_test, icm, ucm)
+            urm_train, urm_test, icm, ucm = load_data_k_fold(data_reader, user_wise=user_wise,make_implicit=make_implicit,
+                                                            threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
 
-        for method in method_list:
-            cd_per_method(urm_train, icm, ucm, method, sampler_list, dataset_folder_path, num_iters=num_iters,
-                          fit_args=fit_args, sampler_args=sampler_args, save_model=save_model)
+            urm_train, urm_test, icm, ucm = load_data_k_fold(data_reader, user_wise=user_wise,
+                                                            make_implicit=make_implicit, threshold=threshold, icm_ucm=True)
+            # item is main charactor, and remove year from item comtext
+            urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm[:, :-1]
+            urm_all = merge_sparse_matrices(urm_train, urm_test)
+            _, _, _, _, urm_train, urm_test, icm, ucm = head_tail_cut_k_fold(CUT_RATIO, urm_all, urm_test, icm, ucm)
+
+            for method in method_list:
+                cd_per_method(urm_train, icm, ucm, method, sampler_list, dataset_folder_path, num_iters=num_iters,
+                            fit_args=fit_args, sampler_args=sampler_args, save_model=save_model)
 
 
 def cd_per_method(cd_urm, icm, ucm, method, sampler_list, folder_path, num_iters=1, **kwargs):
@@ -284,6 +289,7 @@ def parse_args():
     parser.add_argument('-t', '--T', type=int, default=5, help='T for quantity')
     parser.add_argument('-l', '--layer', type=int, default=0, help='number of layer of quantity')
     parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
+    parser.add_argument('-k', '--kfolds', type=int, default=5, help='number of folds for dataset split.')
     parser.add_argument('--attribute', action='store_true', help='Use item attribute data (cascade) or not')
     args = parser.parse_args()
     return args
@@ -322,8 +328,8 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 7
-    result_folder_path = f'{os.path.abspath(args.ouput)}/'
+    num_iters = 3
+    results_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
     HybridCommunityDetection.set_beta(args.beta)
@@ -338,5 +344,5 @@ if __name__ == '__main__':
         for i, method in enumerate(method_list):
             method_list[i] = get_cascade_class(method)
             method_list[i].set_beta(args.beta)
-    clean_results(result_folder_path, data_reader_classes, method_list, sampler_list)
-    main(data_reader_classes, method_list, sampler_list, result_folder_path, num_iters=num_iters)
+    # clean_results(result_folder_path, data_reader_classes, method_list, sampler_list)
+    main(data_reader_classes, method_list, sampler_list, results_folder_path, num_iters=num_iters, n_folds=args.kfolds)

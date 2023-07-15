@@ -33,7 +33,7 @@ from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data_k_fold, merge_sparse_matrices, head_tail_cut_k_fold
 from utils.plot import plot_line, plot_scatter, plot_divide, plot_metric
 from utils.derived_variables import create_related_variables
-from results.plot_results import print_result
+from results.plot_results import print_result_, print_result_k_fold
 import utils.seed
 
 logging.basicConfig(level=logging.INFO)
@@ -58,9 +58,9 @@ def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
 
 
 def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_last_test, urm_test, ucm, icm, dataset_name: str,
-                               results_folder_path: str):
+                               result_folder_path: str):
     recommender_name = recommender.RECOMMENDER_NAME
-    output_folder_path = f'{results_folder_path}{dataset_name}/{recommender_name}/'
+    output_folder_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
 
     evaluator_test = EvaluatorSeparate(urm_test)
 
@@ -92,7 +92,7 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
 
 
 def train_recommender_on_community(recommender, community, urm_train, urm_test, ucm, icm, dataset_name,
-                                   results_folder_path, method_folder_path, n_iter=0, n_comm=None, folder_suffix='',
+                                   result_folder_path, method_folder_path, n_iter=0, n_comm=None, folder_suffix='',
                                    **kwargs):
     recommender_name = recommender.RECOMMENDER_NAME
     print(f'Training {recommender_name} on community {n_comm if n_comm is not None else ""} of iteration {n_iter}...')
@@ -104,7 +104,7 @@ def train_recommender_on_community(recommender, community, urm_train, urm_test, 
                                                    folder_suffix=folder_suffix)
     output_folder_path = f'{output_folder_path}{recommender_name}/'
 
-    base_recommender_path = f'{results_folder_path}{dataset_name}/{recommender_name}/'
+    base_recommender_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
 
     c_urm_train, _, _, c_icm, c_ucm = get_community_urm(urm_train, community=community, filter_items=False, icm=icm, ucm=ucm)
     c_urm_test, _, _ = get_community_urm(urm_test, community=community, filter_items=False)
@@ -178,7 +178,7 @@ def evaluate_recommender(urm_train_last_test, urm_test, ucm, icm, communities, r
 
 def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]],
          sampler_list: Iterable[dimod.Sampler], recommender_list: Iterable[Type[BaseRecommender]],
-         result_folder_path: str):
+         results_folder_path: str, n_folds: int, *args):
     global EI, CUT_RATIO
     user_wise = False
     make_implicit = False
@@ -199,38 +199,46 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
-        urm_train, urm_test, icm, ucm = load_data_k_fold(data_reader, user_wise=user_wise,
-                                                        make_implicit=make_implicit, threshold=threshold, icm_ucm=True)
+        for k in range(n_folds):
+            result_folder_path = f'{results_folder_path}fold-{k:02d}/'
 
-        urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm # item is main charactor
-        icm, ucm = create_related_variables(urm_train, icm, ucm) # should use urm_train_last_test ?
-        icm, ucm = sp.csr_matrix(icm), sp.csr_matrix(ucm)
+            urm_train, urm_test, icm, ucm = load_data_k_fold(data_reader, user_wise=user_wise,make_implicit=make_implicit,
+                                                            threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
 
-        h_urm_train, h_urm_test, h_icm, h_ucm,\
-        t_urm_train, t_urm_test, t_icm, t_ucm = \
-            head_tail_cut_k_fold(CUT_RATIO, urm_train, urm_test, icm, ucm)
-        head_flag = h_urm_train.shape[0] > 0
-        logging.info(f'head shape: {h_urm_train.shape}, tail shape: {t_urm_train.shape}')
+            # item is main charactor, and remove year from item comtext
+            urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm
+            icm, ucm = create_related_variables(urm_train, icm, ucm)
+            icm, ucm = sp.csr_matrix(icm), sp.csr_matrix(ucm)
 
-        for recommender in recommender_list:
-            recommender_name = recommender.RECOMMENDER_NAME
-            output_folder_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
-            if not os.path.exists(f'{output_folder_path}baseline.zip') or not os.path.exists(
-                    f'{output_folder_path}{recommender_name}_best_model_last.zip'):
-                train_all_data_recommender(recommender, t_urm_train, t_urm_test, t_ucm, t_icm, dataset_name, result_folder_path)
-            else:
-                print(f'{recommender_name} already trained and evaluated on {dataset_name}.')
+            h_urm_train, h_urm_test, h_icm, h_ucm,\
+            t_urm_train, t_urm_test, t_icm, t_ucm = \
+                head_tail_cut_k_fold(CUT_RATIO, urm_train, urm_test, icm, ucm)
+            head_flag = h_urm_train.shape[0] > 0
+            logging.info(f'head shape: {h_urm_train.shape}, tail shape: {t_urm_train.shape}')
 
-        for method in method_list:
-            logging.info(f'------------start {method.name}----------')
-            recommend_per_method(t_urm_train, t_urm_test, t_ucm, t_icm, method, sampler_list,
-                                 recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
-                                 save_model=save_model, each_item=EI)
-            if not head_flag or EI:
-                continue
-            recommend_per_method(h_urm_train, h_urm_test, h_ucm, h_icm, method, sampler_list,
-                                 recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
-                                 save_model=save_model, each_item=True)
+            for recommender in recommender_list:
+                recommender_name = recommender.RECOMMENDER_NAME
+                output_folder_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
+                if not os.path.exists(f'{output_folder_path}baseline.zip') or not os.path.exists(
+                        f'{output_folder_path}{recommender_name}_best_model_last.zip'):
+                    train_all_data_recommender(recommender, t_urm_train, t_urm_test, t_ucm, t_icm, dataset_name, result_folder_path)
+                else:
+                    print(f'{recommender_name} already trained and evaluated on {dataset_name}.')
+
+            for method in method_list:
+                logging.info(f'------------start {method.name}----------')
+                recommend_per_method(t_urm_train, t_urm_test, t_ucm, t_icm, method, sampler_list,
+                                    recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
+                                    save_model=save_model, each_item=EI)
+                if not head_flag or EI:
+                    continue
+                recommend_per_method(h_urm_train, h_urm_test, h_ucm, h_icm, method, sampler_list,
+                                    recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
+                                    save_model=save_model, each_item=True)
+
+    urm_all = merge_sparse_matrices(urm_train, urm_test)
+    C_quantity = np.ediff1d(urm_all.tocsr().indptr) # count of each row
+    save_results(data_reader_classes, results_folder_path, method_list, sampler_list, recommender_list, n_folds, C_quantity, *args)
 
 
 def recommend_per_method(urm_train, urm_test, ucm, icm, method, sampler_list, recommender_list,
@@ -310,6 +318,7 @@ def parse_args():
     parser.add_argument('-t', '--T', type=int, default=5, help='T for quantity')
     parser.add_argument('-l', '--layer', type=int, default=0, help='number of layer of quantity')
     parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
+    parser.add_argument('-k', '--kfolds', type=int, default=5, help='number of folds for dataset split.')
     parser.add_argument('--attribute', action='store_true', help='Use item attribute data (cascade) or not')
     args = parser.parse_args()
     return args
@@ -320,7 +329,6 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
         dataset_folder_path = f'{result_folder_path}{dataset_name}/'
-        # dataset_folder_path = os.path.join(result_folder_path, dataset_name)
         if not os.path.exists(dataset_folder_path):
             continue
         hybrid_folder_path = os.path.join(dataset_folder_path, 'Hybrid')
@@ -362,7 +370,7 @@ def clean_results(result_folder_path, data_reader_classes, method_list, sampler_
                                 shutil.rmtree(c_folder_path)
 
 
-def save_results(data_reader_classes, result_folder_path, method_list, sampler_list, recommender_list, *args):
+def save_results(data_reader_classes, results_folder_path, method_list, sampler_list, recommender_list, n_folds, C_quantity, *args):
     global CUT_RATIO
     tag = []
     for arg in args:
@@ -373,9 +381,13 @@ def save_results(data_reader_classes, result_folder_path, method_list, sampler_l
 
     for data_reader in data_reader_classes:
         dataset_name = data_reader.DATASET_SUBFOLDER
-        output_folder = os.path.join('./results/', dataset_name, 'results')
+        # output_folder = os.path.join('./results/', dataset_name, 'results')
+        output_folder = None
         for recommender in recommender_list:
-            print_result(CUT_RATIO, data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
+            for k in range(n_folds):
+                result_folder_path = f'{results_folder_path}fold-{k:02d}/'
+                print_result_(C_quantity, CUT_RATIO, data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
+        print_result_k_fold(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, n_folds)
 
 
 if __name__ == '__main__':
@@ -395,7 +407,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    result_folder_path = f'{os.path.abspath(args.ouput)}/'
-    clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
-    main(data_reader_classes, method_list, sampler_list, recommender_list, result_folder_path)
-    save_results(data_reader_classes, result_folder_path, method_list, sampler_list, recommender_list, args.T, args.alpha, args.beta, args.cut_ratio)
+    results_folder_path = f'{os.path.abspath(args.ouput)}/'
+    # clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
+    main(data_reader_classes, method_list, sampler_list, recommender_list, results_folder_path, args.kfolds,
+         args.T, args.alpha, args.beta, args.cut_ratio)

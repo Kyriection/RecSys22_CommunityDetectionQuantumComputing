@@ -399,7 +399,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
                                  save_model=save_model, each_item=EI)
             if not head_flag or EI:
-                return
+                continue
             recommend_per_method(h_urm_train, h_urm_validation, h_urm_test, h_urm_train_last_test, h_ucm, h_icm, method, sampler_list,
                                  recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
                                  save_model=save_model, each_item=True)
@@ -541,7 +541,7 @@ def save_results(data_reader_classes, result_folder_path, method_list, sampler_l
         dataset_name = data_reader.DATASET_SUBFOLDER
         output_folder = os.path.join('./results/', dataset_name, 'results')
         for recommender in recommender_list:
-            print_result(CUT_RATIO, data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
+            print_result(CUT_RATIO, data_reader, method_list, [], recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
 
 
 if __name__ == '__main__':
