@@ -1,6 +1,7 @@
 from CommunityDetection.Communities import Communities, get_community_folder_path, CommunitiesEI
 from CommunityDetection.Community import Community
 from CommunityDetection.BaseCommunityDetection import BaseCommunityDetection
+from CommunityDetection.EachItem import EachItem
 from CommunityDetection.QUBOBipartiteCommunityDetection import QUBOBipartiteCommunityDetection
 from CommunityDetection.QUBOBipartiteProjectedCommunityDetection import QUBOBipartiteProjectedCommunityDetection
 from CommunityDetection.QUBOBipartiteProjectedCommunityDetection2 import QUBOBipartiteProjectedCommunityDetection2
@@ -8,6 +9,7 @@ from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
 from CommunityDetection.CommunityDetectionRecommender import CommunityDetectionRecommender
 from CommunityDetection.UserCommunityDetection import UserCommunityDetection
 from CommunityDetection.KmeansCommunityDetection import KmeansCommunityDetection
+from CommunityDetection.KmeansBipartiteCommunityDetection import KmeansBipartiteCommunityDetection
 from CommunityDetection.HierarchicalClustering import HierarchicalClustering
 from CommunityDetection.QUBOGraphCommunityDetection import QUBOGraphCommunityDetection
 from CommunityDetection.QUBOProjectedCommunityDetection import QUBOProjectedCommunityDetection
@@ -26,10 +28,10 @@ from CommunityDetection.MultiHybridCommunityDetection import MultiHybridCommunit
 from CommunityDetection.CascadeCommunityDetection import get_cascade_class
 
 METHOD_LIST = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection, UserCommunityDetection, \
-               KmeansCommunityDetection, QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, \
+               KmeansCommunityDetection, QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, EachItem, \
                HybridCommunityDetection, MultiHybridCommunityDetection, QUBOBipartiteProjectedItemCommunityDetection, \
-               SpectralClustering, LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection, \
-               QuantityDivision, UserBipartiteCommunityDetection, TestCommunityDetection]
+               KmeansBipartiteCommunityDetection, LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection, \
+               QuantityDivision, UserBipartiteCommunityDetection, TestCommunityDetection, SpectralClustering]
 METHOD_DICT = {method.name : method for method in METHOD_LIST}
 
 class EmptyCommunityError(Exception):

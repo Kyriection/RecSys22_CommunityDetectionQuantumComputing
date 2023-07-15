@@ -10,7 +10,7 @@ class Clusters:
         self.n_users = n_users
         self.n_items = n_items
         self.communities_list = []
-        self.num_iters = 0
+        self.num_iters = -1
     
     def add_iteration(self, clusters: List[List[int]]):
         items = np.arange(self.n_items)
@@ -30,5 +30,6 @@ class Clusters:
     
     def iter(self, n_iter: int = None):
         if n_iter is None:
-            n_iter = self.num_iters - 1
+            n_iter = self.num_iters
+        assert n_iter <= self.num_iters, f'n_iter({n_iter}) >= self.num_iters({self.num_iters})'
         return self.communities_list[n_iter]

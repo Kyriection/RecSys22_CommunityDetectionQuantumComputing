@@ -13,6 +13,7 @@ import numpy as np
 import scipy.sparse as sp
 import tabu
 from dwave.system import LeapHybridSampler
+from sklearn.cluster import KMeans, SpectralClustering
 
 from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, CommunityDetectionRecommender, \
@@ -21,7 +22,7 @@ from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDet
     HybridCommunityDetection, MultiHybridCommunityDetection, QUBONcutCommunityDetection, \
     SpectralClustering, QUBOBipartiteProjectedItemCommunityDetection, CommunitiesEI, \
     LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection, QuantityDivision, \
-    METHOD_DICT, get_cascade_class, UserBipartiteCommunityDetection
+    METHOD_DICT, get_cascade_class, UserBipartiteCommunityDetection, Clusters, EachItem
 from recsys.Data_manager import Movielens100KReader, Movielens1MReader, FilmTrustReader, FrappeReader, \
     MovielensHetrec2011Reader, LastFMHetrec2011Reader, CiteULike_aReader, CiteULike_tReader, \
     MovielensSampleReader, MovielensSample2Reader, MovielensSample3Reader, DATA_DICT
@@ -41,6 +42,38 @@ CUT_RATIO: float = None
 EI: bool = False # EI if True else (TC or CT)
 MIN_RATINGS_PER_USER = 1
 EVALUATE_FLAG = True
+N_CLUSTER = [2**(i+1) for i in range(3)]
+
+
+def load_classical_communities(urm, ucm, method):
+    n_users, n_items = urm.shape
+    communities = Clusters(n_users, n_items)
+    X = urm
+    if 'Cascade' in method.name:
+        X = sp.hstack((urm, ucm))
+    for n_clusters in tqdm.tqdm(N_CLUSTER, desc='load_communities'):
+        if n_clusters >= n_users:
+            break
+        clusters = [[] for i in range(n_clusters)]
+        model = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
+        # model = SpectralClustering(n_clusters=n_clusters, random_state=0).fit(X)
+        # model = SpectralClustering(
+        #     n_clusters=n_clusters,
+        #     eigen_solver='arpack',
+        #     # eigen_solver='lobpcg',
+        #     # eigen_solver='amg',
+        #     random_state=0,
+        #     assign_labels='discretize',
+        #     # affinity = 'precomputed', 
+        #     # n_init=1000,
+        # ).fit(X)
+        for i, cluster in enumerate(model.labels_):
+            clusters[cluster].append(i)
+        communities.add_iteration(clusters)
+        cnt = sum([1 if len(cluster) > 0 else 0 for cluster in clusters])
+        logging.info(f'n_clusters = {n_clusters}, cnt = {cnt}.')
+    
+    return communities
 
 
 def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
@@ -254,21 +287,25 @@ def recommend_per_method(urm_train, urm_test, ucm, icm, method, sampler_list, re
 
 def cd_recommendation(urm_train, urm_test, ucm, icm, method, recommender_list, dataset_name, folder_path,
                       sampler: dimod.Sampler = None, each_item: bool = False, **kwargs):
-    dataset_folder_path = f'{folder_path}{dataset_name}/'
-    communities = load_communities(dataset_folder_path, method, sampler)
-    if communities is None:
-        print(f'Could not load communitites for {dataset_folder_path}, {method}, {sampler}.')
-        return
-
     if each_item:
         n_users, n_items = urm_train.shape
         recommend_per_iter(urm_train, urm_test, ucm, icm, method, recommender_list, dataset_name,
                            folder_path, sampler=sampler, communities=CommunitiesEI(n_users, n_items), n_iter=-1, **kwargs)
+        return
+
+    if 'KmeansCommunityDetection' in method.name:
+        communities = load_classical_communities(urm_train, ucm, method)
     else:
-        num_iters = communities.num_iters + 1
-        for n_iter in range(num_iters):
-            recommend_per_iter(urm_train, urm_test, ucm, icm, method, recommender_list, dataset_name,
-                               folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
+        dataset_folder_path = f'{folder_path}{dataset_name}/'
+        communities = load_communities(dataset_folder_path, method, sampler)
+        if communities is None:
+            print(f'Could not load communitites for {dataset_folder_path}, {method}, {sampler}.')
+            return
+
+    num_iters = communities.num_iters + 1
+    for n_iter in range(num_iters):
+        recommend_per_iter(urm_train, urm_test, ucm, icm, method, recommender_list, dataset_name,
+                           folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
     # plot_metric(communities, method_folder_path)
     
 
@@ -306,7 +343,7 @@ def parse_args():
                         choices=['QUBOBipartiteCommunityDetection', 'QUBOBipartiteProjectedCommunityDetection',
                                  'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
                                  'KmeansCommunityDetection', 'QuantityDivision', 'HybridCommunityDetection',
-                                 'TestCommunityDetection'])
+                                 'KmeansBipartiteCommunityDetection', 'EachItem', 'TestCommunityDetection'])
     parser.add_argument('-r', '--recommender', nargs='+', type=str, default=['LRRecommender'], help='recommender',
                         choices=['LRRecommender', 'SVRRecommender', 'DTRecommender'])
     parser.add_argument('-d', '--dataset', nargs='+', type=str, default=['Movielens100K'], help='dataset',
@@ -320,6 +357,7 @@ def parse_args():
     parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
     parser.add_argument('-k', '--kfolds', type=int, default=5, help='number of folds for dataset split.')
     parser.add_argument('--attribute', action='store_true', help='Use item attribute data (cascade) or not')
+    parser.add_argument('--EI', action='store_true', help='Each Item')
     args = parser.parse_args()
     return args
 
@@ -392,6 +430,7 @@ def save_results(data_reader_classes, results_folder_path, method_list, sampler_
 
 if __name__ == '__main__':
     args = parse_args()
+    EI = args.EI
     CUT_RATIO = args.cut_ratio
     data_reader_classes = [DATA_DICT[data_name] for data_name in args.dataset]
     # data_reader_classes = [Movielens100KReader, Movielens1MReader, FilmTrustReader, MovielensHetrec2011Reader,
@@ -410,4 +449,4 @@ if __name__ == '__main__':
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
     # clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
     main(data_reader_classes, method_list, sampler_list, recommender_list, results_folder_path, args.kfolds,
-         args.T, args.alpha, args.beta, args.cut_ratio)
+         args.T, args.alpha, args.beta)

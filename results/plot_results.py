@@ -48,7 +48,7 @@ def init_global_data():
 def process_total_data():
   print(TOTAL_DATA)
   if len(TOTAL_DATA['C']) == 0 or\
-    (len(TOTAL_DATA['C']) == 1 and list(TOTAL_DATA['C'].keys())[0] == 0):
+    (len(TOTAL_DATA['C']) == 1 and list(TOTAL_DATA['C'].values())[0] == 1):
     return None, None
   for key in ['MAE', 'RMSE', 'W-MAE', 'W-RMSE']:
     values = TOTAL_DATA[key].values()
@@ -288,16 +288,15 @@ def print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler
   CT = cut_ratio
   dataset = data_reader_class.DATASET_SUBFOLDER
   dataset = os.path.abspath(result_folder_path + dataset)
-  if sampler_list:
-    sampler_list = [sampler.__class__.__name__ for sampler in sampler_list]\
-                 + [f'{sampler.__class__.__name__}_DWaveSampler' for sampler in sampler_list]
-  else:
-    sampler_list = ['']
+  sampler_list = [sampler.__class__.__name__ for sampler in sampler_list]\
+               + [f'{sampler.__class__.__name__}_DWaveSampler' for sampler in sampler_list]
   # special for baseline
   path = os.path.join(dataset, recommender)
   file = os.path.join(path, 'baseline.zip')
   result_df_total = extract_file(file, path)
   if result_df_total is not None:
+    init_global_data()
+    TOTAL_DATA['C'][-1] = 0
     collect_data(C_quantity, -1, result_df_total)
     plot(path, show)
   # for method in QUBO:
@@ -310,12 +309,15 @@ def print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler
       print(method.name)
       # print("N", COL)
     # print(path)
-    
 
     dir_file = os.listdir(path)
     dir_file.sort()
-    # for m in METHOD:
-    for m in sampler_list:
+
+    if 'Kmeans' in method.name or method.name in ['EachItem']:
+      sampler_name_list = ['']
+    else:
+      sampler_name_list = sampler_list
+    for m in sampler_name_list:
       print(f'collecting: {path}/iter/{m}')
       # if show:
         # print(m)
@@ -332,7 +334,7 @@ def print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler
         result_df_ei = extract_file(file, cur)
       for name in dir_file:
         d = os.path.join(path, name)
-        if not os.path.isdir(d):
+        if len(name) < 4 or name[:4] != 'iter' or not os.path.isdir(d):
           continue
         # print(d)
         cur = os.path.join(path, d)
@@ -341,6 +343,7 @@ def print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler
         if not os.path.exists(tmp):
           continue
         N = int(name[4:]) + 1
+        #print(f'---------N={N}------------')
         if CT > 0.0 and N == 0:
            continue
         C = 0
@@ -388,14 +391,16 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
 def print_result_k_fold(data_reader_class, method_list, sampler_list, recommender: str = 'LRRecommender',
                         output_folder: str = None, output_tag: str = None, results_folder_path: str = './results/',
                         n_folds: int = 5):
+  print('---------print_result_k_fold--------------')
   dataset = data_reader_class.DATASET_SUBFOLDER
-  if sampler_list:
-    sampler_list = [sampler.__class__.__name__ for sampler in sampler_list]\
-                 + [f'{sampler.__class__.__name__}_DWaveSampler' for sampler in sampler_list]
-  else:
-    sampler_list = ['']
+  sampler_list = [sampler.__class__.__name__ for sampler in sampler_list]\
+               + [f'{sampler.__class__.__name__}_DWaveSampler' for sampler in sampler_list]
   for method in method_list:
-    for m in sampler_list:
+    if 'Kmeans' in method.name or method.name in ['EachItem']:
+      sampler_name_list = ['']
+    else:
+      sampler_name_list = sampler_list
+    for m in sampler_name_list:
       df_list = [None] * n_folds
       df_flag = True
       for k in range(n_folds):
@@ -413,7 +418,7 @@ def print_result_k_fold(data_reader_class, method_list, sampler_list, recommende
           print(e)
           break
       if not df_flag:
-        print(f'{dataset}/{method}/{m}: fail to read n_folds results.')
+        print(f'{dataset}/{method.name}/{m}: fail to read n_folds results.')
         continue
 
       df_sum = df_list[0]

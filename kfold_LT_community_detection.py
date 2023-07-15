@@ -10,7 +10,7 @@ from dwave.system import LeapHybridSampler
 
 from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
-    UserCommunityDetection, KmeansCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, \
+    UserCommunityDetection, HierarchicalClustering, QUBOGraphCommunityDetection, KmeansBipartiteCommunityDetection, \
     QUBOProjectedCommunityDetection, HybridCommunityDetection, QUBONcutCommunityDetection, SpectralClustering, \
     QUBOBipartiteProjectedItemCommunityDetection, LTBipartiteProjectedCommunityDetection, QuantityDivision, \
     QUBOBipartiteProjectedCommunityDetection2, LTBipartiteCommunityDetection, METHOD_DICT, CascadeCommunityDetection, \
@@ -278,8 +278,8 @@ def parse_args():
     parser.add_argument('method', nargs='+', type=str, help='method',
                         choices=['QUBOBipartiteCommunityDetection', 'QUBOBipartiteProjectedCommunityDetection',
                                  'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
-                                 'KmeansCommunityDetection', 'QuantityDivision', 'HybridCommunityDetection',
-                                 'TestCommunityDetection'])
+                                 'KmeansBipartiteCommunityDetection', 'HybridCommunityDetection',
+                                 'QuantityDivision', 'TestCommunityDetection'])
     parser.add_argument('-d', '--dataset', nargs='+', type=str, default=['Movielens100K'], help='dataset',
                         choices=['Movielens100K', 'Movielens1M', 'MovielensHetrec2011', 'MovielensSample',
                                  'MovielensSample2', 'MovielensSample3'])
@@ -338,7 +338,7 @@ if __name__ == '__main__':
     LTBipartiteProjectedCommunityDetection.set_T(args.T)
     LTBipartiteCommunityDetection.set_T(args.T)
     QuantityDivision.set_T(args.T)
-    KmeansCommunityDetection.set_attribute(args.attribute)
+    KmeansBipartiteCommunityDetection.set_attribute(args.attribute)
     TestCommunityDetection.set_beta(args.beta)
     if args.attribute:
         for i, method in enumerate(method_list):
