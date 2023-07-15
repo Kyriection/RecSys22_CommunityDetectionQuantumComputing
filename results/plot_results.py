@@ -298,10 +298,11 @@ def extract_file(file, tmp):
 
 def get_C(tmp):
   C = 0
-  for c in os.listdir(tmp):
-    if os.path.isdir(os.path.join(tmp, c)) and c[0] == 'c':
+  for file in os.listdir(tmp):
+    # if os.path.isdir(os.path.join(tmp, c)) and c[0] == 'c':
+    if 'run' in file or 'model' in file:
       try:
-        C = max(C, int(c[1:]))
+        C = max(C, int(file[-6:-4])) # run/model{02d}.zip
       except:
         continue
   return C
@@ -462,7 +463,7 @@ def print_result_k_fold(C_quantity, cut_ratio, data_reader_class, method_list, s
     for sampler in sampler_name_list:
       for k in range(n_folds):
         path = os.path.join(result_folder_path, f'fold-{k:02d}', dataset, method.name)
-        if not os.path.exists(path): continue
+        if not os.path.exists(path): break
         dir_files = sorted(os.listdir(path))
         result_df_ei = None
         if CT > 0.0:
@@ -483,6 +484,7 @@ def print_result_k_fold(C_quantity, cut_ratio, data_reader_class, method_list, s
           results_df[N] = add_df(results_df.get(N, create_empty_df(n_users)), result_df)
           C_list[N] = C_list.get(N, 0) + C
 
+      if not results_df: continue
       init_global_data()
       TOTAL_DATA['C'][0] = 1
       collect_data(C_quantity, 0, result_df_total)
