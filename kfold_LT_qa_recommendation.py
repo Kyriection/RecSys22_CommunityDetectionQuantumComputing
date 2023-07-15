@@ -41,8 +41,8 @@ logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
 EI: bool = False # EI if True else (TC or CT)
 MIN_RATINGS_PER_USER = 1
-EVALUATE_FLAG = True
-N_CLUSTER = [2**(i+1) for i in range(3)]
+EVALUATE_FLAG = False
+N_CLUSTER = [2**(i+1) for i in range(10)]
 
 
 def load_classical_communities(urm, ucm, method):
@@ -104,7 +104,7 @@ def train_all_data_recommender(recommender: Type[BaseRecommender], urm_train_las
     rec.fit()
     time_on_train = time.time() - time_on_train
 
-    if not EVALUATE_FLAG:
+    if os.path.exists(output_folder_path):
         return
 
     time_on_test = time.time()
@@ -424,8 +424,11 @@ def save_results(data_reader_classes, results_folder_path, method_list, sampler_
         for recommender in recommender_list:
             for k in range(n_folds):
                 result_folder_path = f'{results_folder_path}fold-{k:02d}/'
-                print_result_(C_quantity, CUT_RATIO, data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
-        print_result_k_fold(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, n_folds)
+                print_result_(C_quantity, CUT_RATIO, data_reader, method_list, sampler_list,
+                              recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
+        # print_result_k_fold(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, )
+        print_result_k_fold(C_quantity, CUT_RATIO, data_reader, method_list, sampler_list,
+                            recommender.RECOMMENDER_NAME, False, output_folder, tag, results_folder_path, n_folds)
 
 
 if __name__ == '__main__':

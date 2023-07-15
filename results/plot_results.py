@@ -97,22 +97,36 @@ def plot(output_folder_path, show: bool = False):
           plot_line(x, WRMSE_data, output_folder_path, key, 'W-RMSE')
 
 
+def concatenate_df(C_quantity, result_df, result_df_ei = None):
+  if result_df_ei is None:
+    return result_df
+
+  cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CT)]
+  head_user_mask = C_quantity > cut_quantity
+  tail_user_mask = ~head_user_mask
+  # logging.info(f'collect_data: cut at {cut_quantity}, head size: {np.sum(head_user_mask)}, tail size: {np.sum(tail_user_mask)}')
+  print(f'collect_data: cut at {cut_quantity}, head size: {np.sum(head_user_mask)}, tail size: {np.sum(tail_user_mask)}')
+  data = np.zeros((C_quantity.size, 3)) # [MAE, MSE, num_rating]
+  data[head_user_mask] = result_df_ei.values
+  data[tail_user_mask] = result_df.values 
+  return pd.DataFrame(data, columns=['MAE', 'MSE', 'num_rating'])
+
+
 def collect_data(C_quantity, n_iter, result_df, result_df_ei = None):
     global MIN_RATING_NUM, PLOT_CUT, CT, STEP
-    # if result_df_ei is not None:
-    if CT > 0.0:
-      cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CT)]
-      head_user_mask = C_quantity > cut_quantity
-      tail_user_mask = ~head_user_mask
-      # logging.info(f'collect_data: cut at {cut_quantity}, head size: {np.sum(head_user_mask)}, tail size: {np.sum(tail_user_mask)}')
-      print(f'collect_data: cut at {cut_quantity}, head size: {np.sum(head_user_mask)}, tail size: {np.sum(tail_user_mask)}')
-      data = np.zeros((C_quantity.size, 3)) # [MAE, MSE, num_rating]
-      # print(result_df_ei.values.shape, result_df.values.shape)
-      if result_df_ei is not None:
-        data[head_user_mask] = result_df_ei.values
-      data[tail_user_mask] = result_df.values 
-    else:
-      data: np.ndarray = result_df.values
+    data = concatenate_df(C_quantity, result_df, result_df_ei).values
+    # if CT > 0.0:
+    #   cut_quantity = sorted(C_quantity, reverse=True)[int(len(C_quantity) * CT)]
+    #   head_user_mask = C_quantity > cut_quantity
+    #   tail_user_mask = ~head_user_mask
+    #   print(f'collect_data: cut at {cut_quantity}, head size: {np.sum(head_user_mask)}, tail size: {np.sum(tail_user_mask)}')
+    #   data = np.zeros((C_quantity.size, 3)) # [MAE, MSE, num_rating]
+    #   if result_df_ei is not None:
+    #     data[head_user_mask] = result_df_ei.values
+    #   data[tail_user_mask] = result_df.values 
+    # else:
+    #   data: np.ndarray = result_df.values
+
     # delete users whose test rating num < MIN_RATING_NUM
     ignore_users = data[:, 2] < MIN_RATING_NUM
     data = data[~ignore_users]
@@ -281,6 +295,18 @@ def extract_file(file, tmp):
     print(e)
     return None
 
+
+def get_C(tmp):
+  C = 0
+  for c in os.listdir(tmp):
+    if os.path.isdir(os.path.join(tmp, c)) and c[0] == 'c':
+      try:
+        C = max(C, int(c[1:]))
+      except:
+        continue
+  return C
+
+
 def print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler_list,
                   recommender: str = 'LRRecommender', show: bool = False, output_folder: str = None,
                   output_tag: str = None, result_folder_path: str = './results/'):
@@ -346,13 +372,7 @@ def print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler
         #print(f'---------N={N}------------')
         if CT > 0.0 and N == 0:
            continue
-        C = 0
-        for c in os.listdir(tmp):
-          if os.path.isdir(os.path.join(tmp, c)) and c[0] == 'c':
-            try:
-              C = max(C, int(c[1:]))
-            except:
-              continue
+        C = get_C(tmp)
         file = os.path.join(tmp, f'cd_{recommender}.zip')
         result_df = extract_file(file, tmp)
         if result_df is None:
@@ -388,9 +408,95 @@ def print_result(cut_ratio, data_reader_class, method_list, sampler_list, recomm
                 show, output_folder, output_tag, result_folder_path)
 
 
-def print_result_k_fold(data_reader_class, method_list, sampler_list, recommender: str = 'LRRecommender',
-                        output_folder: str = None, output_tag: str = None, results_folder_path: str = './results/',
-                        n_folds: int = 5):
+def create_empty_df(n_users):
+  return pd.DataFrame(data=np.zeros(shape=(n_users, 3)), columns=['MAE', 'MSE', 'num_rating'], index=range(n_users))
+
+
+def add_df(df1: pd.DataFrame, df2: pd.DataFrame):
+  df1['MAE'] *= df1['num_rating']
+  df1['MSE'] *= df1['num_rating']
+  df2['MAE'] *= df1['num_rating']
+  df2['MSE'] *= df1['num_rating']
+  df1['MAE'] += df2['MAE']
+  df1['MSE'] += df2['MSE']
+  # df1['MAE'] = df1['MAE'] * df1['num_rating'] + df2['MAE'] * df2['num_rating']
+  # df1['MSE'] = df1['MSE'] * df1['num_rating'] + df2['MSE'] * df2['num_rating']
+  df1['num_rating'] += df2['num_rating']
+  num_rating = df1['num_rating'].copy()
+  num_rating[num_rating == 0.0] = 1.0
+  df1['MAE'] /= num_rating
+  df1['MSE'] /= num_rating
+  # df1.index = pd.Series(df1.index).replace(np.nan, 0)
+  return df1
+
+
+def print_result_k_fold(C_quantity, cut_ratio, data_reader_class, method_list, sampler_list,
+                        recommender: str = 'LRRecommender', show: bool = False, output_folder: str = None,
+                        output_tag: str = None, result_folder_path: str = './results/', n_folds: int = 5):
+  global CT
+  CT = cut_ratio
+  n_users = len(C_quantity)
+  dataset = data_reader_class.DATASET_SUBFOLDER
+  sampler_list = [sampler.__class__.__name__ for sampler in sampler_list]\
+               + [f'{sampler.__class__.__name__}_DWaveSampler' for sampler in sampler_list]
+  
+  result_df_total = create_empty_df(n_users)
+  for k in range(n_folds):
+    path = os.path.join(result_folder_path, f'fold-{k:02d}', dataset, recommender)
+    file_path = os.path.join(path, 'baseline.zip')
+    df_total = extract_file(file_path, path)
+    result_df_total = add_df(result_df_total, df_total)
+  init_global_data()
+  TOTAL_DATA['C'][-1] = 0
+  collect_data(C_quantity, -1, result_df_total)
+  plot(path, show)
+
+  for method in method_list:
+    if 'Kmeans' in method.name or method.name in ['EachItem']:
+      sampler_name_list = ['']
+    else:
+      sampler_name_list = sampler_list
+
+    results_df = {}
+    C_list = {}
+    for sampler in sampler_name_list:
+      for k in range(n_folds):
+        path = os.path.join(result_folder_path, f'fold-{k:02d}', dataset, method.name)
+        if not os.path.exists(path): continue
+        dir_files = sorted(os.listdir(path))
+        result_df_ei = None
+        if CT > 0.0:
+          result_path = os.path.join(path, 'iter-1', sampler)
+          file_path = os.path.join(result_path, f'cd_{recommender}.zip')
+          result_df_ei = extract_file(file_path, result_path)
+        for name in dir_files:
+          if len(name) < 4 or name[:4] != 'iter': continue
+          N = int(name[4:]) + 1
+          if CT > 0.0 and N == 0: continue
+          result_path = os.path.join(path, name, sampler)
+          file_path = os.path.join(result_path, f'cd_{recommender}.zip')
+          result_df = extract_file(file_path, result_path)
+          if result_df is None: continue
+          if result_df_ei is not None:
+            result_df = concatenate_df(C_quantity, result_df, result_df_ei)
+          C = get_C(result_path)
+          results_df[N] = add_df(results_df.get(N, create_empty_df(n_users)), result_df)
+          C_list[N] = C_list.get(N, 0) + C
+
+      init_global_data()
+      TOTAL_DATA['C'][0] = 1
+      collect_data(C_quantity, 0, result_df_total)
+      for N in C_list:
+        TOTAL_DATA['C'][N] = round(C_list[N] / n_folds, 1) + 1
+        collect_data(C_quantity, N, results_df[N], None)
+      output_path = os.path.join('./results/', dataset, method.name, sampler, output_tag)
+      os.makedirs(output_path, exist_ok=True)
+      plot(output_path, show)
+
+
+def print_result_k_fold_mean(data_reader_class, method_list, sampler_list, recommender: str = 'LRRecommender',
+                             output_folder: str = None, output_tag: str = None, results_folder_path: str = './results/',
+                             n_folds: int = 5):
   print('---------print_result_k_fold--------------')
   dataset = data_reader_class.DATASET_SUBFOLDER
   sampler_list = [sampler.__class__.__name__ for sampler in sampler_list]\

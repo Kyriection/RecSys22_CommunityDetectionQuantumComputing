@@ -386,14 +386,14 @@
 
 n_folds=5
 dataset=MovielensSample3
-# echo QUBOBipartiteProjectedCommunityDetection
-# time python kfold_LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM > logs/ctcd-WPM.log 2>&1
-# time python kfold_LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM > logs/ctqr-WPM.log 2>&1
+echo QUBOBipartiteProjectedCommunityDetection
+time python kfold_LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM > logs/ctcd-WPM.log 2>&1
+time python kfold_LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM > logs/ctqr-WPM.log 2>&1
 
 # echo Each Item
 # time python kfold_LT_qa_recommendation.py EachItem -d $dataset -k $n_folds --EI -o results/EI > logs/ctr-EI.log 2>&1
 # echo Kmeans Total w/ attribute
 # time python kfold_LT_qa_recommendation.py KmeansCommunityDetection -d $dataset -k $n_folds --attribute -o results/Kmeans-T-A > logs/ctqr-Kmeans-T-A.log 2>&1
-echo Kmeans Bipartite w/ attribute
-time python kfold_LT_community_detection.py KmeansBipartiteCommunityDetection -d $dataset -k $n_folds --attribute -o results/Kmeans-B-A > logs/ctcd-Kmeans-B-A.log 2>&1
-time python kfold_LT_qa_recommendation.py   KmeansBipartiteCommunityDetection -d $dataset -k $n_folds --attribute -o results/Kmeans-B-A > logs/ctqr-Kmeans-B-A.log 2>&1
+# echo Kmeans Bipartite w/ attribute
+# time python kfold_LT_community_detection.py KmeansBipartiteCommunityDetection -d $dataset -k $n_folds --attribute -o results/Kmeans-B-A > logs/ctcd-Kmeans-B-A.log 2>&1
+# time python kfold_LT_qa_recommendation.py   KmeansBipartiteCommunityDetection -d $dataset -k $n_folds --attribute -o results/Kmeans-B-A > logs/ctqr-Kmeans-B-A.log 2>&1
