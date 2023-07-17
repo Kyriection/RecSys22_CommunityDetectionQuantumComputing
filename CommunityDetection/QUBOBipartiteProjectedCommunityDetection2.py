@@ -2,8 +2,22 @@ import time
 
 import numpy as np
 
-from CommunityDetection.Communities import Communities
 from CommunityDetection.QUBOCommunityDetection import QUBOCommunityDetection
+
+
+def build_like_matrix(urm):
+    n_items, n_users = urm.shape
+    users_sum_rating = np.zeros(n_users, dtype=float)
+    users_num_rating = np.zeros(n_users, dtype=int)
+    rows, cols = urm.nonzero()
+    for item, user in zip(rows, cols):
+        users_sum_rating[user] += urm[item, user]
+        users_num_rating[user] += 1
+    users_num_rating[users_num_rating == 0] = 1
+    users_mean_rating = users_sum_rating / users_num_rating
+    for item, user in zip(rows, cols):
+        urm[item, user] -= users_mean_rating[user]
+    return urm
 
 
 class QUBOBipartiteProjectedCommunityDetection2(QUBOCommunityDetection):
@@ -22,18 +36,16 @@ class QUBOBipartiteProjectedCommunityDetection2(QUBOCommunityDetection):
         # W = self.urm * self.urm.T
 
         # rebuild urm
-        urm = (self.urm - self.urm.mean(axis=1)) / self.urm.max()
+        urm = build_like_matrix(self.urm.copy())
         W = urm * urm.T
-        min_val = np.min(W)
-        max_val = np.max(W)
-        W = (W - min_val) / (max_val - min_val)
 
         if not weighted:
             W = (W > 0) * 1
+        else:
+            W[W < 0] = 0
 
-        # W.setdiag(0)
-        # W.eliminate_zeros()
-        W[np.diag_indices_from(W)] = 0
+        W.setdiag(0)
+        W.eliminate_zeros()
 
         k = W.sum(axis=1)
         m = k.sum() // 2

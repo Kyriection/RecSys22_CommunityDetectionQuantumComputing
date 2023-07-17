@@ -53,7 +53,8 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
          sampler_list: Iterable[dimod.Sampler], results_folder_path: str, num_iters: int, n_folds: int):
     global CUT_RATIO
     user_wise = False
-    make_implicit = True
+    # make_implicit = True
+    make_implicit = False
     threshold = None
 
     fit_args = {
@@ -74,10 +75,8 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
             dataset_folder_path = f'{result_folder_path}{dataset_name}/'
 
             urm_train, urm_test, icm, ucm = load_data_k_fold(data_reader, user_wise=user_wise,make_implicit=make_implicit,
-                                                            threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
+                                                             threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
 
-            urm_train, urm_test, icm, ucm = load_data_k_fold(data_reader, user_wise=user_wise,
-                                                            make_implicit=make_implicit, threshold=threshold, icm_ucm=True)
             # item is main charactor, and remove year from item comtext
             urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm[:, :-1]
             urm_all = merge_sparse_matrices(urm_train, urm_test)
@@ -279,7 +278,8 @@ def parse_args():
                         choices=['QUBOBipartiteCommunityDetection', 'QUBOBipartiteProjectedCommunityDetection',
                                  'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
                                  'KmeansBipartiteCommunityDetection', 'HybridCommunityDetection',
-                                 'QuantityDivision', 'TestCommunityDetection'])
+                                 'QuantityDivision', 'QUBOBipartiteProjectedCommunityDetection2',
+                                 'TestCommunityDetection'])
     parser.add_argument('-d', '--dataset', nargs='+', type=str, default=['Movielens100K'], help='dataset',
                         choices=['Movielens100K', 'Movielens1M', 'MovielensHetrec2011', 'MovielensSample',
                                  'MovielensSample2', 'MovielensSample3'])
@@ -295,24 +295,26 @@ def parse_args():
     return args
 
 
-def clean_results(result_folder_path, data_reader_classes, method_list, sampler_list):
-    for data_reader_class in data_reader_classes:
-        data_reader = data_reader_class()
-        dataset_name = data_reader._get_dataset_name()
-        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
-        for method in method_list:
-            method_folder_path = f'{dataset_folder_path}{method.name}/'
-            if not os.path.exists(method_folder_path):
-                continue
-            for iter_folder in os.listdir(method_folder_path):
-                iter_path = os.path.join(method_folder_path, iter_folder)
-                if not os.path.isdir(iter_path):
+def clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, n_folds: int = 5):
+    for k in range(n_folds):
+        result_folder_path = f'{results_folder_path}fold-{k:02d}/'
+        for data_reader_class in data_reader_classes:
+            data_reader = data_reader_class()
+            dataset_name = data_reader._get_dataset_name()
+            dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+            for method in method_list:
+                method_folder_path = f'{dataset_folder_path}{method.name}/'
+                if not os.path.exists(method_folder_path):
                     continue
-                for sampler in sampler_list:
-                    sampler_path = os.path.join(iter_path, sampler.__class__.__name__)
-                    if os.path.exists(sampler_path):
-                        logging.debug(f'rm {sampler_path}')
-                        shutil.rmtree(sampler_path)
+                for iter_folder in os.listdir(method_folder_path):
+                    iter_path = os.path.join(method_folder_path, iter_folder)
+                    if not os.path.isdir(iter_path):
+                        continue
+                    for sampler in sampler_list:
+                        sampler_path = os.path.join(iter_path, sampler.__class__.__name__)
+                        if os.path.exists(sampler_path):
+                            logging.debug(f'rm {sampler_path}')
+                            shutil.rmtree(sampler_path)
 
 
 if __name__ == '__main__':
@@ -328,7 +330,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 10
+    num_iters = 7
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
@@ -344,5 +346,5 @@ if __name__ == '__main__':
         for i, method in enumerate(method_list):
             method_list[i] = get_cascade_class(method)
             method_list[i].set_beta(args.beta)
-    # clean_results(result_folder_path, data_reader_classes, method_list, sampler_list)
+    clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, args.kfolds)
     main(data_reader_classes, method_list, sampler_list, results_folder_path, num_iters=num_iters, n_folds=args.kfolds)

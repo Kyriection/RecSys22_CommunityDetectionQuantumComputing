@@ -34,7 +34,7 @@ from utils.types import Iterable, Type
 from utils.urm import get_community_urm, load_data_k_fold, merge_sparse_matrices, head_tail_cut_k_fold
 from utils.plot import plot_line, plot_scatter, plot_divide, plot_metric
 from utils.derived_variables import create_related_variables
-from results.plot_results import print_result_, print_result_k_fold
+from results.plot_results import print_result_, print_result_k_fold, print_result_k_fold_mean
 import utils.seed
 
 logging.basicConfig(level=logging.INFO)
@@ -42,7 +42,7 @@ CUT_RATIO: float = None
 EI: bool = False # EI if True else (TC or CT)
 MIN_RATINGS_PER_USER = 1
 EVALUATE_FLAG = False
-N_CLUSTER = [2**(i+1) for i in range(10)]
+N_CLUSTER = [2**(i+1) for i in range(7)]
 
 
 def load_classical_communities(urm, ucm, method):
@@ -343,7 +343,8 @@ def parse_args():
                         choices=['QUBOBipartiteCommunityDetection', 'QUBOBipartiteProjectedCommunityDetection',
                                  'LTBipartiteCommunityDetection', 'LTBipartiteProjectedCommunityDetection',
                                  'KmeansCommunityDetection', 'QuantityDivision', 'HybridCommunityDetection',
-                                 'KmeansBipartiteCommunityDetection', 'EachItem', 'TestCommunityDetection'])
+                                 'KmeansBipartiteCommunityDetection', 'EachItem', 'TestCommunityDetection',
+                                 'QUBOBipartiteProjectedCommunityDetection2'])
     parser.add_argument('-r', '--recommender', nargs='+', type=str, default=['LRRecommender'], help='recommender',
                         choices=['LRRecommender', 'SVRRecommender', 'DTRecommender'])
     parser.add_argument('-d', '--dataset', nargs='+', type=str, default=['Movielens100K'], help='dataset',
@@ -362,50 +363,52 @@ def parse_args():
     return args
 
 
-def clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list):
-    for data_reader_class in data_reader_classes:
-        data_reader = data_reader_class()
-        dataset_name = data_reader._get_dataset_name()
-        dataset_folder_path = f'{result_folder_path}{dataset_name}/'
-        if not os.path.exists(dataset_folder_path):
-            continue
-        hybrid_folder_path = os.path.join(dataset_folder_path, 'Hybrid')
-        logging.debug(f'clean {hybrid_folder_path}')
-        if os.path.exists(hybrid_folder_path):
-            shutil.rmtree(hybrid_folder_path)
-        for recommender in recommender_list:
-            recommender_folder_path = os.path.join(dataset_folder_path, recommender.RECOMMENDER_NAME)
-            logging.debug(f'clean {recommender_folder_path}')
-            if os.path.exists(recommender_folder_path):
-                shutil.rmtree(recommender_folder_path)
-        for method in method_list:
-            method_folder_path = f'{dataset_folder_path}{method.name}/'
-            if not os.path.exists(method_folder_path):
+def clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, n_folds: int = 5):
+    for k in range(n_folds):
+        result_folder_path = f'{results_folder_path}fold-{k:02d}/'
+        for data_reader_class in data_reader_classes:
+            data_reader = data_reader_class()
+            dataset_name = data_reader._get_dataset_name()
+            dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+            if not os.path.exists(dataset_folder_path):
                 continue
-            # print('in: ', method_folder_path)
-            for iter in os.listdir(method_folder_path):
-                iter_folder_path = os.path.join(method_folder_path, iter)
-                if not os.path.isdir(iter_folder_path) or len(iter) < 4 or iter[:4] != 'iter':
+            hybrid_folder_path = os.path.join(dataset_folder_path, 'Hybrid')
+            logging.debug(f'clean {hybrid_folder_path}')
+            if os.path.exists(hybrid_folder_path):
+                shutil.rmtree(hybrid_folder_path)
+            for recommender in recommender_list:
+                recommender_folder_path = os.path.join(dataset_folder_path, recommender.RECOMMENDER_NAME)
+                logging.debug(f'clean {recommender_folder_path}')
+                if os.path.exists(recommender_folder_path):
+                    shutil.rmtree(recommender_folder_path)
+            for method in method_list:
+                method_folder_path = f'{dataset_folder_path}{method.name}/'
+                if not os.path.exists(method_folder_path):
                     continue
-                # print('in: ', iter_folder_path)
-                for sample in sampler_list:
-                    # sampler_folder_path = os.path.join(iter_folder_path, sample.__name__)
-                    sampler_folder_path = os.path.join(iter_folder_path, 'SimulatedAnnealingSampler')
-                    if not os.path.exists(sampler_folder_path):
+                # print('in: ', method_folder_path)
+                for iter in os.listdir(method_folder_path):
+                    iter_folder_path = os.path.join(method_folder_path, iter)
+                    if not os.path.isdir(iter_folder_path) or len(iter) < 4 or iter[:4] != 'iter':
                         continue
-                    # print('in: ', sampler_folder_path)
-                    for recommender in recommender_list:
-                        result_file = os.path.join(sampler_folder_path, f'cd_{recommender.RECOMMENDER_NAME}.zip')
-                        logging.debug(f'clean {result_file}')
-                        if os.path.exists(result_file):
-                            # print('remove: ', result_file)
-                            os.remove(result_file)
-                        for c in os.listdir(sampler_folder_path):
-                            c_folder_path = os.path.join(sampler_folder_path, c)
-                            logging.debug(f'clean {c_folder_path}')
-                            if os.path.isdir(c_folder_path) and c[0] == 'c':
-                                # print('remove: ', c_folder_path)
-                                shutil.rmtree(c_folder_path)
+                    # print('in: ', iter_folder_path)
+                    for sample in sampler_list:
+                        # sampler_folder_path = os.path.join(iter_folder_path, sample.__name__)
+                        sampler_folder_path = os.path.join(iter_folder_path, 'SimulatedAnnealingSampler')
+                        if not os.path.exists(sampler_folder_path):
+                            continue
+                        # print('in: ', sampler_folder_path)
+                        for recommender in recommender_list:
+                            result_file = os.path.join(sampler_folder_path, f'cd_{recommender.RECOMMENDER_NAME}.zip')
+                            logging.debug(f'clean {result_file}')
+                            if os.path.exists(result_file):
+                                # print('remove: ', result_file)
+                                os.remove(result_file)
+                            for c in os.listdir(sampler_folder_path):
+                                c_folder_path = os.path.join(sampler_folder_path, c)
+                                logging.debug(f'clean {c_folder_path}')
+                                if os.path.isdir(c_folder_path) and c[0] == 'c':
+                                    # print('remove: ', c_folder_path)
+                                    shutil.rmtree(c_folder_path)
 
 
 def save_results(data_reader_classes, results_folder_path, method_list, sampler_list, recommender_list, n_folds, C_quantity, *args):
@@ -426,7 +429,7 @@ def save_results(data_reader_classes, results_folder_path, method_list, sampler_
                 result_folder_path = f'{results_folder_path}fold-{k:02d}/'
                 print_result_(C_quantity, CUT_RATIO, data_reader, method_list, sampler_list,
                               recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
-        # print_result_k_fold(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, )
+        print_result_k_fold_mean(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, n_folds)
         print_result_k_fold(C_quantity, CUT_RATIO, data_reader, method_list, sampler_list,
                             recommender.RECOMMENDER_NAME, False, output_folder, tag, results_folder_path, n_folds)
 
@@ -450,6 +453,6 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
-    # clean_results(result_folder_path, data_reader_classes, method_list, sampler_list, recommender_list)
+    clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
     main(data_reader_classes, method_list, sampler_list, recommender_list, results_folder_path, args.kfolds,
          args.T, args.alpha, args.beta)

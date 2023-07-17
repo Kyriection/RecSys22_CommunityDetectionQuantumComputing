@@ -31,7 +31,8 @@ METHOD_LIST = [QUBOBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityD
                KmeansCommunityDetection, QUBOGraphCommunityDetection, QUBOProjectedCommunityDetection, EachItem, \
                HybridCommunityDetection, MultiHybridCommunityDetection, QUBOBipartiteProjectedItemCommunityDetection, \
                KmeansBipartiteCommunityDetection, LTBipartiteProjectedCommunityDetection, LTBipartiteCommunityDetection, \
-               QuantityDivision, UserBipartiteCommunityDetection, TestCommunityDetection, SpectralClustering]
+               QuantityDivision, UserBipartiteCommunityDetection, QUBOBipartiteProjectedCommunityDetection2, \
+               SpectralClustering, TestCommunityDetection]
 METHOD_DICT = {method.name : method for method in METHOD_LIST}
 
 class EmptyCommunityError(Exception):
