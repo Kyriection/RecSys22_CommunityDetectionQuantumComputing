@@ -46,10 +46,11 @@ def init_global_data():
 
 
 def process_total_data():
+  if len(TOTAL_DATA['C']) == 0: return None, None
   print(TOTAL_DATA)
-  if len(TOTAL_DATA['C']) == 0 or\
-    (len(TOTAL_DATA['C']) == 1 and list(TOTAL_DATA['C'].values())[0] == 1):
-    return None, None
+  # if len(TOTAL_DATA['C']) == 0 or\
+    # (len(TOTAL_DATA['C']) == 1 and list(TOTAL_DATA['C'].values())[0] == 1):
+    # return None, None
   for key in ['MAE', 'RMSE', 'W-MAE', 'W-RMSE']:
     values = TOTAL_DATA[key].values()
     TOTAL_DATA[key][-2] = min(values)
@@ -349,8 +350,6 @@ def print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler
       # if show:
         # print(m)
       init_global_data()
-      TOTAL_DATA['C'][0] = 1
-      collect_data(C_quantity, 0, result_df_total)
       result_df_ei = None
       if CT > 0.0:
         name = 'iter-1'
@@ -382,6 +381,9 @@ def print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler
         TOTAL_DATA['C'][N] = C + 1
         collect_data(C_quantity, N, result_df, result_df_ei)
 
+      if len(TOTAL_DATA['C']) == 0: continue
+      TOTAL_DATA['C'][0] = 1
+      collect_data(C_quantity, 0, result_df_total)
       if output_folder is None:
         output_path = os.path.join(path, m, output_tag)
       else:
@@ -414,20 +416,13 @@ def create_empty_df(n_users):
 
 
 def add_df(df1: pd.DataFrame, df2: pd.DataFrame):
-  df1['MAE'] *= df1['num_rating']
-  df1['MSE'] *= df1['num_rating']
-  df2['MAE'] *= df1['num_rating']
-  df2['MSE'] *= df1['num_rating']
-  df1['MAE'] += df2['MAE']
-  df1['MSE'] += df2['MSE']
-  # df1['MAE'] = df1['MAE'] * df1['num_rating'] + df2['MAE'] * df2['num_rating']
-  # df1['MSE'] = df1['MSE'] * df1['num_rating'] + df2['MSE'] * df2['num_rating']
+  df1['MAE'] = df1['MAE'] * df1['num_rating'] + df2['MAE'] * df2['num_rating']
+  df1['MSE'] = df1['MSE'] * df1['num_rating'] + df2['MSE'] * df2['num_rating']
   df1['num_rating'] += df2['num_rating']
   num_rating = df1['num_rating'].copy()
   num_rating[num_rating == 0.0] = 1.0
   df1['MAE'] /= num_rating
   df1['MSE'] /= num_rating
-  # df1.index = pd.Series(df1.index).replace(np.nan, 0)
   return df1
 
 
@@ -485,14 +480,15 @@ def print_result_k_fold(C_quantity, cut_ratio, data_reader_class, method_list, s
           C_list[N] = C_list.get(N, 0) + C
 
       if not results_df: continue
+      output_path = os.path.join('./results/', dataset, method.name, sampler, output_tag)
+      os.makedirs(output_path, exist_ok=True)
       init_global_data()
       TOTAL_DATA['C'][0] = 1
       collect_data(C_quantity, 0, result_df_total)
       for N in C_list:
         TOTAL_DATA['C'][N] = round(C_list[N] / n_folds, 1) + 1
         collect_data(C_quantity, N, results_df[N], None)
-      output_path = os.path.join('./results/', dataset, method.name, sampler, output_tag)
-      os.makedirs(output_path, exist_ok=True)
+        results_df[N].to_csv(os.path.join(output_path, f'results-iter{N:02d}.csv'))
       plot(output_path, show)
 
 
