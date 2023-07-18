@@ -1,12 +1,21 @@
 import numpy as np
 import numpy.typing as npt
+import scipy.sparse as sps
 
 def normalization(variables):
-    min_val = np.min(variables, axis=0)
-    max_val = np.max(variables, axis=0)
-    _range = max_val - min_val
-    _range[_range <= 0] = 1
-    return (variables - min_val) / _range
+    if isinstance(variables, sps.csr_matrix):
+        min_val = variables.min(axis=0)
+        max_val = variables.min(axis=0)
+        rows, cols = variables.nonzero()
+        for row, col in zip(rows, cols):
+            _range = max_val[row] - min_val[row] or 1
+            variables[row, col] = (variables - min_val[row]) / _range
+    else:
+        min_val = np.min(variables, axis=0)
+        max_val = np.max(variables, axis=0)
+        _range = max_val - min_val
+        _range[_range <= 0] = 1
+        return (variables - min_val) / _range
 
 
 def create_derived_variables(urm: npt.ArrayLike):
@@ -45,14 +54,14 @@ def create_related_variables(urm, icm, ucm):
     item_related_variables = np.hstack([
         I_aver_rating.reshape((-1, 1)),
         I_quantity.reshape((-1, 1)),
-        # I_likability.reshape((-1, 1)),
+        I_likability.reshape((-1, 1)),
         icm.toarray(),
     ])
     user_related_variables = np.hstack([
         C_aver_rating.reshape((-1, 1)),
         C_quantity.reshape((-1, 1)),
-        # C_seen_popularity.reshape((-1, 1)),
-        # C_seen_rating.reshape((-1, 1)),
+        C_seen_popularity.reshape((-1, 1)),
+        C_seen_rating.reshape((-1, 1)),
         ucm.toarray(),
     ])
     item_related_variables = normalization(item_related_variables)

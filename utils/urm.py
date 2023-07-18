@@ -4,9 +4,27 @@ import numpy as np
 import scipy.sparse as sps
 
 from CommunityDetection import Community, Communities
+from recsys.Data_manager.DataSplitter import DataSplitter as _DataSplitter
 from recsys.Data_manager.DataSplitter_Holdout import DataSplitter_Holdout
 from recsys.Data_manager.DataSplitter_k_fold import DataSplitter_k_fold
 from recsys.Recommenders.Recommender_utils import reshapeSparse
+from utils.derived_variables import normalization
+
+
+def load_icm_ucm(data_splitter: _DataSplitter, n_users: int, n_items: int):
+    try:
+        icm = data_splitter.get_ICM_from_name('ICM_all')
+    except Exception:
+        logging.warning('Load ICM_all Faild.')
+        icm = sps.csr_matrix(([], ([], [])), shape=(n_items, 1))
+        icm = normalization(icm)
+    try:
+        ucm = data_splitter.get_UCM_from_name('UCM_all')
+    except Exception:
+        logging.warning('Load UCM_all Faild.')
+        ucm = sps.csr_matrix(([], ([], [])), shape=(n_users, 1))
+        ucm = normalization(ucm)
+    return icm, ucm
 
 
 def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True, threshold=None, icm_ucm=False):
@@ -30,19 +48,8 @@ def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True,
 
     if icm_ucm:
         n_users, n_items = urm_train.shape
-        try:
-            # icm = data_splitter.get_loaded_ICM_dict()['ICM_all']
-            icm = data_splitter.get_ICM_from_name('ICM_all')
-        except Exception:
-            logging.warning('Load ICM_all Faild.')
-            icm = sps.csr_matrix(([], ([], [])), shape=(n_items, 1))
-        try:
-            # ucm = data_splitter.get_loaded_UCM_dict()['UCM_all']
-            ucm = data_splitter.get_UCM_from_name('UCM_all')
-        except Exception:
-            logging.warning('Load UCM_all Faild.')
-            ucm = sps.csr_matrix(([], ([], [])), shape=(n_users, 1))
-        return urm_train, urm_validation, urm_test, icm, ucm
+        icm, ucm = load_icm_ucm(data_splitter, n_users, n_items)
+        return urm_train, urm_test, icm, ucm
     else:
         return urm_train, urm_validation, urm_test  # , var_mapping
 
@@ -64,16 +71,7 @@ def load_data_k_fold(data_reader, user_wise=True, make_implicit=True, threshold=
 
     if icm_ucm:
         n_users, n_items = urm_train.shape
-        try:
-            icm = data_splitter.get_ICM_from_name('ICM_all')
-        except Exception:
-            logging.warning('Load ICM_all Faild.')
-            icm = sps.csr_matrix(([], ([], [])), shape=(n_items, 1))
-        try:
-            ucm = data_splitter.get_UCM_from_name('UCM_all')
-        except Exception:
-            logging.warning('Load UCM_all Faild.')
-            ucm = sps.csr_matrix(([], ([], [])), shape=(n_users, 1))
+        icm, ucm = load_icm_ucm(data_splitter, n_users, n_items)
         return urm_train, urm_test, icm, ucm
     else:
         return urm_train, urm_test  # , var_mapping
