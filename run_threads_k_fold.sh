@@ -56,6 +56,7 @@ do
     echo $tag
     time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit > logs/ctcd-$tag.log 2>&1
     time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit > logs/ctqr-$tag.log 2>&1
+    echo ''>&5
   }&
   done
 done
@@ -84,6 +85,7 @@ do
       echo $tag
       time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds -a $alpha -t $T -o results/$tag --implicit > logs/ctcd-$tag.log 2>&1
       time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds -a $alpha -t $T -o results/$tag --implicit > logs/ctqr-$tag.log 2>&1
+      echo ''>&5
     }
     done
   done

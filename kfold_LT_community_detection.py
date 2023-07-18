@@ -348,6 +348,6 @@ if __name__ == '__main__':
         for i, method in enumerate(method_list):
             method_list[i] = get_cascade_class(method)
             method_list[i].set_beta(args.beta)
-    clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, args.kfolds)
+    # clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, args.kfolds)
     main(data_reader_classes, method_list, sampler_list, results_folder_path, num_iters=num_iters,
          n_folds=args.kfolds, implicit=args.implicit)
