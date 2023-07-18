@@ -300,10 +300,13 @@ def extract_file(file, tmp):
 def get_C(tmp):
   C = 0
   for file in os.listdir(tmp):
+    if file[0] == 'C':
+      C = int(file[1:])
+      break
     # if os.path.isdir(os.path.join(tmp, c)) and c[0] == 'c':
     if 'run' in file or 'model' in file:
       try:
-        C = max(C, int(file[-6:-4])) # run/model{02d}.zip
+        C = max(C, int(file[-6:-4]) + 1) # run/model{02d}.zip
       except:
         continue
   return C
@@ -486,7 +489,7 @@ def print_result_k_fold(C_quantity, cut_ratio, data_reader_class, method_list, s
       TOTAL_DATA['C'][0] = 1
       collect_data(C_quantity, 0, result_df_total)
       for N in C_list:
-        TOTAL_DATA['C'][N] = round(C_list[N] / n_folds, 1) + 1
+        TOTAL_DATA['C'][N] = round(C_list[N] / n_folds, 1)
         collect_data(C_quantity, N, results_df[N], None)
         results_df[N].to_csv(os.path.join(output_path, f'results-iter{N:02d}.csv'))
       plot(output_path, show)

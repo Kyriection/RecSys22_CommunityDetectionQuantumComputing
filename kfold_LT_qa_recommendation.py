@@ -333,6 +333,7 @@ def recommend_per_iter(urm_train, urm_test, ucm, icm, method, recommender_list, 
                 n_comm += 1
             evaluate_recommender(urm_train, urm_test, ucm, icm, communities, cd_recommenders, output_folder_path,
                                  recommender_name, n_iter=n_iter)
+            open(f'{output_folder_path}C{n_comm}', 'a').close()
         else:
             print('Recommender already trained and evaluated.')
 
