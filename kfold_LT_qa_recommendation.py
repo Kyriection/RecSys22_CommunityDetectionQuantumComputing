@@ -358,6 +358,7 @@ def parse_args():
     parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
     parser.add_argument('-k', '--kfolds', type=int, default=5, help='number of folds for dataset split.')
     parser.add_argument('--attribute', action='store_true', help='Use item attribute data (cascade) or not')
+    parser.add_argument('--implicit', action='store_true', help='URM make implicit (values to 0/1) or not.')
     parser.add_argument('--EI', action='store_true', help='Each Item')
     args = parser.parse_args()
     return args
@@ -454,5 +455,5 @@ if __name__ == '__main__':
                     # tabu.TabuSampler()]
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
     clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
-    main(data_reader_classes, method_list, sampler_list, recommender_list, results_folder_path, args.kfolds,
-         args.T, args.alpha, args.beta)
+    main(data_reader_classes, method_list, sampler_list, recommender_list, results_folder_path,
+         args.kfolds, args.T, args.alpha, args.beta, args.implicit)

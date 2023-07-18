@@ -50,11 +50,11 @@ def load_communities(folder_path, method, sampler=None, n_iter=0, n_comm=None):
 
 
 def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]],
-         sampler_list: Iterable[dimod.Sampler], results_folder_path: str, num_iters: int, n_folds: int):
+         sampler_list: Iterable[dimod.Sampler], results_folder_path: str, num_iters: int,
+         n_folds: int, implicit: bool):
     global CUT_RATIO
     user_wise = False
-    # make_implicit = True
-    make_implicit = False
+    make_implicit = implicit
     threshold = None
 
     fit_args = {
@@ -291,6 +291,7 @@ def parse_args():
     parser.add_argument('-o', '--ouput', type=str, default='results', help='the path to save the result')
     parser.add_argument('-k', '--kfolds', type=int, default=5, help='number of folds for dataset split.')
     parser.add_argument('--attribute', action='store_true', help='Use item attribute data (cascade) or not')
+    parser.add_argument('--implicit', action='store_true', help='URM make implicit (values to 0/1) or not.')
     args = parser.parse_args()
     return args
 
@@ -347,4 +348,5 @@ if __name__ == '__main__':
             method_list[i] = get_cascade_class(method)
             method_list[i].set_beta(args.beta)
     clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, args.kfolds)
-    main(data_reader_classes, method_list, sampler_list, results_folder_path, num_iters=num_iters, n_folds=args.kfolds)
+    main(data_reader_classes, method_list, sampler_list, results_folder_path, num_iters=num_iters,
+         n_folds=args.kfolds, implicit=args.implicit)

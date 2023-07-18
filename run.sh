@@ -385,10 +385,15 @@
 # done
 
 n_folds=5
-dataset=MovielensSample3
-echo QUBOBipartiteProjectedCommunityDetection
-time python kfold_LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM > logs/ctcd-WPM.log 2>&1
-time python kfold_LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM > logs/ctqr-WPM.log 2>&1
+# dataset=MovielensSample3
+dataset=Movielens100K
+
+method=QUBOBipartiteProjectedCommunityDetection2
+echo $method
+time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds -o results/WPM > logs/ctcd-WPM.log 2>&1
+time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds -o results/WPM > logs/ctqr-WPM.log 2>&1
+# time python kfold_LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM
+# time python kfold_LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM
 
 # echo Each Item
 # time python kfold_LT_qa_recommendation.py EachItem -d $dataset -k $n_folds --EI -o results/EI > logs/ctr-EI.log 2>&1
