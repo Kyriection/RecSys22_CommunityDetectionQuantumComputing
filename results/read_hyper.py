@@ -21,7 +21,15 @@ def read_results(folder_path):
   folder_path = os.path.abspath(folder_path)
   for hyper_name in os.listdir(folder_path):
     hyper_path = os.path.join(folder_path, hyper_name)
-    if not os.path.isdir(hyper_path):
+    if not os.path.isdir(hyper_path): continue
+    hypers = hyper_name.split('_')
+    # hypers = [float(hyper) for hyper in hyper_name.split('_')]
+    # T, alpha, beta = hypers
+    # T, alpha, beta, cut_ratio = hypers
+    try:
+      T, alpha, beta, implicit = hypers
+      T, alpha, beta, implicit = int(T), float(alpha), float(beta), bool(implicit)
+    except:
       continue
     hyper_file = os.path.join(hyper_path, 'total_MAE_RMSE.csv')
     pd_reader = pd.read_csv(hyper_file)
@@ -29,10 +37,6 @@ def read_results(folder_path):
     rmse = min(pd_reader['RMSE'])
     wmae = min(pd_reader['W-MAE'])
     wrmse = min(pd_reader['W-RMSE'])
-    hypers = [float(hyper) for hyper in hyper_name.split('_')]
-    # T, alpha, cut_ratio, layer = hypers
-    T, alpha, beta = hypers
-    # T, alpha, beta, cut_ratio = hypers
     MAE[T] = MAE.get(T, {})
     RMSE[T] = RMSE.get(T, {})
     WMAE[T] = WMAE.get(T, {})

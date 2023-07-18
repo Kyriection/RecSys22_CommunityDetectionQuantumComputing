@@ -42,7 +42,7 @@ CUT_RATIO: float = None
 EI: bool = False # EI if True else (TC or CT)
 MIN_RATINGS_PER_USER = 1
 EVALUATE_FLAG = False
-N_CLUSTER = [2**(i+1) for i in range(7)]
+N_CLUSTER = [2**(i+1) for i in range(10)]
 
 
 def load_classical_communities(urm, ucm, method):
