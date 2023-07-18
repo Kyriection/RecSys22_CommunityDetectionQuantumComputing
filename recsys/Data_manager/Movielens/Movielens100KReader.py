@@ -51,7 +51,7 @@ class Movielens100KReader(DataReader):
     DATASET_URL = "http://files.grouplens.org/datasets/movielens/ml-100k.zip"
     DATASET_SUBFOLDER = "Movielens100K/"
     AVAILABLE_URM = ["URM_all", "URM_timestamp"]
-    AVAILABLE_ICM = ["ICM_genres", "ICM_year", "ICM_all"]
+    AVAILABLE_ICM = ["ICM_genres", "ICM_year", "ICM_all", "ICM_one_hot"]
     AVAILABLE_UCM = ["UCM_all"]
 
     IS_IMPLICIT = False
@@ -111,6 +111,7 @@ class Movielens100KReader(DataReader):
         dataset_manager.add_ICM(ICM_genres_dataframe, "ICM_genres")
         dataset_manager.add_ICM(ICM_years_dataframe, "ICM_year")
         dataset_manager.add_ICM(ICM_all_dataframe, "ICM_all")
+        dataset_manager.add_ICM(ICM_genres_dataframe, "ICM_one_hot")
         dataset_manager.add_UCM(UCM_dataframe, "UCM_all")
 
         loaded_dataset = dataset_manager.generate_Dataset(dataset_name=self._get_dataset_name(),

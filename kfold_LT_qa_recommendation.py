@@ -216,6 +216,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
     user_wise = False
     make_implicit = False
     threshold = None
+    tag = 'recommend'
 
     recsys_args = {
         'cutoff_to_optimize': 10,
@@ -235,7 +236,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         for k in range(n_folds):
             result_folder_path = f'{results_folder_path}fold-{k:02d}/'
 
-            urm_train, urm_test, icm, ucm = load_data_k_fold(data_reader, user_wise=user_wise,make_implicit=make_implicit,
+            urm_train, urm_test, icm, ucm = load_data_k_fold(tag, data_reader, user_wise=user_wise,make_implicit=make_implicit,
                                                             threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
 
             # item is main charactor, and remove year from item comtext
@@ -431,9 +432,9 @@ def save_results(data_reader_classes, results_folder_path, method_list, sampler_
                 result_folder_path = f'{results_folder_path}fold-{k:02d}/'
                 print_result_(C_quantity, CUT_RATIO, data_reader, method_list, sampler_list,
                               recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
-        print_result_k_fold_mean(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, n_folds)
         print_result_k_fold(C_quantity, CUT_RATIO, data_reader, method_list, sampler_list,
                             recommender.RECOMMENDER_NAME, False, output_folder, tag, results_folder_path, n_folds)
+        print_result_k_fold_mean(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, n_folds)
 
 
 if __name__ == '__main__':

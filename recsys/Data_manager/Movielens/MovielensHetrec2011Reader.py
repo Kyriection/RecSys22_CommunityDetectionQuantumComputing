@@ -20,7 +20,7 @@ class MovielensHetrec2011Reader(DataReader):
 
     DATASET_URL = "http://files.grouplens.org/datasets/hetrec2011/hetrec2011-movielens-2k-v2.zip"
     DATASET_SUBFOLDER = "MovielensHetrec2011/"
-    AVAILABLE_ICM = ["ICM_all"]
+    AVAILABLE_ICM = ["ICM_all", "ICM_genres", "ICM_year", "ICM_one_hot"]
     # AVAILABLE_UCM = ["UCM_all"]
 
     IS_IMPLICIT = False
@@ -75,7 +75,10 @@ class MovielensHetrec2011Reader(DataReader):
 
         dataset_manager = DatasetMapperManager()
         dataset_manager.add_URM(URM_all_dataframe, "URM_all")
+        dataset_manager.add_ICM(ICM_genres_dataframe, "ICM_genres")
+        dataset_manager.add_ICM(ICM_years_dataframe, "ICM_year")
         dataset_manager.add_ICM(ICM_all_dataframe, "ICM_all")
+        dataset_manager.add_ICM(ICM_genres_dataframe, "ICM_one_hot")
 
         loaded_dataset = dataset_manager.generate_Dataset(dataset_name=self._get_dataset_name(),
                                                           is_implicit=self.IS_IMPLICIT)

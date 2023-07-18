@@ -4,12 +4,23 @@ import scipy.sparse as sps
 
 def normalization(variables):
     if isinstance(variables, sps.csr_matrix):
-        min_val = variables.min(axis=0)
-        max_val = variables.min(axis=0)
         rows, cols = variables.nonzero()
+        # min_val = variables.min(axis=0).toarray().flatten()
+        # max_val = variables.max(axis=0).toarray().flatten()
+        n_features = variables.shape[1]
+        min_val = np.ones(n_features) * np.inf
+        max_val = np.ones(n_features) * -np.inf
         for row, col in zip(rows, cols):
-            _range = max_val[row] - min_val[row] or 1
-            variables[row, col] = (variables - min_val[row]) / _range
+            min_val[col] = min(min_val[col], variables[row, col])
+            max_val[col] = max(max_val[col], variables[row, col])
+        for row, col in zip(rows, cols):
+            _range = max_val[col] - min_val[col]
+            if _range > 0:
+                variables[row, col] = (variables[row, col] - min_val[col]) / _range
+            else:
+                variables[row, col] = 1
+        variables.eliminate_zeros()
+        return variables
     else:
         min_val = np.min(variables, axis=0)
         max_val = np.max(variables, axis=0)
@@ -54,14 +65,14 @@ def create_related_variables(urm, icm, ucm):
     item_related_variables = np.hstack([
         I_aver_rating.reshape((-1, 1)),
         I_quantity.reshape((-1, 1)),
-        I_likability.reshape((-1, 1)),
+        # I_likability.reshape((-1, 1)),
         icm.toarray(),
     ])
     user_related_variables = np.hstack([
         C_aver_rating.reshape((-1, 1)),
         C_quantity.reshape((-1, 1)),
-        C_seen_popularity.reshape((-1, 1)),
-        C_seen_rating.reshape((-1, 1)),
+        # C_seen_popularity.reshape((-1, 1)),
+        # C_seen_rating.reshape((-1, 1)),
         ucm.toarray(),
     ])
     item_related_variables = normalization(item_related_variables)

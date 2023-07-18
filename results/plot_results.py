@@ -458,6 +458,7 @@ def print_result_k_fold(C_quantity, cut_ratio, data_reader_class, method_list, s
 
     results_df = {}
     C_list = {}
+    cnt = {}
     for sampler in sampler_name_list:
       for k in range(n_folds):
         path = os.path.join(result_folder_path, f'fold-{k:02d}', dataset, method.name)
@@ -481,6 +482,7 @@ def print_result_k_fold(C_quantity, cut_ratio, data_reader_class, method_list, s
           C = get_C(result_path)
           results_df[N] = add_df(results_df.get(N, create_empty_df(n_users)), result_df)
           C_list[N] = C_list.get(N, 0) + C
+          cnt[N] = cnt.get(N, 0) + 1
 
       if not results_df: continue
       output_path = os.path.join('./results/', dataset, method.name, sampler, output_tag)
@@ -488,7 +490,8 @@ def print_result_k_fold(C_quantity, cut_ratio, data_reader_class, method_list, s
       init_global_data()
       TOTAL_DATA['C'][0] = 1
       collect_data(C_quantity, 0, result_df_total)
-      for N in C_list:
+      for N in cnt:
+        if cnt[N] < n_folds: continue
         TOTAL_DATA['C'][N] = round(C_list[N] / n_folds, 1)
         collect_data(C_quantity, N, results_df[N], None)
         results_df[N].to_csv(os.path.join(output_path, f'results-iter{N:02d}.csv'))

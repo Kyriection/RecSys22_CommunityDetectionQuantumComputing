@@ -11,9 +11,12 @@ from recsys.Recommenders.Recommender_utils import reshapeSparse
 from utils.derived_variables import normalization
 
 
-def load_icm_ucm(data_splitter: _DataSplitter, n_users: int, n_items: int):
+def load_icm_ucm(tag: str, data_splitter: _DataSplitter, n_users: int, n_items: int):
     try:
-        icm = data_splitter.get_ICM_from_name('ICM_all')
+        if tag == 'cluster':
+            icm = data_splitter.get_ICM_from_name('ICM_one_hot')
+        elif tag == 'recommend':
+            icm = data_splitter.get_ICM_from_name('ICM_all')
     except Exception:
         logging.warning('Load ICM_all Faild.')
         icm = sps.csr_matrix(([], ([], [])), shape=(n_items, 1))
@@ -54,7 +57,7 @@ def load_data(data_reader, split_quota=None, user_wise=True, make_implicit=True,
         return urm_train, urm_validation, urm_test  # , var_mapping
 
 
-def load_data_k_fold(data_reader, user_wise=True, make_implicit=True, threshold=None, icm_ucm=False, n_folds: int = 5, k: int = 0):
+def load_data_k_fold(tag: str, data_reader, user_wise=True, make_implicit=True, threshold=None, icm_ucm=False, n_folds: int = 5, k: int = 0):
     """
     return urm_train, urm_test(, icm, ucm)
     """
@@ -71,7 +74,7 @@ def load_data_k_fold(data_reader, user_wise=True, make_implicit=True, threshold=
 
     if icm_ucm:
         n_users, n_items = urm_train.shape
-        icm, ucm = load_icm_ucm(data_splitter, n_users, n_items)
+        icm, ucm = load_icm_ucm(tag, data_splitter, n_users, n_items)
         return urm_train, urm_test, icm, ucm
     else:
         return urm_train, urm_test  # , var_mapping

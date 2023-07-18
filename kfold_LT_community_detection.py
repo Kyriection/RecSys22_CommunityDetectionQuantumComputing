@@ -56,6 +56,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
     user_wise = False
     make_implicit = implicit
     threshold = None
+    tag = 'cluster'
 
     fit_args = {
         'threshold': None,
@@ -74,11 +75,10 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
             result_folder_path = f'{results_folder_path}fold-{k:02d}/'
             dataset_folder_path = f'{result_folder_path}{dataset_name}/'
 
-            urm_train, urm_test, icm, ucm = load_data_k_fold(data_reader, user_wise=user_wise,make_implicit=make_implicit,
+            urm_train, urm_test, icm, ucm = load_data_k_fold(tag, data_reader, user_wise=user_wise,make_implicit=make_implicit,
                                                              threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
 
             # item is main charactor, and remove year from item comtext
-            # urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm[:, :-1]
             urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm
             urm_all = merge_sparse_matrices(urm_train, urm_test)
             _, _, _, _, urm_train, urm_test, icm, ucm = head_tail_cut_k_fold(CUT_RATIO, urm_all, urm_test, icm, ucm)

@@ -385,10 +385,10 @@
 # done
 
 n_folds=5
-# dataset=MovielensSample3
-dataset=Movielens100K
+dataset=MovielensSample3
+# dataset=Movielens100K
 
-method=QUBOBipartiteProjectedCommunityDetection2
+method=QUBOBipartiteProjectedCommunityDetection
 echo $method
 time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds -o results/WPM > logs/ctcd-WPM.log 2>&1
 time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds -o results/WPM > logs/ctqr-WPM.log 2>&1
