@@ -221,7 +221,7 @@ def split_train_in_k_folds_user_wise(URM_train, k: int = 5, verbose = False):
         URM_folds[str(i)] = URM_fold_builders[i].get_SparseMatrix()
         if user_no_item_folds[i] != 0:
             print("Warning: {} ({:.2f} %) of {} users have no items in {}'th fold."
-                  .format(user_no_item_folds[i], user_no_item_folds[i]/num_users*100, num_users))
+                  .format(user_no_item_folds[i], user_no_item_folds[i]/num_users*100, num_users, i))
 
     return URM_folds
 

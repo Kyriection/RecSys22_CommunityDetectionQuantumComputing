@@ -37,6 +37,7 @@ from utils.derived_variables import create_related_variables
 from results.plot_results import print_result_, print_result_k_fold, print_result_k_fold_mean
 import utils.seed
 
+
 logging.basicConfig(level=logging.INFO)
 CUT_RATIO: float = None
 EI: bool = False # EI if True else (TC or CT)
@@ -239,7 +240,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
             urm_train, urm_test, icm, ucm = load_data_k_fold(tag, data_reader, user_wise=user_wise,make_implicit=make_implicit,
                                                             threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
 
-            # item is main charactor, and remove year from item comtext
+            # item is main charactor
             urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm
             icm, ucm = create_related_variables(urm_train, icm, ucm)
             icm, ucm = sp.csr_matrix(icm), sp.csr_matrix(ucm)
@@ -308,7 +309,7 @@ def cd_recommendation(urm_train, urm_test, ucm, icm, method, recommender_list, d
         recommend_per_iter(urm_train, urm_test, ucm, icm, method, recommender_list, dataset_name,
                            folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
     # plot_metric(communities, method_folder_path)
-    
+
 
 def recommend_per_iter(urm_train, urm_test, ucm, icm, method, recommender_list, dataset_name, folder_path,
                        sampler: dimod.Sampler = None, communities: Communities = None, n_iter: int = 0, **kwargs):
@@ -456,6 +457,6 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
-    # clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
+    clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
     main(data_reader_classes, method_list, sampler_list, recommender_list, results_folder_path,
          args.kfolds, args.T, args.alpha, args.beta, args.implicit)
