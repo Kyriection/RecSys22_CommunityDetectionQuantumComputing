@@ -1,4 +1,4 @@
-import shutil, time, os, argparse, logging
+import shutil, time, os, argparse, logging, tqdm
 
 import dimod
 import minorminer
@@ -47,7 +47,8 @@ def load_communities(folder_path, method, sampler: Type[dimod.Sampler] = None, n
 def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]],
          base_sampler_list: Iterable[Type[dimod.Sampler]], sampler_list: Iterable[dimod.Sampler],
          results_folder_path: str, num_iters: int, n_folds: int, implicit: bool):
-    user_wise = True
+    # user_wise = True
+    user_wise = False
     make_implicit = implicit
     threshold = None
     tag = 'cluster'
@@ -66,6 +67,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
         for k in range(n_folds):
+            logging.info(f"---------start {k}'th fold------------")
             result_folder_path = f'{results_folder_path}fold-{k:02d}/'
             dataset_folder_path = f'{result_folder_path}{dataset_name}/'
 
@@ -103,10 +105,11 @@ def qa_community_detection(cd_urm, icm, ucm, method, folder_path, base_sampler: 
     for n_iter in range(num_iters):
         if check_communities_size(communities, n_iter, method.filter_users, method.filter_items):
             starting_iter = n_iter
-            # if method is QUBOBipartiteProjectedCommunityDetection:
-                # starting_iter += 1
+            if 'QUBOBipartiteProjectedCommunityDetection' in method.name:
+                starting_iter += 1
             break
     logging.info(f'starting_iter={starting_iter}')
+    starting_iter = 5 #################################################
     if starting_iter is None:
         print(f'Could not find a suitable iteration in range of {num_iters} iterations.')
         return
@@ -157,7 +160,7 @@ def qa_cd_per_iter(cd_urm, icm, ucm, method, folder_path, base_sampler: Type[dim
         empty_communities_flag = True
         new_communities = []
         n_comm = 0
-        for community in communities.iter(n_iter):
+        for community in tqdm.tqdm(communities.iter(n_iter), f'communities.iter({n_iter})'):
             cd = qa_run_cd(cd_urm, icm, ucm, method, folder_path, base_sampler=base_sampler, sampler=sampler,
                            community=community, n_iter=n_iter, n_comm=n_comm, **kwargs)
             if cd is not None:
@@ -240,9 +243,14 @@ def qa_run_cd(cd_urm, icm, ucm, method: Type[BaseCommunityDetection], folder_pat
             embedding = {}
             embedding_time = 0
             if isinstance(sampler, DWaveSampler):
+                # from recsys.Data_manager.DataReader_utils import compute_density
+                # logging.info(f'start finding embedding, shape={cd_urm.shape}, size={cd_urm.size}, density={compute_density(cd_urm)}.')
                 embedding_time = time.time()
+                # embedding = minorminer.find_embedding(m.get_Q_adjacency(), sampler.edgelist, timeout=60)
                 embedding = minorminer.find_embedding(m.get_Q_adjacency(), sampler.edgelist)
                 embedding_time = time.time() - embedding_time
+                # logging.info(f'n_comm={n_comm}, embedding_time={embedding_time}, embedding={bool(embedding)}')
+                # return
 
                 sampler = FixedEmbeddingComposite(sampler, embedding)
 
@@ -355,7 +363,7 @@ if __name__ == '__main__':
     # base_sampler_list = [LeapHybridSampler, SimulatedAnnealingSampler, SteepestDescentSampler, TabuSampler]
     base_sampler_list = [SimulatedAnnealingSampler]
     sampler_list = [DWaveSampler(solver={'topology__type': 'pegasus'})]
-    num_iters = 5
+    num_iters = 6
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)

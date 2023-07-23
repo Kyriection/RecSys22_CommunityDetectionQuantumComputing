@@ -83,6 +83,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
             _, _, _, _, urm_train, urm_test, icm, ucm = head_tail_cut_k_fold(CUT_RATIO, urm_train, urm_test, icm, ucm)
 
             for method in method_list:
+                # if 'Cascade' in method.name: method.n_all_users = urm_train.shape[0]
                 cd_per_method(urm_train, icm, ucm, method, sampler_list, dataset_folder_path, num_iters=num_iters,
                             fit_args=fit_args, sampler_args=sampler_args, save_model=save_model)
 
@@ -96,8 +97,20 @@ def cd_per_method(cd_urm, icm, ucm, method, sampler_list, folder_path, num_iters
         community_detection(cd_urm, icm, ucm, method, folder_path, num_iters=num_iters, **kwargs)
 
 
+# def get_density(communities: Communities, cd_urm, method, community=None, n_iter=0):
+#     if communities is None: return
+#     if community and n_iter == 5:
+#         urm, user_index, item_index = get_community_urm(cd_urm, community, filter_users=method.filter_users,
+#                                                         filter_items=method.filter_items, remove=True)
+#         communities.density = urm.size / len(user_index)
+#         show_urm_info(urm)
+#     get_density(communities.s0, cd_urm, method, communities.c0, n_iter + 1)
+#     get_density(communities.s1, cd_urm, method, communities.c1, n_iter + 1)
+
+
 def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = None, num_iters: int = 1, **kwargs):
     communities = load_communities(folder_path, method, sampler)
+    # communities.num_iters -= 1
     starting_iter = 0 if communities is None else communities.num_iters + 1
     for n_iter in range(starting_iter, num_iters):
         try:
@@ -114,6 +127,7 @@ def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sa
     print(f"communities.num_iters={communities.num_iters}")
 
     method_folder_path = f'{folder_path}{method.name}/'
+    # get_density(communities, cd_urm, method)
     plot_density(communities, method_folder_path)
 
 
@@ -331,7 +345,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 10
+    num_iters = 3
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)

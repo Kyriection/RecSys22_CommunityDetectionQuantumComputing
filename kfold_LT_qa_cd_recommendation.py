@@ -36,7 +36,7 @@ from utils.plot import plot_line, plot_scatter, plot_divide, plot_metric
 from utils.derived_variables import create_related_variables
 from results.plot_results import print_result_, print_result_k_fold, print_result_k_fold_mean
 from kfold_LT_qa_recommendation import load_communities, train_all_data_recommender, evaluate_recommender, \
-    train_recommender_on_community, recommend_per_method
+    train_recommender_on_community
 import utils.seed
 
 
@@ -67,16 +67,21 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
+        C_quantity = None
         for k in range(n_folds):
+            logging.info(f"---------start {k}'th fold------------")
             result_folder_path = f'{results_folder_path}fold-{k:02d}/'
 
             urm_train, urm_test, icm, ucm = load_data_k_fold(tag, data_reader, user_wise=user_wise,make_implicit=make_implicit,
-                                                            threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
+                                                             threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
 
             # item is main charactor
             urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm
             icm, ucm = create_related_variables(urm_train, icm, ucm)
             icm, ucm = sp.csr_matrix(icm), sp.csr_matrix(ucm)
+
+            if C_quantity is None: C_quantity = np.zeros(urm_train.shape[0])
+            C_quantity += np.ediff1d(urm_train.tocsr().indptr) + np.ediff1d(urm_test.tocsr().indptr)
 
             for recommender in recommender_list:
                 recommender_name = recommender.RECOMMENDER_NAME
@@ -92,8 +97,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
                 recommend_per_method(urm_train, urm_test, ucm, icm, method, sampler_list,
                                      recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy(),
                                      save_model=save_model)
-    urm_all = merge_sparse_matrices(urm_train, urm_test)
-    C_quantity = np.ediff1d(urm_all.tocsr().indptr) # count of each row
+
     save_results(data_reader_classes, results_folder_path, method_list, sampler_list, recommender_list, n_folds, C_quantity, *args)
 
 
@@ -127,24 +131,25 @@ def cd_recommendation(urm_train, urm_test, ucm, icm, method, recommender_list, d
             break
 
     logging.info(f'starting_iter={starting_iter}')
+    starting_iter = 5
     if starting_iter is None:
         print(f'No QPU experiments for {dataset_name} with {method} + {sampler_name}')
         return
 
-    # if starting_iter == 0:
-    #     communities = None
-    # else:
-    #     communities.reset_from_iter(starting_iter)
+    if starting_iter == 0:
+        communities = None
+    else:
+        communities.reset_from_iter(starting_iter)
 
     for n_iter in range(starting_iter, num_iters):
-        # new_communities = []
-        # n_comm = 0
-        # for community in communities.iter(n_iter):
-        #     cd = qa_run_cd(cd_urm, icm, ucm, method, dataset_folder_path, base_sampler=sampler.__class__, sampler=DWaveSampler(),
-        #                    community=community, n_iter=n_iter, n_comm=n_comm, **kwargs)
-        #     new_communities.append(cd)
-        #     n_comm += 1
-        # communities.add_iteration(new_communities)
+        new_communities = []
+        n_comm = 0
+        for community in communities.iter(n_iter):
+            cd = qa_run_cd(urm_train, icm, ucm, method, dataset_folder_path, base_sampler=sampler.__class__, sampler=DWaveSampler(),
+                           community=community, n_iter=n_iter, n_comm=n_comm, **kwargs)
+            new_communities.append(cd)
+            n_comm += 1
+        communities.add_iteration(new_communities)
 
         recommend_per_iter(urm_train, urm_test, ucm, icm, method, recommender_list, dataset_name,
                            folder_path, sampler=sampler, communities=communities, n_iter=n_iter, **kwargs)
@@ -204,6 +209,33 @@ def parse_args():
     return args
 
 
+def clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, n_folds: int = 5):
+    for k in range(n_folds):
+        result_folder_path = f'{results_folder_path}fold-{k:02d}/'
+        for data_reader_class in data_reader_classes:
+            dataset_name = data_reader_class.DATASET_SUBFOLDER
+            dataset_folder_path = f'{result_folder_path}{dataset_name}/'
+            # for recommender in recommender_list:
+            #     recommender_folder_path = os.path.join(dataset_folder_path, recommender.RECOMMENDER_NAME)
+            #     if os.path.exists(recommender_folder_path):
+            #         shutil.rmtree(recommender_folder_path)
+            for method in method_list:
+                method_folder_path = f'{dataset_folder_path}{method.name}/'
+                if not os.path.exists(method_folder_path): continue
+                for iter in os.listdir(method_folder_path):
+                    iter_folder_path = os.path.join(method_folder_path, iter)
+                    if not os.path.isdir(iter_folder_path) or len(iter) < 4 or iter[:4] != 'iter': continue
+                    for sampler in sampler_list:
+                        sampler_folder_path = os.path.join(iter_folder_path, f'{sampler.__class__.__name__}_DWaveSampler')
+                        if not os.path.exists(sampler_folder_path): continue
+                        for recommender in recommender_list:
+                            result_file = os.path.join(sampler_folder_path, f'cd_{recommender.RECOMMENDER_NAME}.zip')
+                            if os.path.exists(result_file): os.remove(result_file)
+                            for c in os.listdir(sampler_folder_path):
+                                c_folder_path = os.path.join(sampler_folder_path, c)
+                                if os.path.isdir(c_folder_path) and c[0] == 'c': shutil.rmtree(c_folder_path)
+
+
 def save_results(data_reader_classes, results_folder_path, method_list, sampler_list, recommender_list, n_folds, C_quantity, *args):
     CUT_RATIO = 0.0
     tag = []
@@ -224,7 +256,7 @@ def save_results(data_reader_classes, results_folder_path, method_list, sampler_
                               recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
         print_result_k_fold(C_quantity, CUT_RATIO, data_reader, method_list, sampler_list,
                             recommender.RECOMMENDER_NAME, False, output_folder, tag, results_folder_path, n_folds)
-        print_result_k_fold_mean(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, n_folds)
+        # print_result_k_fold_mean(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, n_folds)
 
 
 if __name__ == '__main__':
@@ -240,5 +272,6 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
+    clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
     main(data_reader_classes, method_list, sampler_list, recommender_list, results_folder_path,
          args.kfolds, args.T, args.alpha, args.beta, args.implicit)

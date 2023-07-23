@@ -43,7 +43,7 @@ CUT_RATIO: float = None
 EI: bool = False # EI if True else (TC or CT)
 MIN_RATINGS_PER_USER = 1
 EVALUATE_FLAG = False
-N_CLUSTER = [2**(i+1) for i in range(10)]
+N_CLUSTER = [2**(i+1) for i in range(6)]
 
 
 def load_classical_communities(urm, ucm, method):
@@ -234,6 +234,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
+        C_quantity = None
         for k in range(n_folds):
             result_folder_path = f'{results_folder_path}fold-{k:02d}/'
 
@@ -244,6 +245,9 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
             urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm
             icm, ucm = create_related_variables(urm_train, icm, ucm)
             icm, ucm = sp.csr_matrix(icm), sp.csr_matrix(ucm)
+
+            if C_quantity is None: C_quantity = np.zeros(urm_train.shape[0])
+            C_quantity += np.ediff1d(urm_train.tocsr().indptr) + np.ediff1d(urm_test.tocsr().indptr)
 
             h_urm_train, h_urm_test, h_icm, h_ucm,\
             t_urm_train, t_urm_test, t_icm, t_ucm = \
@@ -271,8 +275,6 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
                                     recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
                                     save_model=save_model, each_item=True)
 
-    urm_all = merge_sparse_matrices(urm_train, urm_test)
-    C_quantity = np.ediff1d(urm_all.tocsr().indptr) # count of each row
     save_results(data_reader_classes, results_folder_path, method_list, sampler_list, recommender_list, n_folds, C_quantity, *args)
 
 
@@ -395,9 +397,9 @@ def clean_results(results_folder_path, data_reader_classes, method_list, sampler
                     if not os.path.isdir(iter_folder_path) or len(iter) < 4 or iter[:4] != 'iter':
                         continue
                     # print('in: ', iter_folder_path)
-                    for sample in sampler_list:
-                        # sampler_folder_path = os.path.join(iter_folder_path, sample.__name__)
-                        sampler_folder_path = os.path.join(iter_folder_path, 'SimulatedAnnealingSampler')
+                    for sampler in sampler_list:
+                        # sampler_folder_path = os.path.join(iter_folder_path, 'SimulatedAnnealingSampler')
+                        sampler_folder_path = os.path.join(iter_folder_path, sampler.__class__.__name__)
                         if not os.path.exists(sampler_folder_path):
                             continue
                         # print('in: ', sampler_folder_path)
@@ -435,7 +437,7 @@ def save_results(data_reader_classes, results_folder_path, method_list, sampler_
                               recommender.RECOMMENDER_NAME, False, output_folder, tag, result_folder_path)
         print_result_k_fold(C_quantity, CUT_RATIO, data_reader, method_list, sampler_list,
                             recommender.RECOMMENDER_NAME, False, output_folder, tag, results_folder_path, n_folds)
-        print_result_k_fold_mean(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, n_folds)
+        # print_result_k_fold_mean(data_reader, method_list, sampler_list, recommender.RECOMMENDER_NAME, output_folder, tag, results_folder_path, n_folds)
 
 
 if __name__ == '__main__':
@@ -457,6 +459,6 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
-    clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
+    # clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
     main(data_reader_classes, method_list, sampler_list, recommender_list, results_folder_path,
          args.kfolds, args.T, args.alpha, args.beta, args.implicit)
