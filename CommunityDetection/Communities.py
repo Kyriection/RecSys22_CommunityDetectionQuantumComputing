@@ -158,6 +158,9 @@ class Communities:
             'item_index': self.item_index,
             'num_iters': self.num_iters,
             'cut_ratio': self.cut_ratio,
+            'divide_flag': self.divide_flag,
+            'divide_info': self.divide_info,
+            'density': self.density,
         }
 
         dataIO.save_data(comm_file_name, data_dict_to_save)

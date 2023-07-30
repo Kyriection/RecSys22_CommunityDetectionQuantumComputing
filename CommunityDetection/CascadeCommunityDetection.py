@@ -14,15 +14,13 @@ def get_cascade_class(method: BaseCommunityDetection):
         def __init__(self, urm, icm, ucm, *args):
             super().__init__(urm, icm, ucm, icm, ucm)
             self.set_n_all_users(urm.shape[0])
-            self.filter_items = True
-            self.filter_users = True
+            n_users = urm.shape[0]
+            self.method = self.select_method(n_users)
+            self.filter_items = self.method.filter_items
+            self.filter_users = self.method.filter_users
 
         def fit(self, *args, **kwargs):
-            n_users = self.urm.shape[0]
-            method = self.select_method(n_users)
-            self.filter_items = method.filter_items
-            self.filter_users = method.filter_users
-            method.fit(self, *args, **kwargs)
+            self.method.fit(self, *args, **kwargs)
 
         @staticmethod
         def check_select_method(n_users: int) -> int:

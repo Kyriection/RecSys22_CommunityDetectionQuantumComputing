@@ -1,8 +1,8 @@
 # Quantum Community Detection for Recommender Systems
 
 This repository contains the source code for the article
-<a href="https://dl.acm.org/doi/abs/10.1145/3523227.3551478" target="_blank">
-"Towards Recommender Systems with Community Detection and Quantum Computing"</a>
+`<a href="https://dl.acm.org/doi/abs/10.1145/3523227.3551478" target="_blank">`
+"Towards Recommender Systems with Community Detection and Quantum Computing"`</a>`
 published at RecSys 2022. See the websites of our [quantum computing group](https://quantum.polimi.it/) for more
 information on our teams and works.
 
@@ -10,6 +10,7 @@ Here we explain how to install dependencies, setup the connection to D-Wave Leap
 experiments included in this repository.
 
 If you want to cite us or use our repository you can use the following bibtex entry:
+
 ```bibtex
 @inproceedings{10.1145/3523227.3551478,
   author     = {Nembrini, Riccardo and Carugno, Costantino and {Ferrari Dacrema}, Maurizio and Cremonesi, Paolo},
@@ -54,11 +55,12 @@ conda create -n QACDRec python=3.8 anaconda
 conda activate QACDRec
 ```
 
->Remember to add this project in the PYTHONPATH environmental variable if you plan to run the experiments 
-on the terminal:
->```bash
->export PYTHONPATH=$PYTHONPATH:/path/to/project/folder
->```
+> Remember to add this project in the PYTHONPATH environmental variable if you plan to run the experiments
+> on the terminal:
+>
+> ```bash
+> export PYTHONPATH=$PYTHONPATH:/path/to/project/folder
+> ```
 
 Then, make sure you correctly activated the environment and install all the required packages through `pip`:
 
@@ -67,6 +69,7 @@ pip install -r requirements.txt
 ```
 
 ### Additional
+
 If you want to experiment with personalized recommenders, not used in the published results, it is suggested to compile
 Cython code in the repository.
 
@@ -112,16 +115,19 @@ command, which will send a test problem to D-Wave's QPU:
 
 ```bash
 dwave ping
+dwave ping -s hybrid_binary_quadratic_model_version2 --sampling-params '{"time_limit": 5}'
 ```
 
 ## Executing Experiments
 
 In order to execute the experiments you must first run the community detection scripts:
+
 - `run_community_detection.py` to perform community detection with D-Wave Leap Hybrid, Simulated Annealing, Steepest Descent and Tabu Search
 - `qa_run_community_detection.py` to perform community detection with the D-Wave Advantage QPU, starting from iterations computed with the previous script
 
 Then, you can run the recommendation experiments, which will build and evaluate TopPopular recommendation on the
 communities found with the previous scripts:
+
 - `cd_recommendation.py` to perform recommendation with the communities found with `run_community_detection.py`
 - `qa_cd_recommendation.py` to perform recommendation with the communities found with `qa_run_community_detection.py`
 

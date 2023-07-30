@@ -385,14 +385,17 @@
 # done
 
 n_folds=5
-dataset=MovielensSample3
-# dataset=Movielens100K
+# dataset=MovielensSample3
+dataset=Movielens100K
+recommender=LRRecommender
+# recommender=SVRRecommender
 
-method=QUBOBipartiteProjectedCommunityDetection
-echo $method
-time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds -o results/WPM > logs/ctcd-WPM.log 2>&1
-time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds -o results/WPM > logs/ctqr-WPM.log 2>&1
+# method=QUBOBipartiteProjectedCommunityDetection
+# echo $method
+# time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds -o results/WPM > logs/ctcd-WPM.log 2>&1
+# time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds -o results/WPM > logs/ctqr-WPM.log 2>&1
 # time python kfold_LT_community_detection.py QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM
+# time python kfold_LT_community_detection.py LTBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM
 # time python kfold_LT_qa_recommendation.py   QUBOBipartiteProjectedCommunityDetection -d $dataset -k $n_folds -o results/WPM
 
 # echo Each Item
@@ -402,3 +405,39 @@ time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds -o r
 # echo Kmeans Bipartite w/ attribute
 # time python kfold_LT_community_detection.py KmeansBipartiteCommunityDetection -d $dataset -k $n_folds --attribute -o results/Kmeans-B-A > logs/ctcd-Kmeans-B-A.log 2>&1
 # time python kfold_LT_qa_recommendation.py   KmeansBipartiteCommunityDetection -d $dataset -k $n_folds --attribute -o results/Kmeans-B-A > logs/ctqr-Kmeans-B-A.log 2>&1
+
+# time python kfold_LT_qa_run_community_detection.py $method -d $dataset -k $n_folds -o results/WPM > logs/ctcd-WPM.log 2>&1
+# time python kfold_LT_qa_cd_recommendation.py       $method -d $dataset -k $n_folds -o results/WPM > logs/ctqr-WPM.log 2>&1
+
+# ------------- Cascade -------------
+beta_list=(0.125 0.0625 0.03125 0.015625)
+beta_list=(0.03125)
+method_list=(QUBOBipartiteProjectedCommunityDetection)
+for method in ${method_list[*]}
+do
+  for beta in ${beta_list[*]}
+  do
+    # tag=Cascade-$method-$beta
+    # echo $tag
+    # time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
+    # time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag -r $recommender > logs/ctqr-$tag.log 2>&1
+    # time python kfold_LT_qa_run_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag > logs/ctcd-q-$tag.log 2>&1
+    # time python kfold_LT_qa_cd_recommendation.py       $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag > logs/ctqr-q-$tag.log 2>&1
+    tag=Cascade-$method-$beta-implicit
+    echo $tag
+    time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit > logs/ctcd-$tag.log 2>&1
+    time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit -r $recommender > logs/ctqr-$tag.log 2>&1
+    # time python kfold_LT_qa_run_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit > logs/ctcd-q-$tag.log 2>&1
+    # time python kfold_LT_qa_cd_recommendation.py       $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit > logs/ctqr-q-$tag.log 2>&1
+  done
+done
+
+# recommender=SVRRecommender
+# method=QUBOBipartiteProjectedCommunityDetection
+# echo $method
+# time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds -o results/WPM > logs/ctcd-WPM.log 2>&1
+# time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds -o results/WPM -r $recommender > logs/ctqr-WPM.log 2>&1
+# echo ''>&5
+
+# echo Each Item
+# time python kfold_LT_qa_recommendation.py EachItem -d $dataset -k $n_folds --EI -o results/EI -r $recommender > logs/ctr-EI.log 2>&1

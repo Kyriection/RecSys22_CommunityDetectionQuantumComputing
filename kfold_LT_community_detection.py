@@ -110,7 +110,7 @@ def cd_per_method(cd_urm, icm, ucm, method, sampler_list, folder_path, num_iters
 
 def community_detection(cd_urm, icm, ucm, method, folder_path, sampler: dimod.Sampler = None, num_iters: int = 1, **kwargs):
     communities = load_communities(folder_path, method, sampler)
-    # communities.num_iters -= 1
+    # communities.reset_from_iter(4)
     starting_iter = 0 if communities is None else communities.num_iters + 1
     for n_iter in range(starting_iter, num_iters):
         try:
@@ -345,7 +345,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 3
+    num_iters = 5
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
@@ -361,6 +361,6 @@ if __name__ == '__main__':
         for i, method in enumerate(method_list):
             method_list[i] = get_cascade_class(method)
             method_list[i].set_beta(args.beta)
-    clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, args.kfolds)
+    # clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, args.kfolds)
     main(data_reader_classes, method_list, sampler_list, results_folder_path, num_iters=num_iters,
          n_folds=args.kfolds, implicit=args.implicit)

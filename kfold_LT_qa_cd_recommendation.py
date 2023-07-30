@@ -131,7 +131,7 @@ def cd_recommendation(urm_train, urm_test, ucm, icm, method, recommender_list, d
             break
 
     logging.info(f'starting_iter={starting_iter}')
-    starting_iter = 5
+    # starting_iter = 5
     if starting_iter is None:
         print(f'No QPU experiments for {dataset_name} with {method} + {sampler_name}')
         return
@@ -272,6 +272,6 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
-    clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
+    # clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
     main(data_reader_classes, method_list, sampler_list, recommender_list, results_folder_path,
          args.kfolds, args.T, args.alpha, args.beta, args.implicit)

@@ -381,7 +381,7 @@ def print_result_(C_quantity, cut_ratio, data_reader_class, method_list, sampler
         if result_df is None:
            continue
         # logging.info(f'extract_file({file}), resutl_df is None: {result_df is None}')
-        TOTAL_DATA['C'][N] = C + 1
+        TOTAL_DATA['C'][N] = C
         collect_data(C_quantity, N, result_df, result_df_ei)
 
       if len(TOTAL_DATA['C']) == 0: continue
@@ -456,10 +456,10 @@ def print_result_k_fold(C_quantity, cut_ratio, data_reader_class, method_list, s
     else:
       sampler_name_list = sampler_list
 
-    results_df = {}
-    C_list = {}
-    cnt = {}
     for sampler in sampler_name_list:
+      results_df = {}
+      C_list = {}
+      cnt = {}
       for k in range(n_folds):
         path = os.path.join(result_folder_path, f'fold-{k:02d}', dataset, method.name)
         if not os.path.exists(path): break

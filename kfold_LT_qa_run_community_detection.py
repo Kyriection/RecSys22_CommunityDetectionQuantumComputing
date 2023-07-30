@@ -109,7 +109,7 @@ def qa_community_detection(cd_urm, icm, ucm, method, folder_path, base_sampler: 
                 starting_iter += 1
             break
     logging.info(f'starting_iter={starting_iter}')
-    starting_iter = 5 #################################################
+    # starting_iter = 5 #################################################
     if starting_iter is None:
         print(f'Could not find a suitable iteration in range of {num_iters} iterations.')
         return
@@ -363,7 +363,7 @@ if __name__ == '__main__':
     # base_sampler_list = [LeapHybridSampler, SimulatedAnnealingSampler, SteepestDescentSampler, TabuSampler]
     base_sampler_list = [SimulatedAnnealingSampler]
     sampler_list = [DWaveSampler(solver={'topology__type': 'pegasus'})]
-    num_iters = 6
+    num_iters = 10
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)
