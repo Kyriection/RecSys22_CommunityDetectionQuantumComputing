@@ -417,16 +417,16 @@ for method in ${method_list[*]}
 do
   for beta in ${beta_list[*]}
   do
-    # tag=Cascade-$method-$beta
-    # echo $tag
-    # time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
-    # time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag -r $recommender > logs/ctqr-$tag.log 2>&1
+    tag=Cascade-$method-$beta
+    echo $tag
+    time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag > logs/ctcd-$tag.log 2>&1
+    time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag -r $recommender > logs/ctqr-$tag.log 2>&1
     # time python kfold_LT_qa_run_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag > logs/ctcd-q-$tag.log 2>&1
     # time python kfold_LT_qa_cd_recommendation.py       $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag > logs/ctqr-q-$tag.log 2>&1
-    tag=Cascade-$method-$beta-implicit
-    echo $tag
-    time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit > logs/ctcd-$tag.log 2>&1
-    time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit -r $recommender > logs/ctqr-$tag.log 2>&1
+    # tag=Cascade-$method-$beta-implicit
+    # echo $tag
+    # time python kfold_LT_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit > logs/ctcd-$tag.log 2>&1
+    # time python kfold_LT_qa_recommendation.py   $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit -r $recommender > logs/ctqr-$tag.log 2>&1
     # time python kfold_LT_qa_run_community_detection.py $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit > logs/ctcd-q-$tag.log 2>&1
     # time python kfold_LT_qa_cd_recommendation.py       $method -d $dataset -k $n_folds --attribute -b $beta -o results/$tag --implicit > logs/ctqr-q-$tag.log 2>&1
   done
