@@ -62,7 +62,7 @@ class MovielensHetrec2011Reader(DataReader):
         ICM_genres_dataframe = pd.read_csv(filepath_or_buffer=ICM_genre_path, sep="\t", header=None, dtype={0:str, 1:str}, engine='python')
         ICM_genres_dataframe.columns = ["ItemID", "genre"]
         ICM_genre_list = [[f'{feature_name}_{ICM_genres_dataframe[feature_name][index]}', str(index), 1] for feature_name in ["genre"] for index in range(len(ICM_genres_dataframe))] # one-hot
-        ICM_genres_dataframe = pd.DataFrame(ICM_genre_list, columns=['FeatureID', 'UserID', 'Data'])
+        ICM_genres_dataframe = pd.DataFrame(ICM_genre_list, columns=['FeatureID', 'ItemID', 'Data'])
 
         ICM_years_dataframe = pd.read_csv(filepath_or_buffer=ICM_years_path, sep="\t", header=0,
                                         dtype={0:str, 1:str, 2:str, 3:str, 4:str, 5:int}, usecols=[0, 5])
