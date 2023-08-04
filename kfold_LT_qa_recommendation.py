@@ -234,20 +234,16 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
     for data_reader_class in data_reader_classes:
         data_reader = data_reader_class()
         dataset_name = data_reader._get_dataset_name()
-        C_quantity = None
         for k in range(n_folds):
             result_folder_path = f'{results_folder_path}fold-{k:02d}/'
 
             urm_train, urm_test, icm, ucm = load_data_k_fold(tag, data_reader, user_wise=user_wise,make_implicit=make_implicit,
-                                                            threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
+                                                             threshold=threshold, icm_ucm=True, n_folds=n_folds, k=k)
 
             # item is main charactor
             urm_train, urm_test, icm, ucm = urm_train.T.tocsr(), urm_test.T.tocsr(), ucm, icm
             icm, ucm = create_related_variables(urm_train, icm, ucm)
             icm, ucm = sp.csr_matrix(icm), sp.csr_matrix(ucm)
-
-            if C_quantity is None: C_quantity = np.zeros(urm_train.shape[0])
-            C_quantity += np.ediff1d(urm_train.tocsr().indptr) + np.ediff1d(urm_test.tocsr().indptr)
 
             h_urm_train, h_urm_test, h_icm, h_ucm,\
             t_urm_train, t_urm_test, t_icm, t_ucm = \
@@ -276,6 +272,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
                                     recommender_list, dataset_name, result_folder_path, recsys_args=recsys_args.copy,
                                     save_model=save_model, each_item=True)
 
+    C_quantity = np.ediff1d(urm_train.tocsr().indptr) + np.ediff1d(urm_test.tocsr().indptr)
     save_results(data_reader_classes, results_folder_path, method_list, sampler_list, recommender_list, n_folds, C_quantity, *args)
 
 
