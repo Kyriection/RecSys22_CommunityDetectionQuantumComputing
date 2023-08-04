@@ -20,7 +20,7 @@ class Movielens10MReader(DataReader):
     DATASET_URL = "http://files.grouplens.org/datasets/movielens/ml-10m.zip"
     DATASET_SUBFOLDER = "Movielens10M/"
     AVAILABLE_URM = ["URM_all", "URM_timestamp"]
-    AVAILABLE_ICM = ["ICM_all", "ICM_genres", "ICM_tags", "ICM_year"]
+    AVAILABLE_ICM = ["ICM_all", "ICM_genres", "ICM_tags", "ICM_year", "ICM_one_hot"]
 
     IS_IMPLICIT = False
 
@@ -69,6 +69,7 @@ class Movielens10MReader(DataReader):
         dataset_manager.add_ICM(ICM_years_dataframe, "ICM_year")
         dataset_manager.add_ICM(ICM_tags_dataframe, "ICM_tags")
         dataset_manager.add_ICM(ICM_all_dataframe, "ICM_all")
+        dataset_manager.add_ICM(ICM_all_dataframe, "ICM_one_hot")
 
 
         loaded_dataset = dataset_manager.generate_Dataset(dataset_name=self._get_dataset_name(),

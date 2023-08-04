@@ -43,7 +43,7 @@ CUT_RATIO: float = None
 EI: bool = False # EI if True else (TC or CT)
 MIN_RATINGS_PER_USER = 1
 EVALUATE_FLAG = False
-N_CLUSTER = [2**(i+1) for i in range(9)]
+N_CLUSTER = [2**(i+1) for i in range(10)]
 
 
 def load_classical_communities(urm, ucm, method):
@@ -256,6 +256,7 @@ def main(data_reader_classes, method_list: Iterable[Type[BaseCommunityDetection]
             logging.info(f'head shape: {h_urm_train.shape}, tail shape: {t_urm_train.shape}')
 
             for recommender in recommender_list:
+                recommender.set_limit(min(*urm_train.data, *urm_test.data), max(*urm_train.data, *urm_test.data))
                 recommender_name = recommender.RECOMMENDER_NAME
                 output_folder_path = f'{result_folder_path}{dataset_name}/{recommender_name}/'
                 if not os.path.exists(f'{output_folder_path}baseline.zip') or not os.path.exists(
@@ -354,7 +355,7 @@ def parse_args():
                         choices=['LRRecommender', 'SVRRecommender', 'DTRecommender'])
     parser.add_argument('-d', '--dataset', nargs='+', type=str, default=['Movielens100K'], help='dataset',
                         choices=['Movielens100K', 'Movielens1M', 'MovielensHetrec2011', 'MovielensSample',
-                                 'MovielensSample2', 'MovielensSample3'])
+                                 'MovielensSample2', 'MovielensSample3', 'MovielensLatestSmall'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for cascade')
     parser.add_argument('-b', '--beta', type=float, default=0.0, help='beta for quantity')
