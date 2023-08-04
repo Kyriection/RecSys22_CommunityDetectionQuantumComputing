@@ -296,7 +296,7 @@ def parse_args():
                                  'TestCommunityDetection'])
     parser.add_argument('-d', '--dataset', nargs='+', type=str, default=['Movielens100K'], help='dataset',
                         choices=['Movielens100K', 'Movielens1M', 'MovielensHetrec2011', 'MovielensSample',
-                                 'MovielensSample2', 'MovielensSample3'])
+                                 'MovielensSample2', 'MovielensSample3', 'MovielensLatestSmall'])
     parser.add_argument('-c', '--cut_ratio', type=float, default=0.0, help='head ratio for clustered tail')
     parser.add_argument('-a', '--alpha', type=float, default=1.0, help='alpha for quantity')
     parser.add_argument('-b', '--beta', type=float, default=0.0, help='beta for cascade')
@@ -345,7 +345,7 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler()]
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
-    num_iters = 9
+    num_iters = 10
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
     QUBOGraphCommunityDetection.set_alpha(args.alpha)
     QUBOProjectedCommunityDetection.set_alpha(args.alpha)

@@ -21,6 +21,8 @@ def get_recommender_class(sklearn_model, recommender_name: str):
     class SklearnRecommender(BaseRecommender):
 
         RECOMMENDER_NAME = recommender_name
+        LIMIT_MIN = 0.0
+        LIMIT_MAX = 5.0
 
         def __init__(self, URM_train, ucm, icm, user_id_array: Optional[list] = None):
             super(SklearnRecommender, self).__init__(URM_train)
@@ -58,12 +60,12 @@ def get_recommender_class(sklearn_model, recommender_name: str):
             if self.scores is not None:
                 return self.scores[user, items_id].copy()
             if self.model is None:
-                return np.ones(len(items_id), dtype=np.float32) * 3
+                return (self.LIMIT_MIN + self.LIMIT_MAX) / 2 * np.ones(len(items_id), dtype=np.float32)
 
             x = [sp.hstack((self.ucm[user_id], self.icm[i])).A.flatten() for i in items_id]
             scores = self.model.predict(x)
-            scores[scores < 1.0] = 1.0
-            scores[scores > 5.0] = 5.0
+            scores[scores < self.LIMIT_MIN] = self.LIMIT_MIN
+            scores[scores > self.LIMIT_MAX] = self.LIMIT_MAX
             return scores
 
 
@@ -71,7 +73,7 @@ def get_recommender_class(sklearn_model, recommender_name: str):
             if self.scores is not None:
                 return
             n_users = len(self.user_id_array)
-            self.scores = np.ones((n_users, self.n_items), dtype=np.float32) * 3
+            self.scores = (self.LIMIT_MIN + self.LIMIT_MAX) / 2 * np.ones((n_users, self.n_items), dtype=np.float32)
             if self.model is not None:
                 for i, user in tqdm.tqdm(enumerate(self.user_id_array)):
                     self.scores[i] = self.predict(user)
@@ -103,5 +105,11 @@ def get_recommender_class(sklearn_model, recommender_name: str):
             dataIO.save_data(file_name=file_name, data_dict_to_save = data_dict_to_save)
 
             self._print("Saving complete")
+
+        @staticmethod
+        def set_limit(limit_min, limit_max):
+            logging.info(f'Recommender set limit [{limit_min}, {limit_max}].')
+            SklearnRecommender.LIMIT_MIN = limit_min
+            SklearnRecommender.LIMIT_MAX = limit_max
     
     return SklearnRecommender

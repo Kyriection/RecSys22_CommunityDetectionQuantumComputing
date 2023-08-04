@@ -14,12 +14,14 @@ from recsys.Data_manager.Movielens.Movielens1MReader import Movielens1MReader
 from recsys.Data_manager.Movielens.Movielens10MReader import Movielens10MReader
 from recsys.Data_manager.Movielens.Movielens20MReader import Movielens20MReader
 from recsys.Data_manager.Movielens.MovielensHetrec2011Reader import MovielensHetrec2011Reader
+from recsys.Data_manager.Movielens.MovielensLatestSmallReader import MovielensLatestSmallReader
 from recsys.Data_manager.LastFMHetrec2011.LastFMHetrec2011Reader import LastFMHetrec2011Reader
 from recsys.Data_manager.CiteULike.CiteULikeReader import CiteULike_aReader, CiteULike_tReader
 from recsys.Data_manager.Frappe.FrappeReader import FrappeReader
 from recsys.Data_manager.FilmTrust.FilmTrustReader import FilmTrustReader
 
 DATA_LIST = [Movielens100KReader, Movielens1MReader, MovielensHetrec2011Reader,
-             MovielensSampleReader, MovielensSample2Reader, MovielensSample3Reader]
+             MovielensSampleReader, MovielensSample2Reader, MovielensSample3Reader,
+             MovielensLatestSmallReader]
 
 DATA_DICT = {data_reader.DATASET_SUBFOLDER[:-1]: data_reader for data_reader in DATA_LIST}
