@@ -460,6 +460,6 @@ if __name__ == '__main__':
     # sampler_list = [LeapHybridSampler(), neal.SimulatedAnnealingSampler(), greedy.SteepestDescentSampler(),
                     # tabu.TabuSampler()]
     results_folder_path = f'{os.path.abspath(args.ouput)}/'
-    # clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
+    clean_results(results_folder_path, data_reader_classes, method_list, sampler_list, recommender_list, args.kfolds)
     main(data_reader_classes, method_list, sampler_list, recommender_list, results_folder_path,
          args.kfolds, args.T, args.alpha, args.beta, args.implicit)
