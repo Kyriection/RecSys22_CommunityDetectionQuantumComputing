@@ -12,7 +12,7 @@ import neal
 import numpy as np
 import scipy.sparse as sp
 import tabu
-from dwave.system import LeapHybridSampler
+# from dwave.system import LeapHybridSampler
 from sklearn.cluster import KMeans, SpectralClustering
 
 from CommunityDetection import BaseCommunityDetection, QUBOBipartiteCommunityDetection, \

@@ -6,7 +6,7 @@ import neal
 import numpy as np
 import tabu
 import pandas as pd
-from dwave.system import LeapHybridSampler
+# from dwave.system import LeapHybridSampler
 
 from CommunityDetection import BaseCommunityDetection, QUBOCommunityDetection, QUBOBipartiteCommunityDetection, \
     QUBOBipartiteProjectedCommunityDetection, Communities, Community, get_community_folder_path, EmptyCommunityError, \
